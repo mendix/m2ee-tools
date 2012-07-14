@@ -1,0 +1,14 @@
+insert private module location into the python search path
+Index: m2ee-tools-0.3.0/src/m2ee.py
+===================================================================
+--- m2ee-tools-0.3.0.orig/src/m2ee.py	2011-04-30 18:32:07.538707403 +0200
++++ m2ee-tools-0.3.0/src/m2ee.py	2011-04-30 18:38:45.830705089 +0200
+@@ -9,6 +9,8 @@
+ import subprocess
+ import os, signal, pwd, getpass, atexit
+ import time, string
++import sys
++sys.path.insert(1, '/usr/share/m2ee-tools')
+ from m2ee.config import M2EEConfig
+ from m2ee.client import M2EEClient
+ from m2ee.runner import M2EERunner

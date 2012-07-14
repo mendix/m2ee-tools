@@ -1,0 +1,135 @@
+#
+# ~/.m2ee/m2ee.yaml
+# user/application specific configuration
+#
+m2ee:
+ app_name: __MXPROJECT__
+ app_base: /srv/mendix/__MXUSER__
+ # m2ee admin interface and password
+ admin_port: __MXADMPORT__
+ admin_pass: __MXADMPASS__
+ monitoring_pass: __MXMONPASS__
+ # mxruntime web interface port
+ runtime_port: __MXPORT__
+ # set to true when running behind a 'connection offloading' http proxy that already
+ # deals with many idle browser connections
+ runtime_blocking_connector: true
+ # preserve_environment can be eiter:
+ #   true -> keep all environment variables when starting the JVM process
+ #   false -> keep none (default)
+ #   a list of env variable names to keep (e.g. ["LOGNAME","LANG"]), while ignoring all others
+ #preserve_environment: false
+ # custom_environment can be used to add custom enviroment variables when starting the JVM process
+ #custom_environment:
+  #SOME_ENV_VAR: value
+  #OTHER_ENV_VAR: value2
+ # custom java options, like -Xmx256m or -Djava.foo=bar
+ # note: in case you are using ia32-sun-java6-bin, you want to add the following option:
+ #   "-Dsun.io.useCanonPrefixCache=false". Also see http://bugs.debian.org/617402.
+ javaopts: [
+   "-Dfile.encoding=UTF-8", "-XX:MaxPermSize=64M", "-Xmx128M", "-Xms128M",
+   "-Djava.io.tmpdir=/srv/mendix/__MXUSER__/data/tmp",
+ ]
+ # force specific mxruntime version to use (e.g. mdp has no valid version number)
+ # if empty, the version will be autodetected using the mdp file
+ #runtime_version:
+ # if true, try to symlink web/mxclientsystem to the mxclientsystem directory
+ # of the runtime distribution currently in use (useful for fixed config webserver
+ # that followes symlinks)
+ symlink_mxclientsystem: true
+ # run this at the end of an unpack-action (>2.5.0-rc2)
+ #post_unpack_hook: '/home/knorrie/bin/post-unpack-hook.sh'
+ # file in which to store the pid of the running m2ee process
+ pidfile: /home/__MXUSER__/.m2ee/m2ee.pid
+ # setting False disables the emtpydb and restoredb commands
+ allow_destroy_db: true
+ # this location is used for writing/reading database dumps and writing validation
+ # query logs. defaults to $app_base/data/database
+ #database_dump_path:
+ # this location is used for reading model uploads (.zip or .mda)
+ # it defaults to $app_base/data/model-upload
+ #model_upload_path:
+ # experimental: log file location to use for a quick tail call
+ logfile: /var/log/xas2/__MXUSER__.log
+ jetty:
+  # Jetty tweaking... Better not use these unless you really know what you're doing.
+  # Options only apply to the MxRuntime http server
+  #runtime_min_threads: 8
+  #runtime_max_threads: 254
+ munin:
+  #config_cache: /home/__MXUSER__/.m2ee/munin-cache.json
+  #graph_total_named_users: True
+mimetypes:
+ bmp: image/bmp
+logging:
+ - # <- list of dicts
+   name: SysLogSubscriber
+   type: syslog
+   autosubscribe: INFO
+   host: localhost
+   port: 514
+   facility: LOG_LOCAL6
+   prefix: __MXUSER__
+# - # example of file logging by the platform itself
+#   name: FileSubscriber
+#   type: file
+#   autosubscribe: INFO
+#   filename: /path/to/your/favorite/logfile
+#   max_size: 10485760 # bytes(!!)
+#   max_rotation: 7
+custom:
+ # put microflow constants in here
+ #"Module.Constant": text
+ #"AnotherModule.AnotherConstant": bla
+mxruntime:
+ DTAPMode: P
+ #XASId:
+ #
+ # MxRuntime still needs to know where we found it, to fetch stuff like
+ # microflow debugger icons and the mxclientsystem. Also ModelerAPI ClassCache
+ # needs it.
+ #RuntimePath: defaults to $runtimepath
+ # the location of the mxclientsystem only needs to be specified when it's not
+ # to be found in its default location, as subdirectory of RuntimePath
+ #MxClientSystemPath: defaults to $runtimepath/mxclientsystem
+
+ # File/Dir locations
+ #
+ # 
+ #BasePath: defaults to $app_base
+ #PublicWebrootPath: defaults to $app_base/web/
+ #BuiltInDatabasePath: defaults to $app_base/data/database/
+ #TempPath: defaults to $app_base/tmp/
+ #UploadedFilesPath: defaults to $app_base/data/files/
+ KeyFile: /home/__MXUSER__/.m2ee/key.mx
+ #ModelerFile: defaults to $app_base/model/model.mdp
+ #
+ 
+ # The following options will *not* be read from the modeler file in A/P mode:
+ #
+ ApplicationRootUrl: https://__MXURL__/
+ DatabaseType: PostgreSQL
+ DatabaseHost: localhost
+ DatabaseName: __MXUSER__
+ DatabaseUserName: __MXUSER__
+ DatabasePassword: __MXPGPASS__
+ 
+ # The following options will be read from the modeler file, but can be overridden here:
+ #
+ #AdminUserName:
+ #GuestUserRoleName:
+ #AdminUserRoleName:
+ #EnableGuestLogin:
+ #ShowNavigationTree:
+ #HashAlgorithm:
+ #WsdlTargetNamespace:
+ #
+ 
+ # The following options can only be set here:
+ #PersistentSessions: false
+ # ScheduledEventExecution can be set to ALL, NONE (default) or SPECIFIED
+ ScheduledEventExecution: NONE
+ # When using ScheduledEventExecution SPECIFIED, provide a comma-separated list
+ # of actions to enable:
+ #MyScheduledEvents: "Module.Comma,Module.Seperated,Module.Stuff"
+

@@ -1,0 +1,13 @@
+#
+# /etc/m2ee/m2ee.yaml
+# system-wide m2ee configuration
+#
+mxnode:
+ # mxjar_repo, containing directories with version-numbering, which contain
+ # mxruntime, m2ee-server directories with java libraries and the mxclientsystem
+ mxjar_repo: [/usr/share/mendix/, /usr/local/share/mendix/]
+ # override postgres client tools versions to use
+ #pg_dump: /usr/lib/postgresql/8.3/bin/pg_dump
+ #pg_restore: /usr/lib/postgresql/8.4/bin/pg_restore
+ #psql: /usr/lib/postgresql/8.3/bin/psql
+

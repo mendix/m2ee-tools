@@ -1,0 +1,104 @@
+m2ee-tools 0.3.6.1, 19 Mar 2012
+  * m2ee-tools is python 2.4 compatible again (remove a conditional expression)
+  * Add missing autosubscribe option in file logging example config
+  * Use sys.exit() instead of exit()
+
+m2ee-tools 0.3.6, 9 Feb 2012
+  * Fix crash when message field in critical logmessage is not present
+
+m2ee-tools 0.3.5, 2 Jan 2012
+  * Fix: Remove leftover test code causing 'Caused by: bla'
+  * Fix: if running the Mendix Runtime from source using eclipse, dont try
+    to find where m2ee/runtime jars live
+  * Fix: also put model lib into classpath when running Mendix from source
+
+m2ee-tools 0.3.4, 17 Oct 2011
+  * Fix MicroFlowConstants -> MicroflowConstants typo, which causes mf
+    constants not to be recognized if put in custom section in m2ee.yaml
+	Thanks to Jonathan van Alteren <jvalteren@flowfabric.com>
+
+m2ee-tools 0.3.3, 7 Sep 2011
+
+  * Fix nagios output: don't put status information in performance data
+    section
+  * Now compatible with 2.5.0 < Mendix <= 3.0.0-rc1
+  * Fix missing send_mime_types functionality (mime types were being ignored
+    until now)
+  * Stop application startup when sending configuration causes error messages
+  * Add munin-config-cache, so munin_config will output last-known configuration,
+    while munin_values won't output values.
+    This prevents graphs from disappearing when an application is not running.
+  * Improve feedback when "pid alive, m2ee does not respond": more verbose
+    explanation; tell user to consider restarting the application process.
+
+m2ee-tools 0.3.2, unreleased
+
+  * Fix string formatting issues
+  * get_logged_in_user_names is now who or w
+
+m2ee-tools 0.3.1, 7 Jun 2011
+
+  * Fix string formatting error in restoredb error output
+  * instead of all to stderr, log everything below ERROR to to stdout,
+    log everything that's ERROR and more serious to stderr
+
+m2ee-tools 0.3.0, 30 May 2011
+
+  * Add help text explaining available commands
+  * Add health check functionality
+  * Integrate munin and nagios plugin into m2ee scripts. Yay!
+  * Always use effective uid for os.path.expanduser (fixes issues with
+    running as munin-plugin)
+  * Don't read deprecated m2eerc-file if yaml version is present
+  * Remove conditional expressions in command line argument processing
+    because they make python 2.4 cry
+  * Update Mendix copyright and license notices, cleanup third-party licenses
+  * Implement sending monitoring_pass at startup
+  * Cleanup pidfile handling and detection of running / not running
+  * Implement setting output verbosity at startup using -v/-q 
+  * Use python logging module for logging instead of print statements
+  * Refactored startup code
+  * Add option to save ddl commands besides view/execute
+  * Fix minute/month formatting typo in filenames for ddl/pg_dump output
+  * Search for /etc/m2ee/m2ee.yaml and ~/.m2ee/m2ee.yaml by default,
+    m2eerc-variants are now deprecated
+  * Fallback to using sqlite3 binary via subprocess module when import sqlite3
+    fails (e.g. when running using python 2.4)
+  * Add warning about using experimental profiling code in production
+  * Add configuration file examples
+  * Allow mxjar_repo to be a list of multiple locations
+
+m2ee-tools 0.2.3, 29 Mar 2011
+
+  * Prevent m2ee from hanging when the xas is unresponsive
+  * Add preserve_environment and custom_environment
+  * Prevent m2ee from hanging when the xas is unresponsive
+  * Immediately write pid of jvm when available
+
+m2ee-tools 0.2.2, 17 Feb 2011
+
+  * Make psql/pg_dump/pg_restore to be used configurable
+  * Add psql convenience command
+  * Fix crash when trying to start before unpacking anything
+  * Quick implementation of loglevel get/set FEATURE~~1111
+
+m2ee-tools 0.2.1, 30 Nov 2010
+
+  * Call tail with -F instead of -f at log
+  * Add agile request-profiler client
+  * Add post-unpack-hook option
+  * Let java itself search for .jar files in lib directories
+  * Move java classpath after javaopts on command line
+  * Changes for Mendix 2.5.0:
+    - Don't automatically ask for creation of admin user (check was broken
+      anyway). Calling create_admin_user manually is still possible.
+    - Implement interactive update_admin_user action to allow reset of user
+      account password, even when it's not 1.
+    - Add get_logged_in_user_names and simple about action
+    - Print (a maximum of 10) logged in users when executing status action
+    - Include lib/userlib/* (jars) in the classpath as well
+  * fix allow_destroy_db
+
+m2ee-tools 0.1.0, 11 May 2010
+
+  * Initial release

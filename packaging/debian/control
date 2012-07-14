@@ -1,0 +1,22 @@
+Source: m2ee-tools
+Section: misc
+Priority: extra
+Maintainer: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Build-Depends: debhelper (>= 7), python-support (>= 0.6)
+Standards-Version: 3.9.1
+Homepage: http://www.mendix.com/
+XS-Python-Version: >= 2.4
+
+Package: m2ee-tools
+Architecture: all
+Depends: ${python:Depends}, ${misc:Depends}, unzip, python-yaml, python-simplejson, python-httplib2
+Recommends: sqlite3
+Suggests: postgresql-client
+Description: Mendix 2.5 deployment tools
+ The m2ee tools provide an interactive way to manage Mendix Business Server
+ processes. Using the scripts, a Mendix application can be started, stopped
+ and monitored.
+ .
+ When using a PostgreSQL database as datastore for the application, m2ee
+ also provides functionality to dump and restore databases, if the
+ postgresql-client package is installed.

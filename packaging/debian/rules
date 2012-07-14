@@ -1,0 +1,45 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Makefile to build the m2ee-tools Debian package. This file is based on a
+# Makefile originally written by Joey Hess and Craig Small.
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=1
+
+build:
+
+clean:
+	dh_testdir
+	dh_testroot
+	dh_prep  
+	find . -name '*.pyc' -print0 | xargs -0 -r rm
+	dh_installdirs
+	dh_clean 
+
+# No architecture-dependent files to build.
+binary-arch:
+
+# Build architecture-independent files here.
+binary-indep:
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs CHANGES
+	dh_installdocs
+	dh_installexamples
+	dh_installman
+	dh_installdirs
+	dh_install
+	cp src/m2ee.py debian/m2ee-tools/usr/bin/m2ee
+	dh_pysupport /usr/share/m2ee-tools/m2ee
+	#dh_installinit
+	dh_strip
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary build
