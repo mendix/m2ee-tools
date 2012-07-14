@@ -1,3 +1,6 @@
+m2ee-tools UNRELEASED
+  * 'pretty' print statistics output
+
 m2ee-tools 0.3.6.1, 19 Mar 2012
   * m2ee-tools is python 2.4 compatible again (remove a conditional expression)
   * Add missing autosubscribe option in file logging example config

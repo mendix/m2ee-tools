@@ -8,7 +8,7 @@
 import cmd
 import subprocess
 import os, sys, signal, pwd, getpass, atexit
-import time, string
+import time, string, pprint
 from m2ee.config import M2EEConfig
 from m2ee.client import M2EEClient
 from m2ee.runner import M2EERunner
@@ -468,7 +468,7 @@ class M2EE(cmd.Cmd):
             return
         stats = self._client.runtime_statistics().get_feedback()
         stats.update(self._client.server_statistics().get_feedback())
-        print stats
+        pprint.pprint(stats)
 
     def do_munin_config(self, args):
         import m2ee.munin
