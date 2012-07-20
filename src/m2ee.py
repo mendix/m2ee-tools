@@ -540,19 +540,22 @@ class M2EE(cmd.Cmd):
     def do_psql(self, args):
         self._reload_config_if_changed()
         if not self._config.is_using_postgresql():
-            logger.warn("Only PostgreSQL databases are supported right now.")
+            logger.error("Only PostgreSQL databases are supported right now.")
+            return
         self._pgutil.psql()
 
     def do_dumpdb(self, args):
         self._reload_config_if_changed()
         if not self._config.is_using_postgresql():
-            logger.warn("Only PostgreSQL databases are supported right now.")
+            logger.error("Only PostgreSQL databases are supported right now.")
+            return
         self._pgutil.dumpdb()
 
     def do_restoredb(self, args):
         self._reload_config_if_changed()
         if not self._config.is_using_postgresql():
-            logger.warn("Only PostgreSQL databases are supported right now.")
+            logger.error("Only PostgreSQL databases are supported right now.")
+            return
         if not args:
             logger.error("restoredb needs the name of a dump file in %s as argument" % self._config.get_database_dump_path())
             return
@@ -569,12 +572,12 @@ class M2EE(cmd.Cmd):
 
     def do_emptydb(self, args):
         self._reload_config_if_changed()
+        if not self._config.is_using_postgresql():
+            logger.error("Only PostgreSQL databases are supported right now.")
+            return
         (pid_alive, m2ee_alive) = self._check_alive()
         if pid_alive or m2ee_alive:
             logger.warn("The application process is still running, refusing to empty the database right now.")
-            return
-        if not self._config.is_using_postgresql():
-            logger("Only PostgreSQL databases are supported right now.")
             return
         self._pgutil.emptydb()
 
