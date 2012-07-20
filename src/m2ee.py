@@ -646,10 +646,13 @@ class M2EE(cmd.Cmd):
         params = {"sort" : "subscriber"}
         m2eeresponse = self._client.get_log_settings(params) 
         print "Current loglevels:"
+        log_subscribers = []
         for (subscriber_name, node_names) in m2eeresponse.get_feedback().iteritems():
             for (node_name, subscriber_level) in node_names.iteritems():
-                print "%s %s %s" % (subscriber_name, node_name, subscriber_level)
-        print
+                log_subscribers.append("%s %s %s" % 
+                        (subscriber_name, node_name, subscriber_level))
+        log_subscribers.sort()
+        print("\n".join(log_subscribers))
 
     def _set_log_level(self, subscriber, node, level):
         if self._report_not_running():
