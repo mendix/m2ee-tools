@@ -45,7 +45,8 @@ class M2EEClient:
         except AttributeError:
             # httplib throws AttributeError: 'NoneType' object has no attribute 'makefile' :-|
             pass
-        except SocketError:
+        except SocketError, e:
+            logger.trace("Got SocketError: %d (%s)" % (e.errno, e.strerror))
             pass
         return False
 

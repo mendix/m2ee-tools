@@ -61,7 +61,7 @@ class M2EERunner:
             os.kill(pid, 0)
             return True
         except OSError:
-            logger.debug("No process with pid %s, or not ours." % pid)
+            logger.trace("No process with pid %s, or not ours." % pid)
             return False
 
     def stop(self, timeout=5):
@@ -98,10 +98,21 @@ class M2EERunner:
             logger.error("Cannot start MxRuntime, MxRuntime version %s is not available on this server" % version)
             return False
 
+        # prepare execution
+        cmd = ['java']
+        javaopts = self._config.get_java_opts()
+        if javaopts:
+            cmd.extend(javaopts)
+        cmd.extend(['-cp', classpath, self._config.get_appcontainer_mainclass()])
+        env = self._config.get_java_env()
+        logger.trace("Command line to be used when starting the JVM: %s" % cmd)
+
         try:
+            logger.trace("[%s] Forking now..." % os.getpid()) 
             pid = os.fork()
             if pid > 0:
                 self._pid = None
+                logger.trace("[%s] Waiting for intermediate process to exit..." % os.getpid()) 
                 # prevent zombie process
                 (waitpid, result) = os.waitpid(pid, 0)
                 if result == 0:
@@ -112,26 +123,23 @@ class M2EERunner:
         except OSError, e:
             logger.error("Forking subprocess failed: %d (%s)\n" % (e.errno, e.strerror))
             return
+        logger.trace("[%s] Now in intermediate forked process..." % os.getpid())
         # decouple from parent environment
         os.chdir("/")
         os.setsid()
         os.umask(0022)
         # start java subprocess (second fork)
-        cmd = ['java']
-        javaopts = self._config.get_java_opts()
-        if javaopts:
-            cmd.extend(javaopts)
-        cmd.extend(['-cp', classpath, self._config.get_appcontainer_mainclass()])
-        logger.trace("Starting java using command line: %s" % cmd)
+        logger.trace("[%s] Starting the JVM..." % os.getpid())
         proc = subprocess.Popen(
             cmd,
             close_fds=True,
             cwd='/',
-            env=self._config.get_java_env()
+            env=env,
         )
         # always write pid asap, so that monitoring can detect apps that should
         # be started but fail to do so
         self._pid = proc.pid
+        logger.trace("[%s] Writing JVM pid to pidfile: %s" % (os.getpid(),self._pid))
         self._write_pidfile()
         # wait for m2ee to become available
         t = 0
@@ -140,16 +148,22 @@ class M2EERunner:
             dead = proc.poll()
             if dead != None:
                 logger.error("Java subprocess terminated with errorcode %s" % dead)
+                logger.debug("[%s] Doing unclean exit from intermediate process now." % os.getpid())
                 os._exit(1)
             if self.check_pid(proc.pid) and self._client.ping():
                 break
             t += step
         if t >= timeout:
+            logger.error("Timeout: Java subprocess takes too long to start.")
+            logger.trace("[%s] Doing unclean exit from intermediate process now." % os.getpid())
             os._exit(1)
+        logger.trace("Calling CloseStdIO...") 
         self._client.close_stdio().display_error()
+        logger.trace("[%s] Exiting intermediate process..." % os.getpid()) 
         os._exit(0)
 
     def _wait_pid(self, timeout=None, step=0.25):
+        logger.trace("Waiting for process to disappear: timeout=%s" % timeout)
         if self.check_pid():
             if timeout == None:
                 return False
@@ -160,6 +174,7 @@ class M2EERunner:
                     break
                 t += step
             if t >= timeout:
+                logger.trace("Timeout: Process %s takes too long to disappear." % self._pid)
                 return False
         self._cleanup_pid()
         return True

@@ -348,13 +348,15 @@ class M2EEConfig:
             host = host[:lastcolon]
 
         # TODO: sanity checks
-        return {
+        pg_env = {
             'PGHOST': host,
             'PGPORT': port,
             'PGUSER': self._conf['mxruntime']['DatabaseUserName'],
             'PGPASSWORD': self._conf['mxruntime']['DatabasePassword'],
             'PGDATABASE': self._conf['mxruntime']['DatabaseName'],
         }
+        logger.trace("PostgreSQL environment variables: %s" % str(pg_env))
+        return pg_env
 
     def get_psql_location(self):
         return self._conf['mxnode'].get('psql', 'psql')

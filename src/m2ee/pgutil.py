@@ -26,6 +26,7 @@ class M2EEPgUtil:
 
         logger.info("Writing database dump to %s" % db_dump_file_name)
         cmd = (pg_dump_location, "-O", "-x", "-F", "c")
+        logger.trace("Executing %s" % str(cmd))
         proc = subprocess.Popen(cmd, env=pgenv, stdout=open(db_dump_file_name, 'w+'))
         proc.communicate()
 
@@ -50,6 +51,7 @@ class M2EEPgUtil:
 
         logger.debug("Restoring %s" % db_dump_file_name)
         cmd = (pg_restore_location, "-d", pgenv['PGDATABASE'], "-O", "-x", db_dump_file_name)
+        logger.trace("Executing %s" % str(cmd))
         proc = subprocess.Popen(cmd, env=pgenv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout,stderr) = proc.communicate()
 
@@ -86,6 +88,7 @@ class M2EEPgUtil:
             "c.relnamespace WHERE relkind = 'r' AND n.nspname NOT IN ('pg_catalog', "
             "'pg_toast') AND pg_catalog.pg_table_is_visible(c.oid)"
         )
+        logger.trace("Executing %s, creating pipe for stdout,stderr" % str(cmd))
         proc1 = subprocess.Popen(cmd, env=pgenv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout,stderr) =  proc1.communicate()
 
@@ -95,6 +98,7 @@ class M2EEPgUtil:
         
         stdin = stdout
         cmd = (psql_location,)
+        logger.trace("Piping stdout,stderr to %s" % str(cmd))
         proc2 = subprocess.Popen(cmd, env=pgenv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout,stderr) = proc2.communicate(stdin)
         
@@ -110,6 +114,7 @@ class M2EEPgUtil:
             "c.relnamespace WHERE relkind = 'S' AND n.nspname NOT IN ('pg_catalog', "
             "'pg_toast') AND pg_catalog.pg_table_is_visible(c.oid)"
         )
+        logger.trace("Executing %s, creating pipe for stdout,stderr" % str(cmd))
         proc1 = subprocess.Popen(cmd, env=pgenv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout,stderr) =  proc1.communicate()
 
@@ -119,6 +124,7 @@ class M2EEPgUtil:
         
         stdin = stdout
         cmd = (psql_location,)
+        logger.trace("Piping stdout,stderr to %s" % str(cmd))
         proc2 = subprocess.Popen(cmd, env=pgenv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout,stderr) = proc2.communicate(stdin)
         
@@ -130,4 +136,6 @@ class M2EEPgUtil:
         pgenv = os.environ.copy()
         pgenv.update(self._config.get_pg_environment())
         psql_location = self._config.get_psql_location()
-        subprocess.call((psql_location,), env=pgenv)
+        cmd = (psql_location,)
+        logger.trace("Executing %s" % str(cmd))
+        subprocess.call(cmd, env=pgenv)
