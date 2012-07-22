@@ -59,14 +59,16 @@ class M2EEConfig:
         # 3.0: application information (e.g. runtime version)
         # if this file does not exist (i.e. < 3.0) try_load_json returns {}
         self._model_metadata = self._try_load_json(os.path.join(self._conf['m2ee']['app_base'],'model','metadata.json'))
+
+        # Dirty hack to tell if we're on 2.5 or not
+        self._dirty_hack_is_25 = len(self._model_metadata) == 0
+
         # 3.0: config.json "contains the configuration settings of the active configuration (in the Modeler) at the time of deployment."
         # It also contains default values for microflow constants. D/T configuration is not stored in the mdp anymore, so for D/T
         # we need to insert it into the configuration we read from yaml (yay!)
         # { "Configuration": { "key": "value", ... }, "Constants": { "Module.Constant": "value", ... } }
-        self._model_config = self._try_load_json(os.path.join(self._conf['m2ee']['app_base'],'model','config.json'))
-
-        # Dirty hack to tell if we're on 2.5 or not
-        self._dirty_hack_is_25 = len(self._model_metadata) == 0
+        if not self._dirty_hack_is_25 and self.get_dtap_mode()[0] in ('D','T'):
+            self._merge_config_json_into_runtime()
 
         # look up MxRuntime version
         self._runtime_version = self._lookup_runtime_version()
@@ -80,6 +82,28 @@ class M2EEConfig:
 
         # search for server files and build classpath
         self._classpath = self._setup_classpath()
+
+    def _merge_config_json_into_runtime(self):
+        config_json = self._try_load_json(os.path.join(self._conf['m2ee']['app_base'],'model','config.json'))
+        if not config_json:
+            return
+
+        # figure out which constants to use
+        merge_constants = config_json.get('Constants',{})
+        # custom yaml section can override defaults
+        merge_constants.update(self._conf['custom'])
+        # 'MicroflowConstants' from runtime yaml section can override default/custom
+        yaml_mxruntime_mfconstants = self._conf['mxruntime'].get('MicroflowConstants',{})
+        if yaml_mxruntime_mfconstants: # can still be None!
+            merge_constants.update(yaml_mxruntime_mfconstants)
+        
+        # merge all yaml runtime settings into config
+        merge_config = config_json.get('Configuration',{})
+        merge_config.update(self._conf['mxruntime'])
+        # replace 'MicroflowConstants' with mfconstants we just figured out before to prevent dict-deepmerge-problems
+        merge_config['MicroflowConstants'] = merge_constants
+        # put the merged result back into self._conf['mxruntime']
+        self._conf['mxruntime'] = merge_config
 
     def _try_load_json(self, jsonfile):
         logger.debug("Loading json configuration from %s" % jsonfile)
@@ -271,32 +295,7 @@ class M2EEConfig:
         return self._conf['m2ee'].get('logfile', None)
 
     def get_runtime_config(self):
-        if self._dirty_hack_is_25:
-            return self._conf['mxruntime']
-
-        # also... 3.0
-        config = {}
-        mfconstants = {}
-        # if not in production seed config from config.json
-        if not self.get_dtap_mode()[0] in ('A','P'):
-            if 'Configuration' in self._model_config:
-                config = self._model_config['Configuration']
-            # read mf defaults/development mix from config.json
-            if 'Constants' in self._model_config:
-                mfconstants = self._model_config['Constants']
-        # custom yaml section can override defaults
-        mfconstants.update(self._conf['custom'])
-        # 'MicroflowConstants' from runtime yaml section can override default/custom
-        mxruntime_mfconstants = self._conf['mxruntime'].get('MicroflowConstants',{})
-        if mxruntime_mfconstants: # can still be None!
-            mfconstants.update(mxruntime_mfconstants)
-
-        # merge all yaml runtime settings into config
-        config.update(self._conf['mxruntime'])
-        # replace 'MicroflowConstants' with mfconstants we figured out before to prevent dict-deepmerge-problems
-        config['MicroflowConstants'] = mfconstants
-
-        return config
+        return self._conf['mxruntime']
 
     def get_custom_config(self):
         # 2.5 uses update_custom_configuration to send mfconstants to the runtime,
@@ -323,7 +322,10 @@ class M2EEConfig:
         return self._conf['m2ee'].get('allow_destroy_db', False)
 
     def is_using_postgresql(self):
-        return self._conf['mxruntime'].get('DatabaseType', None) == "PostgreSQL"
+        databasetype = self._conf['mxruntime'].get('DatabaseType', None)
+        if isinstance(databasetype, str):
+            return databasetype.lower() == "postgresql"
+        return False
 
     def get_pg_environment(self):
         if not self.is_using_postgresql():
