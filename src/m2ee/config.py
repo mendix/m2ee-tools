@@ -323,9 +323,7 @@ class M2EEConfig:
 
     def is_using_postgresql(self):
         databasetype = self._conf['mxruntime'].get('DatabaseType', None)
-        if isinstance(databasetype, str):
-            return databasetype.lower() == "postgresql"
-        return False
+        return isinstance(databasetype, str) and databasetype.lower() == "postgresql"
 
     def get_pg_environment(self):
         if not self.is_using_postgresql():
