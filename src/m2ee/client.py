@@ -163,9 +163,6 @@ class M2EEClient:
     def check_health(self, params=None):
         return self.request("check_health", params)
 
-    def get_admin_action_names(self):
-        return self.request("get_admin_action_names")
-
 class M2EEResponse:
 
     ERR_REQUEST_NULL = -1
