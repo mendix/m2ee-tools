@@ -67,8 +67,10 @@ class M2EEConfig:
         # It also contains default values for microflow constants. D/T configuration is not stored in the mdp anymore, so for D/T
         # we need to insert it into the configuration we read from yaml (yay!)
         # { "Configuration": { "key": "value", ... }, "Constants": { "Module.Constant": "value", ... } }
-        if not self._dirty_hack_is_25 and self.get_dtap_mode()[0] in ('D','T'):
-            self._merge_config_json_into_runtime()
+        # also... move the custom section into the MicroflowConstants runtime config option where
+        # 3.0 now expects them to be! yay...
+        if not self._dirty_hack_is_25:
+            self._merge_runtime_configuration()
 
         # look up MxRuntime version
         self._runtime_version = self._lookup_runtime_version()
@@ -83,13 +85,15 @@ class M2EEConfig:
         # search for server files and build classpath
         self._classpath = self._setup_classpath()
 
-    def _merge_config_json_into_runtime(self):
+    def _merge_runtime_configuration(self):
         config_json = self._try_load_json(os.path.join(self._conf['m2ee']['app_base'],'model','config.json'))
         if not config_json:
             return
 
         # figure out which constants to use
-        merge_constants = config_json.get('Constants',{})
+        merge_constants = {}
+        if not self.get_dtap_mode()[0] in ('A','P'):
+            merge_constants.update(config_json.get('Constants',{}))
         # custom yaml section can override defaults
         merge_constants.update(self._conf['custom'])
         # 'MicroflowConstants' from runtime yaml section can override default/custom
@@ -98,7 +102,9 @@ class M2EEConfig:
             merge_constants.update(yaml_mxruntime_mfconstants)
         
         # merge all yaml runtime settings into config
-        merge_config = config_json.get('Configuration',{})
+        merge_config = {}
+        if not self.get_dtap_mode()[0] in ('A','P'):
+            merge_config.update(config_json.get('Configuration',{}))
         merge_config.update(self._conf['mxruntime'])
         # replace 'MicroflowConstants' with mfconstants we just figured out before to prevent dict-deepmerge-problems
         merge_config['MicroflowConstants'] = merge_constants
