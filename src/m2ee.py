@@ -8,7 +8,7 @@
 import cmd
 import subprocess
 import os, sys, signal, pwd, getpass, atexit
-import time, string, pprint
+import time, string, pprint, yaml
 from m2ee.config import M2EEConfig
 from m2ee.client import M2EEClient
 from m2ee.runner import M2EERunner
@@ -666,6 +666,45 @@ class M2EE(cmd.Cmd):
         else:
             logger.info("Loglevel for %s set to %s" % (node, level))
 
+    def do_show_running_runtime_requests(self, args):
+        self._reload_config_if_changed()
+        if self._report_not_running():
+            return
+        m2eeresp = self._client.get_current_runtime_requests()
+        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
+            logger.error("This action is not available in the Mendix Runtime version you are currently using.")
+            logger.error("It was implemented in Mendix 2.5.8 and 3.1.0")
+            return
+        m2eeresp.display_error()
+        if not m2eeresp.has_error():
+            feedback = m2eeresp.get_feedback()
+            if not feedback:
+                logger.info("There are no currently running runtime requests.")
+            else:
+                print "Current running Runtime Requests:"
+                print yaml.dump(feedback)
+
+    def do_interrupt_request(self, args):
+        self._reload_config_if_changed()
+        if self._report_not_running():
+            return
+        if args == "":
+            logger.error("This function needs a request id as parameter")
+            logger.error("Use show_running_runtime_requests to view currently running requests")
+        m2eeresp = self._client.get_current_runtime_requests()
+        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
+            logger.error("This action is not available in the Mendix Runtime version you are currently using.")
+            logger.error("It was implemented in Mendix 2.5.8 and 3.1.0")
+            return
+        m2eeresp = self._client.interrupt_request({"request_id":args})
+        m2eeresp.display_error()
+        if not m2eeresp.has_error():
+            feedback = m2eeresp.get_feedback()
+            if feedback["result"] == False:
+                logger.error("A request with ID %s was not found % args")
+            else:
+                logger.info("An attempt to cancel the running action was made.")
+
     def cleanup_logging(self):
         # atexit
         if self._logproc:
@@ -721,6 +760,8 @@ class M2EE(cmd.Cmd):
         print " who, w - show currently logged in users"
         print " log - follow live logging from the application"
         print " loglevel - view and configure loglevels"
+        print " show_current_runtime_requests - show action stack of currently handled requests"
+        print " interrupt_request - cancel a running runtime request"
         print " profiler - start the profiler (experimental) "
         print " about - show Mendix Runtime version information"
         print " exit, quit, <ctrl>-d - exit m2ee"

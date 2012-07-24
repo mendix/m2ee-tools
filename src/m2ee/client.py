@@ -163,6 +163,12 @@ class M2EEClient:
     def check_health(self, params=None):
         return self.request("check_health", params)
 
+    def get_current_runtime_requests(self):
+        return self.request("get_current_runtime_requests")
+
+    def interrupt_request(self, params):
+        return self.request("interrupt_request", params)
+
 class M2EEResponse:
 
     ERR_REQUEST_NULL = -1
