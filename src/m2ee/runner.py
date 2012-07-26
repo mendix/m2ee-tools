@@ -91,21 +91,9 @@ class M2EERunner:
             logger.error("The application process is already started!")
             return False
 
-        # check for platform availability
-        version = self._config.get_runtime_version()
-        classpath = self._config.get_classpath()
-        if not classpath:
-            logger.error("Cannot start MxRuntime, MxRuntime version %s is not available on this server" % version)
-            return False
-
         # prepare execution
-        cmd = ['java']
-        javaopts = self._config.get_java_opts()
-        if javaopts:
-            cmd.extend(javaopts)
-        cmd.extend(['-cp', classpath, self._config.get_appcontainer_mainclass()])
+        cmd = self._config.get_java_cmd()
         env = self._config.get_java_env()
-        logger.trace("Command line to be used when starting the JVM: %s" % cmd)
 
         try:
             logger.trace("[%s] Forking now..." % os.getpid()) 

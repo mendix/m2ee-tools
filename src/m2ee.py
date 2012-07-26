@@ -142,6 +142,12 @@ class M2EE(cmd.Cmd):
 
     def _start(self):
         self._reload_config_if_changed()
+
+        if not self._config.all_systems_are_go():
+            logger.error("Cannot start MxRuntime due to previous critical errors.")
+            return
+
+        logger.debug("Checking if the runtime is already alive...")
         (pid_alive, m2ee_alive) = self._check_alive()
         if not pid_alive and not m2ee_alive:
             logger.info("Trying to start the MxRuntime...")
@@ -150,11 +156,32 @@ class M2EE(cmd.Cmd):
         elif not m2ee_alive:
             return
 
-        # check status, if it's created or starting, go on, else stop
+        # check if Appcontainer startup went OK
         m2eeresponse = self._client.runtime_status()
         if m2eeresponse.has_error():
             m2eeresponse.display_error()
             return
+
+        # go do startup sequence
+        self._configure_logging()
+        self._send_jetty_config()
+        self._send_mime_types()
+
+        xmpp_credentials = self._config.get_xmpp_credentials()
+        if xmpp_credentials:
+            self._client.connect_xmpp(xmpp_credentials)
+
+        # when running hybrid appcontainer, we need to create the runtime ourselves
+        if self._config.get_appcontainer_version():
+            self._client.create_runtime({
+                "runtime_path": os.path.join(self._config.get_runtime_path(),'runtime'),
+                "port": self._config.get_runtime_port(),
+                "application_base_path": self._config.get_app_base(),
+                "use_blocking_connector": self._config.get_runtime_blocking_connector(),
+            })
+
+        # check status, if it's created or starting, go on, else stop
+        m2eeresponse = self._client.runtime_status()
         status = m2eeresponse.get_feedback()['status']
         if not status in ['created','starting']:
             logger.error("Cannot start MxRuntime when it has status %s" % status)
@@ -162,11 +189,6 @@ class M2EE(cmd.Cmd):
         logger.debug("MxRuntime status: %s" % status)
 
         self._fix_mxclientsystem_symlink()
-
-        # go do startup sequence
-        self._configure_logging()
-        self._send_jetty_config()
-        self._send_mime_types()
 
         if not self._send_runtime_config():
             # stop when sending configuration causes error messages
@@ -182,7 +204,7 @@ class M2EE(cmd.Cmd):
                 abort = True
                 logger.info("The MxRuntime is fully started now.")
             else:
-                logger.error(startresponse.get_message())
+                startresponse.display_error()
                 if result == 2: # db does not exist
                     answer = self._ask_user_whether_to_create_db()
                     if answer == 'a':
@@ -205,7 +227,6 @@ class M2EE(cmd.Cmd):
                     logger.error("You'll have to fix the configuration and run start again... (or ask for help..)")
                     abort = True
                 else:
-                    logger.error("%s Caused by: %s" % (startresponse.get_message(), startresponse.get_cause()))
                     abort = True
 
     def _fix_mxclientsystem_symlink(self):
