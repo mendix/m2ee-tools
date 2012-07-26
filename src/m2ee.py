@@ -13,7 +13,7 @@ from m2ee.config import M2EEConfig
 from m2ee.client import M2EEClient
 from m2ee.runner import M2EERunner
 from m2ee import pgutil
-from m2ee.mdautil import M2EEMdaUtil
+from m2ee import mdautil
 from m2ee.profile import M2EEProfiler
 from m2ee.log import logger
 
@@ -39,7 +39,6 @@ class M2EE(cmd.Cmd):
         self._config = M2EEConfig(self._yamlfiles)
         self._client = M2EEClient('http://127.0.0.1:%s/' % self._config.get_admin_port(), self._config.get_admin_pass())
         self._runner = M2EERunner(self._config, self._client)
-        self._mdautil = M2EEMdaUtil(self._config)
 
     def _check_alive(self):
         pid_alive = self._runner.check_pid()
@@ -633,7 +632,11 @@ class M2EE(cmd.Cmd):
         if pid_alive or m2ee_alive:
             logger.error("The application process is still running, refusing to unpack a new application model right now.")
             return
-        if self._mdautil.unpack(args):
+        if mdautil.unpack(
+            self._config.get_model_upload_path(),
+            args,
+            self._config.get_app_base(),
+        ):
             self._reload_config()
         post_unpack_hook = self._config.get_post_unpack_hook()
         if post_unpack_hook:
@@ -649,7 +652,7 @@ class M2EE(cmd.Cmd):
                 logger.error("post-unpack-hook script %s does not exist." % post_unpack_hook)
     
     def complete_unpack(self, text, line, begidx, endidx):
-        return self._mdautil.complete_unpack(text)
+        return mdautil.complete_unpack(self._config.get_model_upload_path(), text)
 
     def do_log(self, args):
         if self.cleanup_logging():
