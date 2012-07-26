@@ -5,10 +5,18 @@
 m2ee:
  app_name: __MXPROJECT__
  app_base: /srv/mendix/__MXUSER__
- # m2ee admin interface and password
+ # m2ee http admin interface and password
  admin_port: __MXADMPORT__
  admin_pass: __MXADMPASS__
  monitoring_pass: __MXMONPASS__
+ # m2ee xmpp admin interface credentials
+ # jid and password are mandatory...
+ #xmpp:
+  #jid: appcontainer@example.com
+  #password: 1
+  # ...host/port are optional, and can be used to disable dns SRV lookups
+  #host: example.com
+  #port: 5222
  # mxruntime web interface port
  runtime_port: __MXPORT__
  # set to true when running behind a 'connection offloading' http proxy that already

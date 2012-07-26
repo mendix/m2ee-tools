@@ -52,9 +52,15 @@ class M2EEConfig:
         for yamlfile in yamlfiles:
             self._load_config(yamlfile)
 
+        self._run_from_source = self._conf['mxnode'].get('run_from_source', False)
+
+        # disable flag during pre-flight check if launch would fail
+        self._all_systems_are_go = True
         # raises exception when important config is missing
         # also update basepath in mxruntime config
         self._check_config()
+
+        self._appcontainer_version = self._conf['m2ee'].get('appcontainer_version',None)
 
         # 3.0: application information (e.g. runtime version)
         # if this file does not exist (i.e. < 3.0) try_load_json returns {}
@@ -76,14 +82,57 @@ class M2EEConfig:
         self._runtime_version = self._lookup_runtime_version()
 
         # if running from binary distribution, try to find where m2ee/runtime jars live
-        if not self._conf['mxnode'].get('run_from_source', False):
-            self._mxjar_path = self._lookup_mxjar_path()
+        self._runtime_path = None
+        if not self._run_from_source or self._run_from_source == 'appcontainer':
+            if self._runtime_version == None:
+                # this probably means reading version information from the modeler file failed
+                logger.critical("Unable to look up mendix runtime files because product version is unknown.")
+                self._all_systems_are_go = False
+            else:
+                self._runtime_path = self._lookup_in_mxjar_repo(self._runtime_version)
+                if self._runtime_path == None:
+                    logger.critical("Mendix Runtime not found for version %s" % self._runtime_version)
+                    self._all_systems_are_go = False
 
-        # 3.0: appcontainer information (e.g. M2EE main class name)
-        self._appcontainer_environment = self._load_appcontainer_environment()
+        if not self._appcontainer_version:
+            # 3.0: appcontainer information (e.g. M2EE main class name)
+            self._appcontainer_environment = self._load_appcontainer_environment()
+        else:
+            # b0rk
+            self._appcontainer_environment = {}
+
+        logger.debug("Determining classpath to be used...")
+
+        classpath = []
 
         # search for server files and build classpath
-        self._classpath = self._setup_classpath()
+        if not self._run_from_source and self._appcontainer_version:
+            # start appcontainer from jars, which starts runtime from jars
+            # start without classpath and main class, using java -jar
+            logger.debug("Hybrid appcontainer from jars does not need a classpath.")
+            self._appcontainer_jar = self._lookup_appcontainer_jar()            
+        elif self._run_from_source:
+            logger.debug("Building classpath to run hybrid appcontainer from source.")
+            # start appcontainer from source, which starts runtime from jars
+            classpath = self._setup_classpath_from_source()
+        elif not self._run_from_source and not self._appcontainer_version:
+            logger.debug("Building classpath to run appcontainer/runtime from jars.")
+            # start appcontainer/runtime together from jars
+            classpath = self._setup_classpath_runtime_binary()
+            classpath.extend(self._setup_classpath_model())
+        
+        self._classpath = ":".join(classpath)
+        if classpath:
+            logger.debug("Using classpath: %s" % self._classpath)
+        else:
+            logger.debug("No classpath will be used")
+
+        # If running runtime from source, this location needs to be set manually
+        # else, if not set yet and running from jars (_runtime_path is known) set it here.
+        if self._runtime_path and not 'RuntimePath' in self._conf['mxruntime']:
+            runtimePath = os.path.join(self._runtime_path,'runtime')
+            logger.debug("Setting RuntimePath runtime config option to %s" % runtimePath)
+            self._conf['mxruntime']['RuntimePath'] = runtimePath
 
     def _merge_runtime_configuration(self):
         config_json = self._try_load_json(os.path.join(self._conf['m2ee']['app_base'],'model','config.json'))
@@ -168,21 +217,22 @@ class M2EEConfig:
     def _check_config(self):
         # TODO: better exceptions
 
-        # mxnode
-        if self._conf['mxnode'].get('run_from_source', False):
-            if not self._conf['mxnode'].get('source_workspace', None):
-                logger.critical("Run from source was selected, but source_workspace is not specified!")
-                sys.exit(1)
-            if not self._conf['mxnode'].get('source_projects', None):
-                logger.critical("Run from source was selected, but source_projects is not specified!")
-                sys.exit(1)
-        else:
+        if not self._run_from_source or self._run_from_source == 'appcontainer':
             if not self._conf['mxnode'].get('mxjar_repo', None):
                 logger.critical("mxnode/mxjar_repo is not specified!")
                 sys.exit(1)
             # ensure mxjar_repo is a list, multiple locations are allowed for searching
             if not type(self._conf['mxnode']['mxjar_repo']) == list:
                 self._conf['mxnode']['mxjar_repo'] = [self._conf['mxnode']['mxjar_repo']]
+
+        # mxnode
+        if self._run_from_source:
+            if not self._conf['mxnode'].get('source_workspace', None):
+                logger.critical("Run from source was selected, but source_workspace is not specified!")
+                sys.exit(1)
+            if not self._conf['mxnode'].get('source_projects', None):
+                logger.critical("Run from source was selected, but source_projects is not specified!")
+                sys.exit(1)
 
         # m2ee
         for option in ['app_name','app_base','admin_port','admin_pass','runtime_port','pidfile']:
@@ -227,6 +277,9 @@ class M2EEConfig:
     def get_app_base(self):
         return self._conf['m2ee']['app_base']
 
+    def get_runtime_blocking_connector(self):
+        return self._conf['m2ee']['runtime_blocking_connector']
+
     def get_symlink_mxclientsystem(self):
         return self._conf['m2ee'].get('symlink_mxclientsystem', False)
 
@@ -240,10 +293,13 @@ class M2EEConfig:
         if 'MxClientSystemPath' in self._conf['mxruntime']:
             return self._conf['mxruntime'].get('MxClientSystemPath')
         else:
-            return os.path.join(self._mxjar_path, 'runtime', 'mxclientsystem')
+            return os.path.join(self._runtime_path, 'runtime', 'mxclientsystem')
 
     def get_mimetypes(self):
         return self._conf['mimetypes']
+
+    def all_systems_are_go(self):
+        return self._all_systems_are_go
 
     def get_java_env(self):
         env = {}
@@ -272,27 +328,70 @@ class M2EEConfig:
         env.update({
             'M2EE_ADMIN_PORT':str(self._conf['m2ee']['admin_port']),
             'M2EE_ADMIN_PASS':str(self._conf['m2ee']['admin_pass']),
-            'M2EE_RUNTIME_PORT':str(self._conf['m2ee']['runtime_port']),
         })
+
+        # only add RUNTIME environment variables when using default appcontainer from runtime distro
+        if not self._appcontainer_version:
+            env['M2EE_RUNTIME_PORT'] = str(self._conf['m2ee']['runtime_port'])
+            if 'runtime_blocking_connector' in self._conf['m2ee']:
+                env['M2EE_RUNTIME_BLOCKING_CONNECTOR'] = str(self._conf['m2ee']['runtime_blocking_connector'])
+
         if 'monitoring_pass' in self._conf['m2ee']:
             env['M2EE_MONITORING_PASS'] = str(self._conf['m2ee']['monitoring_pass'])
-        if 'runtime_blocking_connector' in self._conf['m2ee']:
-            env['M2EE_RUNTIME_BLOCKING_CONNECTOR'] = str(self._conf['m2ee']['runtime_blocking_connector'])
         return env
 
-    def get_java_opts(self):
+    def get_java_cmd(self):
+        """
+        Build complete JVM startup command line
+        """
+        cmd = ['java']
         if 'javaopts' in self._conf['m2ee']:
-            if type(self._conf['m2ee']['javaopts'] == list):
-                return self._conf['m2ee']['javaopts']
+            if isinstance(self._conf['m2ee']['javaopts'], list):
+                cmd.extend(self._conf['m2ee']['javaopts'])
             else:
                 logger.warn("javaopts option in m2ee section in configuration is not a list")
-        return None
+        if self._classpath:
+            cmd.extend(['-cp', self._classpath, self._get_appcontainer_mainclass()])
+        elif self._appcontainer_version:
+            cmd.extend(['-jar', self._appcontainer_jar])
+        else:
+            logger.critical("Unable to determine JVM startup parameters.")
+            return None
 
+        logger.trace("Command line to be used when starting the JVM: %s" % cmd)
+        return cmd
+
+    def _lookup_appcontainer_jar(self):
+        if self._appcontainer_version == None:
+            # this probably means a bug in this program
+            logger.critical("Trying to look up appcontainer jar, but _appcontainer_version is not defined.")
+            self._all_systems_are_go = False
+            return ""
+
+        appcontainer_path = self._lookup_in_mxjar_repo('appcontainer-%s' % self._appcontainer_version)
+        if appcontainer_path == None:
+            logger.critical("AppContainer not found for version %s" % self._appcontainer_version)
+            self._all_systems_are_go = False
+            return ""
+
+        return os.path.join(appcontainer_path, 'appcontainer.jar')
+        
     def get_admin_port(self):
         return self._conf['m2ee']['admin_port']
 
     def get_admin_pass(self):
         return self._conf['m2ee']['admin_pass']
+
+    def get_xmpp_credentials(self):
+        if 'xmpp' in self._conf['m2ee']:
+            if isinstance(self._conf['m2ee']['xmpp'],dict):
+                return self._conf['m2ee']['xmpp']
+            else:
+                logger.warn("xmpp option in m2ee section in configuration is not a dictionary")
+        return None
+
+    def get_runtime_port(self):
+        return self._conf['m2ee']['runtime_port']
 
     def get_pidfile(self):
         return self._conf['m2ee']['pidfile']
@@ -379,57 +478,66 @@ class M2EEConfig:
     def get_model_upload_path(self):
         return self._conf['m2ee']['model_upload_path']
 
+    def get_appcontainer_version(self):
+        return self._appcontainer_version
+
     def get_runtime_version(self):
         return self._runtime_version
 
     def get_classpath(self):
         return self._classpath
 
-    def get_appcontainer_mainclass(self):
-        # 2.5
+    def _get_appcontainer_mainclass(self):
+        # XXX: if-hell...
+        if self._appcontainer_version:
+            # using new 3.0+ appcontainer
+            return "com.mendix.m2ee.AppContainer"
+        # 2.5?
         if not 'version' in self._appcontainer_environment:
             return "com.mendix.m2ee.server.M2EE"
-        # 3.0
-        # TODO: implement version-handling
+        # 3.0, using default appcontainer?
         return "com.mendix.m2ee.server.HttpAdminAppContainer"
 
-    def _setup_classpath(self):
-        """Returns the location of the mendix runtime files and the 
-        java classpath or None if the classpath cannot be determined
-        (i.e. the Mendix Runtime is not available on this system)"""
-
+    def _setup_classpath_from_source(self):
+        # when running from source, grab eclipse projects:
+        logger.debug("Running from source.")
         classpath = []
 
-        # when running from source, grab eclipse projects:
-        if self._conf['mxnode'].get('run_from_source', False):
-            logger.debug("Running from source.")
+        wsp = self._conf['mxnode']['source_workspace']
+        for proj in self._conf['mxnode']['source_projects']:
+            classpath.append(os.path.join(wsp, proj, 'bin'))
+            libdir = os.path.join(wsp, proj, 'lib')
+            if os.path.isdir(libdir):
+                classpath.append(os.path.join(libdir, '*'))
 
-            wsp = self._conf['mxnode']['source_workspace']
-            for proj in self._conf['mxnode']['source_projects']:
-                classpath.append(os.path.join(wsp, proj, 'bin'))
-                libdir = os.path.join(wsp, proj, 'lib')
-                if os.path.isdir(libdir):
-                    classpath.append(os.path.join(libdir, '*'))
+        return classpath
 
-        else:
-            logger.debug("Running from binary distribution.")
+    def _setup_classpath_runtime_binary(self):
+        """
+        Returns the location of the mendix runtime files and the 
+        java classpath or None if the classpath cannot be determined
+        (i.e. the Mendix Runtime is not available on this system)
+        """
 
-            if not self._mxjar_path:
-                logger.debug("mxjar_path is empty, no classpath can be determined")
-                return None
+        logger.debug("Running from binary distribution.")
+        classpath = []
 
-            # TODO: do something with self._appcontainer_environment/version
+        if not self._runtime_path:
+            logger.debug("runtime_path is empty, no classpath can be determined")
+            return []
 
-            classpath.extend([
-                os.path.join(self._mxjar_path,'server','*'),
-                os.path.join(self._mxjar_path,'server','lib','*'),
-                os.path.join(self._mxjar_path,'runtime','*'),
-                os.path.join(self._mxjar_path,'runtime','lib','*'),
-            ])
+        classpath.extend([
+            os.path.join(self._runtime_path,'server','*'),
+            os.path.join(self._runtime_path,'server','lib','*'),
+            os.path.join(self._runtime_path,'runtime','*'),
+            os.path.join(self._runtime_path,'runtime','lib','*'),
+        ])
 
-            # XXX
-            if not 'RuntimePath' in self._conf['mxruntime']:
-                self._conf['mxruntime']['RuntimePath'] = os.path.join(self._mxjar_path,'runtime')
+        return classpath
+
+    def _setup_classpath_model(self):
+
+        classpath = []
 
         # put model lib into classpath
         model_lib = os.path.join(self._conf['m2ee']['app_base'],'model','lib')
@@ -443,10 +551,8 @@ class M2EEConfig:
              if os.path.isdir(os.path.join(model_lib, name))])
         else:
             logger.warn("model has no lib dir?")
-        
-        txtclasspath = ":".join(classpath)
-        logger.debug("Using classpath: %s" % txtclasspath)
-        return txtclasspath
+
+        return classpath
 
     def _lookup_runtime_version(self):
         # force to a specific version
@@ -514,34 +620,29 @@ class M2EEConfig:
 
         return version
 
-    def _lookup_mxjar_path(self):
-        if self._runtime_version == None:
-            # this probably means reading version information from the modeler file failed
-            logger.debug("Unable to look up mendix runtime files because product version is unknown.")
-            return None # fail
-
-        # else, search for binary distributions in mxjar_repo
-        logger.debug("Searching for Mendix %s in mxjar repo locations..." % self._runtime_version)
-        mxjar_path = None
+    def _lookup_in_mxjar_repo(self, dirname):
+        logger.debug("Searching for %s in mxjar repo locations..." % dirname)
+        path = None
         for repo in self._conf['mxnode']['mxjar_repo']:
-            try_path = os.path.join(repo, self._runtime_version)
+            try_path = os.path.join(repo, dirname)
             if os.path.isdir(try_path):
-                mxjar_path = try_path
-        if mxjar_path == None:
-            logger.warn("Mendix Runtime not found for version %s" % self._runtime_version)
-            return None
+                path = try_path
+                logger.debug("Using: %s" % path)
+                break
         
-        logger.debug("...using %s" % mxjar_path)
-        return mxjar_path
+        return path
+
+    def get_runtime_path(self):
+        return self._runtime_path
 
     def _load_appcontainer_environment(self):
         # if running from source, search in workspace folder
         if self._conf['mxnode'].get('run_from_source', False):
             return self._try_load_json(os.path.join(self._conf['mxnode']['source_workspace'], 'environment.json'))
 
-        # else if version is known, search in mxjar_path
-        if self._mxjar_path:
-            return self._try_load_json(os.path.join(self._mxjar_path, 'environment.json'))
+        # else if version is known, search in runtime_path
+        if self._runtime_path:
+            return self._try_load_json(os.path.join(self._runtime_path, 'environment.json'))
 
         # else, nothing
         return {}

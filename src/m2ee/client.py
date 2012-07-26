@@ -169,6 +169,15 @@ class M2EEClient:
     def interrupt_request(self, params):
         return self.request("interrupt_request", params)
 
+    def connect_xmpp(self, params):
+        return self.request("connect_xmpp", params)
+
+    def disconnect_xmpp(self):
+        return self.request("disconnect_xmpp")
+
+    def create_runtime(self, params):
+        return self.request("create_runtime", params)
+
 class M2EEResponse:
 
     ERR_REQUEST_NULL = -1
@@ -182,29 +191,35 @@ class M2EEResponse:
     def __init__(self, action, json):
         self._action = action
         self._json = json
+        self._result = self._json['result']
+        self._feedback = self._json.get('feedback', {})
+        self._message = self._json.get('message', None)
+        self._cause = self._json.get('cause', None)
+        self._stacktrace = self._json.get('stacktrace', None)
 
     def get_result(self):
-        return self._json['result']
+        return self._result
 
     def get_feedback(self):
-        return self._json.get('feedback', {})
+        return self._feedback
 
     def get_message(self):
-        return self._json.get('message', None)
+        return self._message
 
     def get_cause(self):
-        return self._json.get('cause', None)
+        return self._cause
 
     def get_stacktrace(self):
-        return self._json.get('stacktrace', None)
+        return self._stacktrace
 
     def has_error(self):
-        return self._json['result'] != 0
+        return self._result != 0
 
     def display_error(self):
-        if not self.has_error():
-            return
-        logger.error(self.get_error())
+        if self.has_error():
+            logger.error(self.get_error())
+            if self._stacktrace:
+                logger.debug(self._stacktrace)
 
     def get_error(self):
         # there's always an error here, first check has_error() before you call this
