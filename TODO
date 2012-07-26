@@ -1,0 +1,6 @@
+[ ] move all code that isn't directly doing user interaction out of the Cmd class, enabling
+    the use of a more scriptable m2ee-tools for use by an appcontroller
+[ ] improve code readability of all decisions that are made because m2ee-tools has to be
+    compatible with Mendix since 2.5.0 
+[ ] man m2ee.yaml instead of lots of documentation in the example file itself
+

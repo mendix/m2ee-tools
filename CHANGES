@@ -2,6 +2,9 @@ m2ee-tools UNRELEASED
   * 'pretty' print statistics output
   * Add show_current_runtime_requests and interrupt_request to show and
     terminate running requests. (>= 2.5.8, 3.1.0)
+	But... interrupt_request seems to be broken in 4.0 and 4.1... :-|
+  * Implement hybrid appcontainer support (allowing the appcontainer
+    to connect to xmpp)
 
 m2ee-tools 0.3.6.1, 19 Mar 2012
   * m2ee-tools is python 2.4 compatible again (remove a conditional expression)
