@@ -463,13 +463,13 @@ class M2EEConfig:
         logger.trace("PostgreSQL environment variables: %s" % str(pg_env))
         return pg_env
 
-    def get_psql_location(self):
+    def get_psql_binary(self):
         return self._conf['mxnode'].get('psql', 'psql')
 
-    def get_pg_dump_location(self):
+    def get_pg_dump_binary(self):
         return self._conf['mxnode'].get('pg_dump', 'pg_dump')
 
-    def get_pg_restore_location(self):
+    def get_pg_restore_binary(self):
         return self._conf['mxnode'].get('pg_restore', 'pg_restore')
 
     def get_database_dump_path(self):

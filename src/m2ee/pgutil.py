@@ -10,132 +10,116 @@ import subprocess
 import time
 from log import logger
 
-class M2EEPgUtil:
+def dumpdb(pg_env, pg_dump_binary, database_dump_path):
 
-    def __init__(self, config):
-        self._config = config
+    env = os.environ.copy()
+    env.update(pg_env)
+    
+    db_dump_file_name = os.path.join(database_dump_path,
+            "%s_%s.backup" % (env['PGDATABASE'], time.strftime("%Y%m%d_%H%M%S")))
 
-    def dumpdb(self):
+    logger.info("Writing database dump to %s" % db_dump_file_name)
+    cmd = (pg_dump_binary, "-O", "-x", "-F", "c")
+    logger.trace("Executing %s" % str(cmd))
+    proc = subprocess.Popen(cmd, env=env, stdout=open(db_dump_file_name, 'w+'))
+    proc.communicate()
 
-        pgenv = os.environ.copy()
-        pgenv.update(self._config.get_pg_environment())
-        pg_dump_location = self._config.get_pg_dump_location()
-        
-        db_dump_file_name = os.path.join(self._config.get_database_dump_path(),
-                "%s_%s.backup" % (pgenv['PGDATABASE'], time.strftime("%Y%m%d_%H%M%S")))
+def restoredb(pg_env, pg_restore_binary, database_dump_path, dump_name):
 
-        logger.info("Writing database dump to %s" % db_dump_file_name)
-        cmd = (pg_dump_location, "-O", "-x", "-F", "c")
-        logger.trace("Executing %s" % str(cmd))
-        proc = subprocess.Popen(cmd, env=pgenv, stdout=open(db_dump_file_name, 'w+'))
-        proc.communicate()
+    env = os.environ.copy()
+    env.update(pg_env)
 
-    def restoredb(self, dump_name):
-        if not self._config.allow_destroy_db():
-            logger.error("Destructive database operations are turned off.")
-            return
+    answer = raw_input("This command will restore this dump into database %s. Continue? (y)es, (N)o? " % env['PGDATABASE'])
+    if answer != 'y':
+        logger.info("Aborting!")
+        return
 
-        pgenv = os.environ.copy()
-        pgenv.update(self._config.get_pg_environment())
-        pg_restore_location = self._config.get_pg_restore_location()
+    db_dump_file_name = os.path.join(database_dump_path, dump_name)
+    if not os.path.isfile(db_dump_file_name):
+        logger.error("file %s does not exist: " % db_dump_file_name)
+        return
 
-        answer = raw_input("This command will restore this dump into database %s. Continue? (y)es, (N)o? " % pgenv['PGDATABASE'])
-        if answer != 'y':
-            logger.info("Aborting!")
-            return
+    logger.debug("Restoring %s" % db_dump_file_name)
+    cmd = (pg_restore_binary, "-d", env['PGDATABASE'], "-O", "-x", db_dump_file_name)
+    logger.trace("Executing %s" % str(cmd))
+    proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (stdout,stderr) = proc.communicate()
 
-        db_dump_file_name = os.path.join(self._config.get_database_dump_path(), dump_name)
-        if not os.path.isfile(db_dump_file_name):
-            logger.error("file %s does not exist: " % db_dump_file_name)
-            return
+    if stderr != '':
+        logger.error("An error occured while calling pg_restore: %s " % stderr)
+        return
 
-        logger.debug("Restoring %s" % db_dump_file_name)
-        cmd = (pg_restore_location, "-d", pgenv['PGDATABASE'], "-O", "-x", db_dump_file_name)
-        logger.trace("Executing %s" % str(cmd))
-        proc = subprocess.Popen(cmd, env=pgenv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        (stdout,stderr) = proc.communicate()
+def complete_restoredb(database_dump_path,  text):
+    return [f for f in os.listdir(database_dump_path)
+            if os.path.isfile(os.path.join(database_dump_path, f))
+            and f.startswith(text)
+            and f.endswith(".backup")]
 
-        if stderr != '':
-            logger.error("An error occured while calling pg_restore: %s " % stderr)
-            return
+def emptydb(pg_env, psql_binary):
 
-    def complete_restoredb(self, text):
-        db_dump_path = self._config.get_database_dump_path()
-        return [f for f in os.listdir(db_dump_path)
-                if os.path.isfile(os.path.join(db_dump_path, f))
-                and f.startswith(text)
-                and f.endswith(".backup")]
+    env = os.environ.copy()
+    env.update(pg_env)
 
-    def emptydb(self):
-        if not self._config.allow_destroy_db():
-            logger.error("Destructive database operations are turned off.")
-            return
+    answer = raw_input("This command will drop all tables and sequences in database %s. Continue? (y)es, (N)o? " % env['PGDATABASE'])
+    if answer != 'y':
+        print "Aborting!"
+        return
+    
+    logger.info("Removing all tables...")
+    # get list of drop table commands
+    cmd = (psql_binary, "-t", "-c",
+        "SELECT 'DROP TABLE ' || n.nspname || '.' || c.relname || ' CASCADE;' FROM "
+        "pg_catalog.pg_class AS c LEFT JOIN pg_catalog.pg_namespace AS n ON n.oid = "
+        "c.relnamespace WHERE relkind = 'r' AND n.nspname NOT IN ('pg_catalog', "
+        "'pg_toast') AND pg_catalog.pg_table_is_visible(c.oid)"
+    )
+    logger.trace("Executing %s, creating pipe for stdout,stderr" % str(cmd))
+    proc1 = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (stdout,stderr) =  proc1.communicate()
 
-        pgenv = os.environ.copy()
-        pgenv.update(self._config.get_pg_environment())
-        psql_location = self._config.get_psql_location()
+    if stderr != '':
+        logger.error("An error occured while calling psql: %s" % stderr)
+        return
+    
+    stdin = stdout
+    cmd = (psql_binary,)
+    logger.trace("Piping stdout,stderr to %s" % str(cmd))
+    proc2 = subprocess.Popen(cmd, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (stdout,stderr) = proc2.communicate(stdin)
+    
+    if stderr != '':
+        logger.error("An error occured while calling psql: %s" % stderr)
+        return
 
-        answer = raw_input("This command will drop all tables and sequences in database %s. Continue? (y)es, (N)o? " % pgenv['PGDATABASE'])
-        if answer != 'y':
-            print "Aborting!"
-            return
-        
-        logger.info("Removing all tables...")
-        # get list of drop table commands
-        cmd = (psql_location, "-t", "-c",
-            "SELECT 'DROP TABLE ' || n.nspname || '.' || c.relname || ' CASCADE;' FROM "
-            "pg_catalog.pg_class AS c LEFT JOIN pg_catalog.pg_namespace AS n ON n.oid = "
-            "c.relnamespace WHERE relkind = 'r' AND n.nspname NOT IN ('pg_catalog', "
-            "'pg_toast') AND pg_catalog.pg_table_is_visible(c.oid)"
-        )
-        logger.trace("Executing %s, creating pipe for stdout,stderr" % str(cmd))
-        proc1 = subprocess.Popen(cmd, env=pgenv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        (stdout,stderr) =  proc1.communicate()
+    logger.info("Removing all sequences...")
+    # get list of drop sequence commands
+    cmd = (psql_binary, "-t", "-c",
+        "SELECT 'DROP SEQUENCE ' || n.nspname || '.' || c.relname || ' CASCADE;' FROM "
+        "pg_catalog.pg_class AS c LEFT JOIN pg_catalog.pg_namespace AS n ON n.oid = "
+        "c.relnamespace WHERE relkind = 'S' AND n.nspname NOT IN ('pg_catalog', "
+        "'pg_toast') AND pg_catalog.pg_table_is_visible(c.oid)"
+    )
+    logger.trace("Executing %s, creating pipe for stdout,stderr" % str(cmd))
+    proc1 = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (stdout,stderr) =  proc1.communicate()
 
-        if stderr != '':
-            logger.error("An error occured while calling psql: %s" % stderr)
-            return
-        
-        stdin = stdout
-        cmd = (psql_location,)
-        logger.trace("Piping stdout,stderr to %s" % str(cmd))
-        proc2 = subprocess.Popen(cmd, env=pgenv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        (stdout,stderr) = proc2.communicate(stdin)
-        
-        if stderr != '':
-            logger.error("An error occured while calling psql: %s" % stderr)
-            return
+    if stderr != '':
+        logger.error("An error occured while calling psql: %s" % stderr)
+        return
+    
+    stdin = stdout
+    cmd = (psql_binary,)
+    logger.trace("Piping stdout,stderr to %s" % str(cmd))
+    proc2 = subprocess.Popen(cmd, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (stdout,stderr) = proc2.communicate(stdin)
+    
+    if stderr != '':
+        logger.error("An error occured while calling psql: %s" % stderr)
+        return
 
-        logger.info("Removing all sequences...")
-        # get list of drop sequence commands
-        cmd = (psql_location, "-t", "-c",
-            "SELECT 'DROP SEQUENCE ' || n.nspname || '.' || c.relname || ' CASCADE;' FROM "
-            "pg_catalog.pg_class AS c LEFT JOIN pg_catalog.pg_namespace AS n ON n.oid = "
-            "c.relnamespace WHERE relkind = 'S' AND n.nspname NOT IN ('pg_catalog', "
-            "'pg_toast') AND pg_catalog.pg_table_is_visible(c.oid)"
-        )
-        logger.trace("Executing %s, creating pipe for stdout,stderr" % str(cmd))
-        proc1 = subprocess.Popen(cmd, env=pgenv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        (stdout,stderr) =  proc1.communicate()
-
-        if stderr != '':
-            logger.error("An error occured while calling psql: %s" % stderr)
-            return
-        
-        stdin = stdout
-        cmd = (psql_location,)
-        logger.trace("Piping stdout,stderr to %s" % str(cmd))
-        proc2 = subprocess.Popen(cmd, env=pgenv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        (stdout,stderr) = proc2.communicate(stdin)
-        
-        if stderr != '':
-            logger.error("An error occured while calling psql: %s" % stderr)
-            return
-
-    def psql(self):
-        pgenv = os.environ.copy()
-        pgenv.update(self._config.get_pg_environment())
-        psql_location = self._config.get_psql_location()
-        cmd = (psql_location,)
-        logger.trace("Executing %s" % str(cmd))
-        subprocess.call(cmd, env=pgenv)
+def psql(pg_env, psql_binary):
+    env = os.environ.copy()
+    env.update(pg_env)
+    cmd = (psql_binary,)
+    logger.trace("Executing %s" % str(cmd))
+    subprocess.call(cmd, env=env)

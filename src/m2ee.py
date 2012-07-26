@@ -12,7 +12,7 @@ import time, string, pprint, yaml
 from m2ee.config import M2EEConfig
 from m2ee.client import M2EEClient
 from m2ee.runner import M2EERunner
-from m2ee.pgutil import M2EEPgUtil
+from m2ee import pgutil
 from m2ee.mdautil import M2EEMdaUtil
 from m2ee.profile import M2EEProfiler
 from m2ee.log import logger
@@ -39,8 +39,6 @@ class M2EE(cmd.Cmd):
         self._config = M2EEConfig(self._yamlfiles)
         self._client = M2EEClient('http://127.0.0.1:%s/' % self._config.get_admin_port(), self._config.get_admin_pass())
         self._runner = M2EERunner(self._config, self._client)
-        if self._config.is_using_postgresql():
-            self._pgutil = M2EEPgUtil(self._config)
         self._mdautil = M2EEMdaUtil(self._config)
 
     def _check_alive(self):
@@ -563,19 +561,29 @@ class M2EE(cmd.Cmd):
         if not self._config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
             return
-        self._pgutil.psql()
+        pgutil.psql(
+            self._config.get_pg_environment(),
+            self._config.get_psql_binary(),
+        )
 
     def do_dumpdb(self, args):
         self._reload_config_if_changed()
         if not self._config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
             return
-        self._pgutil.dumpdb()
+        pgutil.dumpdb(
+            self._config.get_pg_environment(),
+            self._config.get_pg_dump_binary(),
+            self._config.get_database_dump_path(),
+        )
 
     def do_restoredb(self, args):
         self._reload_config_if_changed()
         if not self._config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
+            return
+        if not self._config.allow_destroy_db():
+            logger.error("Destructive database operations are turned off.")
             return
         if not args:
             logger.error("restoredb needs the name of a dump file in %s as argument" % self._config.get_database_dump_path())
@@ -584,23 +592,37 @@ class M2EE(cmd.Cmd):
         if pid_alive or m2ee_alive:
             logger.warn("The application is still running, refusing to restore the database right now.")
             return
-        self._pgutil.restoredb(args)
+        pgutil.restoredb(
+            self._config.get_pg_environment(),
+            self._config.get_pg_restore_binary(),
+            self._config.get_database_dump_path(),
+            args,
+        )
 
     def complete_restoredb(self, text, line, begidx, endidx):
         if not self._config.is_using_postgresql():
             return []
-        return self._pgutil.complete_restoredb(text)
+        return pgutil.complete_restoredb(
+            self._config.get_database_dump_path(),
+            text,
+        )
 
     def do_emptydb(self, args):
         self._reload_config_if_changed()
         if not self._config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
             return
+        if not self._config.allow_destroy_db():
+            logger.error("Destructive database operations are turned off.")
+            return
         (pid_alive, m2ee_alive) = self._check_alive()
         if pid_alive or m2ee_alive:
             logger.warn("The application process is still running, refusing to empty the database right now.")
             return
-        self._pgutil.emptydb()
+        pgutil.emptydb(
+            self._config.get_pg_environment(),
+            self._config.get_psql_binary(),
+        )
 
     def do_unpack(self, args):
         self._reload_config_if_changed()
