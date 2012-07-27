@@ -7,7 +7,7 @@
 
 import cmd
 import subprocess
-import os, sys, signal, pwd, getpass, atexit
+import os, sys, signal, codecs, pwd, getpass, atexit
 import time, string, pprint, yaml
 from m2ee.config import M2EEConfig
 from m2ee.client import M2EEClient
@@ -349,7 +349,9 @@ class M2EE(cmd.Cmd):
                 query_file_name = os.path.join(self._config.get_database_dump_path(),
                         "%s_database_commands.sql" % time.strftime("%Y%m%d_%H%M%S"))
                 logger.info("Saving DDL commands to %s" % query_file_name)
-                open(query_file_name,'w+').write("%s" % '\n'.join(feedback['ddl_commands']))
+                fd = codecs.open(query_file_name, mode='w', encoding='utf-8')
+                fd.write("%s" % '\n'.join(feedback['ddl_commands']))
+                fd.close()
                 if answer == 'e':
                     m2eeresponse = self._client.execute_ddl_commands()
                     m2eeresponse.display_error()
