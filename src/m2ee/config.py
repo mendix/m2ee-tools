@@ -8,9 +8,9 @@
 import yaml
 import os, sys, pwd
 import re
-import codecs
 import subprocess
 import simplejson
+import copy
 from log import logger
 try:
     import sqlite3
@@ -22,7 +22,7 @@ except ImportError:
 
 class M2EEConfig:
 
-    def __init__(self, yamlfiles=None):
+    def __init__(self, config):
 
         self._mtimes = {}
 
@@ -33,24 +33,6 @@ class M2EEConfig:
         self._conf['logging'] = []
         self._conf['mxruntime'] = {}
         self._conf['custom'] = {}
-
-        if yamlfiles == None:
-            yamlfiles = []
-            # don't add deprecated m2eerc-file if yaml is present
-            # (if both exist, probably one is a symlink to the other...)
-            if os.path.isfile("/etc/m2ee/m2ee.yaml"):
-                yamlfiles.append("/etc/m2ee/m2ee.yaml")
-            elif os.path.isfile("/etc/m2ee/m2eerc"):
-                yamlfiles.append("/etc/m2ee/m2eerc")
-
-            homedir = pwd.getpwuid(os.getuid())[5]
-            if os.path.isfile(os.path.join(homedir, ".m2ee/m2ee.yaml")):
-                yamlfiles.append(os.path.join(homedir, ".m2ee/m2ee.yaml"))
-            elif os.path.isfile(os.path.join(homedir, ".m2eerc")):
-                yamlfiles.append(os.path.join(homedir, ".m2eerc"))
-
-        for yamlfile in yamlfiles:
-            self._load_config(yamlfile)
 
         self._run_from_source = self._conf['mxnode'].get('run_from_source', False)
 
@@ -188,31 +170,6 @@ class M2EEConfig:
     def dump(self):
         print yaml.dump(self._conf)
 
-    def _load_config(self, yamlfile):
-        logger.debug("Loading configuration from %s" % yamlfile)
-        fd = None
-        try:
-            fd = open(yamlfile)
-        except Exception, e:
-            logger.error("Error reading configuration file %s, ignoring..." % yamlfile)
-            return
-
-        config = None
-        try:
-            config = yaml.load(fd)
-        except Exception, e:
-            logger.error("Error parsing configuration file %s: %s" % (yamlfile, e))
-            return
-
-        # merge configuration, new replaces old when colliding
-        for section in ['mxnode','m2ee','mimetypes','mxruntime','custom']:
-            if section in config and type(config[section]) == dict:
-                self._conf[section].update(config[section])
-        for section in ['logging']:
-            if section in config and type(config[section]) == list:
-                self._conf[section].extend(config[section])
-        
-        self._mtimes[yamlfile] = os.stat(yamlfile)[8] # st_mtime
 
     def _check_config(self):
         # TODO: better exceptions
@@ -650,8 +607,78 @@ class M2EEConfig:
     def dirty_hack_is_25(self):
         return self._dirty_hack_is_25
 
+def find_yaml_files():
+    yaml_files = []
+    # don't add deprecated m2eerc-file if yaml is present
+    # (if both exist, probably one is a symlink to the other...)
+    if os.path.isfile("/etc/m2ee/m2ee.yaml"):
+        yaml_files.append("/etc/m2ee/m2ee.yaml")
+    elif os.path.isfile("/etc/m2ee/m2eerc"):
+        yaml_files.append("/etc/m2ee/m2eerc")
+
+    homedir = pwd.getpwuid(os.getuid())[5]
+    if os.path.isfile(os.path.join(homedir, ".m2ee/m2ee.yaml")):
+        yaml_files.append(os.path.join(homedir, ".m2ee/m2ee.yaml"))
+    elif os.path.isfile(os.path.join(homedir, ".m2eerc")):
+        yaml_files.append(os.path.join(homedir, ".m2eerc"))
+    return yaml_files
+
+
+def read_yaml_files(yaml_files=None):
+    config = []
+    yaml_mtimes = {}
+    if not yaml_files:
+        yaml_files = find_yaml_files()
+
+    for yaml_file in yaml_files:
+        additional_config = load_config(yaml_file)
+        config = merge_config(config, additional_config)
+        yaml_mtimes[yaml_file] = os.stat(yaml_file)[8] # st_mtime
+
+    return (yaml_mtimes, config)
+
+def load_config(yaml_file):
+    logger.debug("Loading configuration from %s" % yaml_file)
+    fd = None
+    try:
+        fd = open(yaml_file)
+    except Exception, e:
+        logger.error("Error reading configuration file %s, ignoring..." % yaml_file)
+        return
+
+    try:
+        return yaml.load(fd)
+    except Exception, e:
+        logger.error("Error parsing configuration file %s: %s" % (yaml_file, e))
+        return
+
+def merge_config(initial_config, additional_config):
+    result = copy.deepcopy(initial_config)
+    additional_config = copy.deepcopy(additional_config)
+
+    for section in set(initial_config.keys() + additional_config.keys()):
+        if section in initial_config: 
+            if section in additional_config: 
+                if isinstance(additional_config[section], dict):
+                    result[section] = merge_config(initial_config[section], additional_config[section])
+                elif isinstance(additional_config[section], list):
+                    result[section] = initial_config[section] + additional_config[section]
+                else:
+                    result[section] = additional_config[section]
+        else:
+            result[section] = additional_config[section]
+
+    return result
+    
+
 if __name__ == '__main__':
-    import sys
-    config = M2EEConfig(sys.argv[1:])
-    config.dump()
+    a = {"a" : 1, "b" : { "b1" : 3, "b2" : 4}, "c" : [1,2,3], "e":1}
+    b = {"a" : 2, "b" : {"b1" : 1337}, "c" : [4,], "d" : 7}
+    print "a: %s" % a
+    print "b: %s" % b
+    print merge_config(a,b)
+    print "a: %s" % a
+    print "b: %s" % b
+    #config = M2EEConfig(sys.argv[1:])
+    #config.dump()
 
