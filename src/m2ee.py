@@ -153,11 +153,13 @@ class M2EE(cmd.Cmd):
         elif not m2ee_alive:
             return
 
-        # check if Appcontainer startup went OK
+        # check status, if it's created or starting, go on, else stop
         m2eeresponse = self._client.runtime_status()
-        if m2eeresponse.has_error():
-            m2eeresponse.display_error()
+        status = m2eeresponse.get_feedback()['status']
+        if not status in ['feut','created','starting']:
+            logger.error("Cannot start MxRuntime when it has status %s" % status)
             return
+        logger.debug("MxRuntime status: %s" % status)
 
         # go do startup sequence
         self._configure_logging()
@@ -176,14 +178,6 @@ class M2EE(cmd.Cmd):
                 "application_base_path": self._config.get_app_base(),
                 "use_blocking_connector": self._config.get_runtime_blocking_connector(),
             })
-
-        # check status, if it's created or starting, go on, else stop
-        m2eeresponse = self._client.runtime_status()
-        status = m2eeresponse.get_feedback()['status']
-        if not status in ['created','starting']:
-            logger.error("Cannot start MxRuntime when it has status %s" % status)
-            return
-        logger.debug("MxRuntime status: %s" % status)
 
         self._fix_mxclientsystem_symlink()
 
