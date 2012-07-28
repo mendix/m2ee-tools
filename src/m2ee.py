@@ -168,7 +168,7 @@ class M2EE(cmd.Cmd):
 
         xmpp_credentials = self._config.get_xmpp_credentials()
         if xmpp_credentials:
-            self._client.connect_xmpp(xmpp_credentials)
+            self._client.connect_xmpp(xmpp_credentials).display_error()
 
         # when running hybrid appcontainer, we need to create the runtime ourselves
         if self._config.get_appcontainer_version():
@@ -177,7 +177,7 @@ class M2EE(cmd.Cmd):
                 "port": self._config.get_runtime_port(),
                 "application_base_path": self._config.get_app_base(),
                 "use_blocking_connector": self._config.get_runtime_blocking_connector(),
-            })
+            }).display_error()
 
         self._fix_mxclientsystem_symlink()
 
