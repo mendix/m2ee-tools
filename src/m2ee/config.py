@@ -22,19 +22,17 @@ except ImportError:
 
 class M2EEConfig:
 
-    def __init__(self, config):
+    def __init__(self, yaml_files=None, config=None):
+        if yaml_files:
+            (self._mtimes, yaml_config) = read_yaml_files(yaml_files)
+            self._conf = yaml_config
+        else:
+            self._mtimes = {}
 
-        self._mtimes = {}
-
-        self._conf = {}
-        self._conf['mxnode'] = {}
-        self._conf['m2ee'] = {}
-        self._conf['mimetypes'] = {}
-        self._conf['logging'] = []
-        self._conf['mxruntime'] = {}
-        self._conf['custom'] = {}
-
-        self._run_from_source = self._conf['mxnode'].get('run_from_source', False)
+        if config:
+            self._conf = merge_config(self._conf, config)
+        else:
+            self._conf = {}
 
         # disable flag during pre-flight check if launch would fail
         self._all_systems_are_go = True
@@ -173,6 +171,8 @@ class M2EEConfig:
 
     def _check_config(self):
         # TODO: better exceptions
+
+        self._run_from_source = self._conf.get('mxnode', {}).get('run_from_source', False)
 
         if not self._run_from_source or self._run_from_source == 'appcontainer':
             if not self._conf['mxnode'].get('mxjar_repo', None):
@@ -669,16 +669,8 @@ def merge_config(initial_config, additional_config):
             result[section] = additional_config[section]
 
     return result
-    
 
 if __name__ == '__main__':
-    a = {"a" : 1, "b" : { "b1" : 3, "b2" : 4}, "c" : [1,2,3], "e":1}
-    b = {"a" : 2, "b" : {"b1" : 1337}, "c" : [4,], "d" : 7}
-    print "a: %s" % a
-    print "b: %s" % b
-    print merge_config(a,b)
-    print "a: %s" % a
-    print "b: %s" % b
-    #config = M2EEConfig(sys.argv[1:])
-    #config.dump()
+    config = M2EEConfig(sys.argv[1:])
+    config.dump()
 
