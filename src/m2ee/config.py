@@ -23,9 +23,10 @@ except ImportError:
 class M2EEConfig:
 
     def __init__(self, yaml_files=None, config=None):
+        self._conf = {}
         if yaml_files:
             (self._mtimes, yaml_config) = read_yaml_files(yaml_files)
-            self._conf = yaml_config
+            self._conf = merge_config(self._conf, yaml_config)
         else:
             self._mtimes = {}
 
@@ -175,11 +176,11 @@ class M2EEConfig:
         self._run_from_source = self._conf.get('mxnode', {}).get('run_from_source', False)
 
         if not self._run_from_source or self._run_from_source == 'appcontainer':
-            if not self._conf['mxnode'].get('mxjar_repo', None):
+            if not self._conf.get('mxnode', {}).get('mxjar_repo', None):
                 logger.critical("mxnode/mxjar_repo is not specified!")
                 sys.exit(1)
             # ensure mxjar_repo is a list, multiple locations are allowed for searching
-            if not type(self._conf['mxnode']['mxjar_repo']) == list:
+            if not type(self._conf.get('mxnode', {})['mxjar_repo']) == list:
                 self._conf['mxnode']['mxjar_repo'] = [self._conf['mxnode']['mxjar_repo']]
 
         # mxnode
