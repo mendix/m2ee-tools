@@ -19,18 +19,18 @@ class CLI(cmd.Cmd):
     def do_restart(self, args):
         if self._stop():
             self.m2ee.start_appcontainer()
-            self.start_runtime()
+            self._start_runtime()
 
     def do_stop(self, args):
         self._stop()
 
     def do_start(self, args):
         self.m2ee.start_appcontainer()
-        self.start_runtime()
+        self._start_runtime()
 
     def _stop(self):
         self.m2ee._reload_config_if_changed()
-        (pid_alive, m2ee_alive) = self.m2ee._check_alive()
+        (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if not pid_alive and not m2ee_alive:
             logger.info("Nothing to stop, the application is not running.")
             return True
@@ -163,7 +163,7 @@ class CLI(cmd.Cmd):
 
     def do_create_admin_user(self, args=None):
         self.m2ee._reload_config_if_changed()
-        (pid_alive, m2ee_alive) = self.m2ee._check_alive()
+        (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if not m2ee_alive:
             logger.warn("The application process needs to be running to create a user object in the application.")
             return
@@ -178,7 +178,7 @@ class CLI(cmd.Cmd):
 
     def do_update_admin_user(self, args=None):
         self.m2ee._reload_config_if_changed()
-        (pid_alive, m2ee_alive) = self.m2ee._check_alive()
+        (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if not m2ee_alive:
             logger.warn("The application process needs to be running to change user objects in the application.")
             return
@@ -200,7 +200,7 @@ class CLI(cmd.Cmd):
 
     def do_status(self, args):
         self.m2ee._reload_config_if_changed()
-        if self.m2ee._report_not_running():
+        if self._report_not_running():
             return
         feedback = self.m2ee._client.runtime_status().get_feedback()
         logger.info("The application process is running, the MxRuntime has status: %s" % feedback['status'])
@@ -217,7 +217,7 @@ class CLI(cmd.Cmd):
 
     def do_show_critical_log_messages(self, args):
         self.m2ee._reload_config_if_changed()
-        if self.m2ee._report_not_running():
+        if self._report_not_running():
             return
 
         critlist = self.m2ee._client.get_critical_log_messages()
@@ -227,7 +227,7 @@ class CLI(cmd.Cmd):
         print "\n".join(critlist)
 
     def do_check_health(self, args):
-        if self.m2ee._report_not_running():
+        if self._report_not_running():
             return
         health_response = self.m2ee._client.check_health()
         if not health_response.has_error():
@@ -254,7 +254,7 @@ class CLI(cmd.Cmd):
 
     def do_statistics(self, args):
         self.m2ee._reload_config_if_changed()
-        if self.m2ee._report_not_running():
+        if self._report_not_running():
             return
         stats = self.m2ee._client.runtime_statistics().get_feedback()
         stats.update(self.m2ee._client.server_statistics().get_feedback())
@@ -276,7 +276,7 @@ class CLI(cmd.Cmd):
 
     def do_about(self, args):
         self.m2ee._reload_config_if_changed()
-        if self.m2ee._report_not_running():
+        if self._report_not_running():
             return
         feedback = self.m2ee._client.about().get_feedback()
         print "Using %s version %s" % (feedback['name'], feedback['version'])
@@ -288,7 +288,7 @@ class CLI(cmd.Cmd):
 
     def do_who(self, args):
         self.m2ee._reload_config_if_changed()
-        if self.m2ee._report_not_running():
+        if self._report_not_running():
             return
         if args:
             try:
@@ -347,7 +347,7 @@ class CLI(cmd.Cmd):
         if not args:
             logger.error("restoredb needs the name of a dump file in %s as argument" % self.m2ee._config.get_database_dump_path())
             return
-        (pid_alive, m2ee_alive) = self.m2ee._check_alive()
+        (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if pid_alive or m2ee_alive:
             logger.warn("The application is still running, refusing to restore the database right now.")
             return
@@ -374,7 +374,7 @@ class CLI(cmd.Cmd):
         if not self.m2ee._config.allow_destroy_db():
             logger.error("Destructive database operations are turned off.")
             return
-        (pid_alive, m2ee_alive) = self.m2ee._check_alive()
+        (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if pid_alive or m2ee_alive:
             logger.warn("The application process is still running, refusing to empty the database right now.")
             return
@@ -388,7 +388,7 @@ class CLI(cmd.Cmd):
         if not args:
             logger.error("unpack needs the name of a model upload zipfile in %s as argument" % self.m2ee._config.get_model_upload_path())
             return
-        (pid_alive, m2ee_alive) = self.m2ee._check_alive()
+        (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if pid_alive or m2ee_alive:
             logger.error("The application process is still running, refusing to unpack a new application model right now.")
             return
@@ -412,7 +412,7 @@ class CLI(cmd.Cmd):
                 logger.error("post-unpack-hook script %s does not exist." % post_unpack_hook)
     
     def do_log(self, args):
-        if self.cleanup_logging():
+        if self._cleanup_logging():
             return
         logfile = self.m2ee._config.get_logfile()
         if not logfile:
@@ -431,7 +431,7 @@ class CLI(cmd.Cmd):
             self.prompt = "LOG %s" % self.m2ee._default_prompt
 
     def do_loglevel(self, args):
-        if self.m2ee._report_not_running():
+        if self._report_not_running():
             return
         args = string.split(args)
         if len(args) == 3:
@@ -439,27 +439,57 @@ class CLI(cmd.Cmd):
             self.m2ee.set_log_level(subscriber, node, level)
         else:
             if len(args) == 0:
-                self.m2ee._get_log_levels()
+                self._get_log_levels()
             print "To adjust loglevels, use: loglevel <subscribername> <lognodename> <level>"
             print "Available levels: NONE, CRITICAL, ERROR, WARNING, INFO, DEBUG, TRACE"
 
     def _get_log_levels(self):
         if self._report_not_running():
             return
-        params = {"sort" : "subscriber"}
-        m2eeresponse = self._client.get_log_settings(params) 
+        log_levels = self.m2ee.get_log_levels()
         print "Current loglevels:"
         log_subscribers = []
-        for (subscriber_name, node_names) in m2eeresponse.get_feedback().iteritems():
+        for (subscriber_name, node_names) in log_levels.iteritems(): 
             for (node_name, subscriber_level) in node_names.iteritems():
                 log_subscribers.append("%s %s %s" % 
                         (subscriber_name, node_name, subscriber_level))
         log_subscribers.sort()
         print("\n".join(log_subscribers))
 
+    def _set_log_level(self, subscriber, node, level):
+        if self._report_not_running():
+            return
+        level = level.upper()
+        response = self.m2ee.set_log_level(subscriber, node, level)
+        if response.has_error():
+            response.display_error()
+            print "Remember, all parameters are case sensitive"
+        else:
+            logger.info("Loglevel for %s set to %s" % (node, level))
+
+    def _report_not_running(self):
+        """
+        To be used by actions to see whether m2ee is available for executing requests.
+        Also prints a line when the application is not running.
+
+        if self._report_not_running():
+            return
+        do_things_that_communicate_using_m2ee_client()
+
+        returns True when m2ee is not available for requests, else False
+        """
+        (pid_alive, m2ee_alive) = self.m2ee.check_alive()
+        if not pid_alive and not m2ee_alive:
+            logger.info("The application process is not running.")
+            return True
+        # if pid is alive, but m2ee does not respond, errors are already printed by check_alive
+        if pid_alive and not m2ee_alive:
+            return True
+        return False
+
     def do_show_running_runtime_requests(self, args):
         self.m2ee._reload_config_if_changed()
-        if self.m2ee._report_not_running():
+        if self._report_not_running():
             return
         m2eeresp = self.m2ee._client.get_current_runtime_requests()
         if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
@@ -477,7 +507,7 @@ class CLI(cmd.Cmd):
 
     def do_interrupt_request(self, args):
         self.m2ee._reload_config_if_changed()
-        if self.m2ee._report_not_running():
+        if self._report_not_running():
             return
         if args == "":
             logger.error("This function needs a request id as parameter")
@@ -515,7 +545,7 @@ class CLI(cmd.Cmd):
         if answer == 'y':
             M2EEProfiler(self.m2ee._client).cmdloop()
 
-    def cleanup_logging(self):
+    def _cleanup_logging(self):
         # atexit
         if self.m2ee._logproc:
             logger.debug("Stopping log output...")
@@ -526,7 +556,7 @@ class CLI(cmd.Cmd):
             return True
         return False
 
-    def start_runtime(self):
+    def _start_runtime(self):
         # try hitting the runtime until it breaks or stops complaining
         abort = False
         params = {}
@@ -628,7 +658,7 @@ if __name__ == '__main__':
         yaml_files.append(options.yamlfiles)
 
     m2ee = CLI(yaml_files)
-    atexit.register(m2ee.cleanup_logging)
+    atexit.register(m2ee._cleanup_logging)
     if args:
         m2ee.onecmd(' '.join(args))
     else:

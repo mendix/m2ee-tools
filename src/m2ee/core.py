@@ -28,12 +28,12 @@ class M2EE():
             logger.info("Configuration change detected, reloading.")
             self._reload_config()
 
-    def _reload_config(self, config):
+    def _reload_config(self, config=None):
         self._config = M2EEConfig(yaml_files = self._yamlfiles, config = config)
         self._client = M2EEClient('http://127.0.0.1:%s/' % self._config.get_admin_port(), self._config.get_admin_pass())
         self._runner = M2EERunner(self._config, self._client)
 
-    def _check_alive(self):
+    def check_alive(self):
         pid_alive = self._runner.check_pid()
         m2ee_alive = self._client.ping()
 
@@ -45,26 +45,6 @@ class M2EE():
             logger.error("pid %s is not available, but m2ee responds" % self._runner.get_pid())
         return (pid_alive, m2ee_alive)
 
-    def _report_not_running(self):
-        """
-        To be used by actions to see whether m2ee is available for executing requests.
-        Also prints a line when the application is not running.
-
-        if self._report_not_running():
-            return
-        do_things_that_communicate_using_m2ee_client()
-
-        returns True when m2ee is not available for requests, else False
-        """
-        (pid_alive, m2ee_alive) = self._check_alive()
-        if not pid_alive and not m2ee_alive:
-            logger.info("The application process is not running.")
-            return True
-        # if pid is alive, but m2ee does not respond, errors are already printed by _check_alive
-        if pid_alive and not m2ee_alive:
-            return True
-        return False
-
     def start_appcontainer(self):
         self._reload_config_if_changed()
 
@@ -73,7 +53,7 @@ class M2EE():
             return
 
         logger.debug("Checking if the runtime is already alive...")
-        (pid_alive, m2ee_alive) = self._check_alive()
+        (pid_alive, m2ee_alive) = self.check_alive()
         if not pid_alive and not m2ee_alive:
             logger.info("Trying to start the MxRuntime...")
             if not self._runner.start():
@@ -222,16 +202,13 @@ class M2EE():
         return mdautil.complete_unpack(self._config.get_model_upload_path(), text)
 
     def set_log_level(self, subscriber, node, level):
-        if self._report_not_running():
-            return
-        level = level.upper()
         params = {"subscriber":subscriber,"node":node,"level":level}
-        response = self._client.set_log_level(params)
-        if response.has_error():
-            response.display_error()
-            print "Remember, all parameters are case sensitive"
-        else:
-            logger.info("Loglevel for %s set to %s" % (node, level))
+        return self._client.set_log_level(params)
+
+    def get_log_levels(self):
+        params = {"sort" : "subscriber"}
+        m2ee_response =  self._client.get_log_settings(params)
+        return m2ee_response.get_feedback()
 
     def emptyline(self):
         self._reload_config_if_changed()
