@@ -221,21 +221,7 @@ class M2EE():
     def complete_unpack(self, text, line, begidx, endidx):
         return mdautil.complete_unpack(self._config.get_model_upload_path(), text)
 
-    def _get_log_levels(self):
-        if self._report_not_running():
-            return
-        params = {"sort" : "subscriber"}
-        m2eeresponse = self._client.get_log_settings(params) 
-        print "Current loglevels:"
-        log_subscribers = []
-        for (subscriber_name, node_names) in m2eeresponse.get_feedback().iteritems():
-            for (node_name, subscriber_level) in node_names.iteritems():
-                log_subscribers.append("%s %s %s" % 
-                        (subscriber_name, node_name, subscriber_level))
-        log_subscribers.sort()
-        print("\n".join(log_subscribers))
-
-    def _set_log_level(self, subscriber, node, level):
+    def set_log_level(self, subscriber, node, level):
         if self._report_not_running():
             return
         level = level.upper()

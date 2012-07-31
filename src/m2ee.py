@@ -436,12 +436,26 @@ class CLI(cmd.Cmd):
         args = string.split(args)
         if len(args) == 3:
             (subscriber, node, level) = args
-            self.m2ee._set_log_level(subscriber, node, level)
+            self.m2ee.set_log_level(subscriber, node, level)
         else:
             if len(args) == 0:
                 self.m2ee._get_log_levels()
             print "To adjust loglevels, use: loglevel <subscribername> <lognodename> <level>"
             print "Available levels: NONE, CRITICAL, ERROR, WARNING, INFO, DEBUG, TRACE"
+
+    def _get_log_levels(self):
+        if self._report_not_running():
+            return
+        params = {"sort" : "subscriber"}
+        m2eeresponse = self._client.get_log_settings(params) 
+        print "Current loglevels:"
+        log_subscribers = []
+        for (subscriber_name, node_names) in m2eeresponse.get_feedback().iteritems():
+            for (node_name, subscriber_level) in node_names.iteritems():
+                log_subscribers.append("%s %s %s" % 
+                        (subscriber_name, node_name, subscriber_level))
+        log_subscribers.sort()
+        print("\n".join(log_subscribers))
 
     def do_show_running_runtime_requests(self, args):
         self.m2ee._reload_config_if_changed()
