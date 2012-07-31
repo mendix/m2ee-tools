@@ -32,8 +32,6 @@ class M2EEConfig:
 
         if config:
             self._conf = merge_config(self._conf, config)
-        else:
-            self._conf = {}
 
         # disable flag during pre-flight check if launch would fail
         self._all_systems_are_go = True
@@ -236,7 +234,7 @@ class M2EEConfig:
         return self._conf['m2ee']['app_base']
 
     def get_runtime_blocking_connector(self):
-        return self._conf['m2ee']['runtime_blocking_connector']
+        return self._conf['m2ee'].get('runtime_blocking_connector', False)
 
     def get_symlink_mxclientsystem(self):
         return self._conf['m2ee'].get('symlink_mxclientsystem', False)
@@ -626,7 +624,7 @@ def find_yaml_files():
 
 
 def read_yaml_files(yaml_files=None):
-    config = []
+    config = {}
     yaml_mtimes = {}
     if not yaml_files:
         yaml_files = find_yaml_files()
