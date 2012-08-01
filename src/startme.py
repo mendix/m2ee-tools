@@ -1,4 +1,5 @@
 
+import getpass
 import ConfigParser
 from optparse import OptionParser
 from m2ee import M2EE
@@ -51,7 +52,7 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
     set_verbosity(options)
 
-    username = 'tr10000'
+    username = getpass.getuser()
     config = ConfigParser.ConfigParser()
     config.read('/usr/local/etc/cloud.conf')
     jid = config.get('NodeController', 'jid')
