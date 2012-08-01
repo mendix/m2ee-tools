@@ -653,7 +653,11 @@ def load_config(yaml_file):
 
 def merge_config(initial_config, additional_config):
     result = copy.deepcopy(initial_config)
+    if additional_config is None:
+        return result
     additional_config = copy.deepcopy(additional_config)
+    if initial_config is None:
+        return additional_config
 
     for section in set(initial_config.keys() + additional_config.keys()):
         if section in initial_config: 
