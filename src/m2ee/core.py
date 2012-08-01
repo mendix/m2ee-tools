@@ -6,11 +6,11 @@
 #
 
 import pwd, os
-from m2ee.config import M2EEConfig
-from m2ee.client import M2EEClient
-from m2ee.runner import M2EERunner
-from m2ee import mdautil
-from m2ee.log import logger
+from config import M2EEConfig
+from client import M2EEClient
+from runner import M2EERunner
+import mdautil
+from log import logger
 
 class M2EE():
 
