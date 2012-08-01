@@ -35,9 +35,14 @@ class M2EEConfig:
 
         # disable flag during pre-flight check if launch would fail
         self._all_systems_are_go = True
-        # raises exception when important config is missing
-        # also update basepath in mxruntime config
-        self._check_config()
+
+        self._check_appcontainer_config()
+
+        self._check_runtime_config()
+        self._conf['mxruntime'].setdefault('BasePath', self._conf['m2ee']['app_base'])
+
+        self.fix_permissions()
+
 
         self._appcontainer_version = self._conf['m2ee'].get('appcontainer_version',None)
 
@@ -168,18 +173,9 @@ class M2EEConfig:
         print yaml.dump(self._conf)
 
 
-    def _check_config(self):
+    def _check_appcontainer_config(self):
         # TODO: better exceptions
-
         self._run_from_source = self._conf.get('mxnode', {}).get('run_from_source', False)
-
-        if not self._run_from_source or self._run_from_source == 'appcontainer':
-            if not self._conf.get('mxnode', {}).get('mxjar_repo', None):
-                logger.critical("mxnode/mxjar_repo is not specified!")
-                sys.exit(1)
-            # ensure mxjar_repo is a list, multiple locations are allowed for searching
-            if not type(self._conf.get('mxnode', {})['mxjar_repo']) == list:
-                self._conf['mxnode']['mxjar_repo'] = [self._conf['mxnode']['mxjar_repo']]
 
         # mxnode
         if self._run_from_source:
@@ -191,26 +187,36 @@ class M2EEConfig:
                 sys.exit(1)
 
         # m2ee
-        for option in ['app_name','app_base','admin_port','admin_pass','runtime_port','pidfile']:
+        for option in ['app_base','admin_port','admin_pass','pidfile']:
             if not self._conf['m2ee'].get(option, None):
                 logger.critical("Option %s in configuration section m2ee is not defined!" % option)
                 sys.exit(1)
-
-        # check some locations for existance and permissions
-        basepath = self._conf['m2ee']['app_base']
-        if not os.path.exists(basepath):
-            logger.critical("Application base directory %s does not exist!" % basepath)
-            sys.exit(1)
-
-        self._conf['mxruntime'].setdefault('BasePath', self._conf['m2ee']['app_base'])
-
-        self.fix_permissions()
 
         # database_dump_path
         if not 'database_dump_path' in self._conf['m2ee']:
             self._conf['m2ee']['database_dump_path'] = os.path.join(self._conf['m2ee']['app_base'], 'data', 'database')
         if not os.path.isdir(self._conf['m2ee']['database_dump_path']):
             logger.warn("Database dump path %s is not a directory" % self._conf['m2ee']['database_dump_path'])
+
+    def _check_runtime_config(self):
+        self._run_from_source = self._conf.get('mxnode', {}).get('run_from_source', False)
+
+        if not self._run_from_source or self._run_from_source == 'appcontainer':
+            if not self._conf.get('mxnode', {}).get('mxjar_repo', None):
+                logger.warn("mxnode/mxjar_repo is not specified!")
+            # ensure mxjar_repo is a list, multiple locations are allowed for searching
+            if not type(self._conf.get('mxnode', {})['mxjar_repo']) == list:
+                self._conf['mxnode']['mxjar_repo'] = [self._conf['mxnode']['mxjar_repo']]
+        # m2ee
+        for option in ['app_name','app_base','runtime_port']:
+            if not self._conf['m2ee'].get(option, None):
+                logger.warn("Option %s in configuration section m2ee is not defined!" % option)
+        # check some locations for existance and permissions
+        basepath = self._conf['m2ee']['app_base']
+        if not os.path.exists(basepath):
+            logger.critical("Application base directory %s does not exist!" % basepath)
+            sys.exit(1)
+
         # model_upload_path
         if not 'model_upload_path' in self._conf['m2ee']:
             self._conf['m2ee']['model_upload_path'] = os.path.join(self._conf['m2ee']['app_base'], 'data', 'model-upload')

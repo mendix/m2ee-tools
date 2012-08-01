@@ -7,27 +7,36 @@ from m2ee.log import logger
 
 class API():
 
-    def __init__(self, username, admin_port, runtime_port, password, jid):
+    def __init__(self, username, admin_port, password, runtime_port=None, jid=None):
         base = '/srv/cloud/slots/%s/deploy/' % username
         pid_file = '%s/%s.pid' % (base, username)
         config = {'mxnode' : 
                     { 'mxjar_repo' : '/usr/local/share/mendix/'},
                 'm2ee' : 
                     {'app_name' : username, 'app_base' : base, 'admin_port' : admin_port, 
-                        'admin_pass' : password, 'runtime_port' : runtime_port, 'pidfile' : pid_file,
-                        'appcontainer_version' : 'latest', 'jid' : jid },
+                        'admin_pass' : password, 'pidfile' : pid_file,
+                        'appcontainer_version' : 'latest'},
                 'mxruntime' : { 'DTAPMode' : 'P' },
                 'logging': [{
                     'name' : 'XMPPLogSubscriber',
                     'type' : 'file',
                     'autosubscribe' : 'INFO',
-                    'filename' : '/tmp/tr10000.log'}],
+                    'filename' : '%s/data/log/logging.log' % base}],
                 'mimetypes' : { 'bmp' : 'image/bmp', 'log' : 'text/plain'}
                 }
+
+        if jid is not None:
+            config['m2ee']['jid'] = jid
+        if runtime_port is not None:
+            config['m2ee']['runtime_port'] = runtime_port
+
         self.m2ee = M2EE(config=config)
 
     def start(self):
         self.m2ee.start_appcontainer()
+
+    def stop(self):
+        self.m2ee._runner.terminate()
 
 def set_verbosity(options):
     # how verbose should we be? see http://docs.python.org/release/2.7/library/logging.html#logging-levels
@@ -42,6 +51,17 @@ def set_verbosity(options):
     if verbosity < 5:
         verbosity = 5
     logger.setLevel(verbosity)
+
+def start(username, admin_port, password, runtime_port, jid, verbosity=50):
+    logger.setLevel(verbosity)
+    API(username, admin_port,  password, runtime_port=runtime_port, jid=jid).start()
+    return True
+
+
+def stop(username, admin_port, runtime_port, verbosity=50):
+    logger.setLevel(verbosity)
+    API(username, admin_port, runtime_port).stop()
+    return True
 
 if __name__ == '__main__':
     parser = OptionParser()
