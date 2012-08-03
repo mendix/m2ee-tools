@@ -57,22 +57,22 @@ class M2EE():
         if not pid_alive and not m2ee_alive:
             logger.info("Trying to start the MxRuntime...")
             if not self._runner.start():
-                return
+                return False
         elif not m2ee_alive:
-            return
+            return False
 
         # check if Appcontainer startup went OK
         m2eeresponse = self._client.runtime_status()
         if m2eeresponse.has_error():
             m2eeresponse.display_error()
-            return
+            return False
 
         # check status, if it's created or starting, go on, else stop
         m2eeresponse = self._client.runtime_status()
         status = m2eeresponse.get_feedback()['status']
         if not status in ['feut','created','starting']:
             logger.error("Cannot start MxRuntime when it has status %s" % status)
-            return
+            return False
         logger.debug("MxRuntime status: %s" % status)
 
         # go do startup sequence
@@ -86,18 +86,16 @@ class M2EE():
 
         # when running hybrid appcontainer, we need to create the runtime ourselves
         if self._config.get_appcontainer_version():
-            self._client.create_runtime({
+            response = self._client.create_runtime({
                 "runtime_path": os.path.join(self._config.get_runtime_path(),'runtime'),
                 "port": self._config.get_runtime_port(),
                 "application_base_path": self._config.get_app_base(),
                 "use_blocking_connector": self._config.get_runtime_blocking_connector(),
             })
+            return not response.has_error()
 
-        self._fix_mxclientsystem_symlink()
+        return True
 
-        if not self._send_runtime_config():
-            # stop when sending configuration causes error messages
-            return
 
     def _fix_mxclientsystem_symlink(self):
         # check mxclientsystem symlink and refresh if necessary

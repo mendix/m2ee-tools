@@ -558,6 +558,11 @@ class CLI(cmd.Cmd):
         return False
 
     def _start_runtime(self):
+        self._fix_mxclientsystem_symlink()
+
+        if not self._send_runtime_config():
+            # stop when sending configuration causes error messages
+            return
         # try hitting the runtime until it breaks or stops complaining
         abort = False
         params = {}
