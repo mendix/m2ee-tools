@@ -1,5 +1,6 @@
 
 import getpass
+import os
 import ConfigParser
 from optparse import OptionParser
 from m2ee import M2EE
@@ -7,36 +8,50 @@ from m2ee.log import logger
 
 class API():
 
-    def __init__(self, username, admin_port, password, runtime_port=None, jid=None):
+    def __init__(self, username, admin_port, password, runtime_port=None, 
+            jid=None, jvm_size=128):
         base = '/srv/cloud/slots/%s/deploy/' % username
+        policy_location = os.path.join('/srv/cloud/slots/', username, 'config', '.policy')
+        tmp_dir = os.path.join(base, 'data', 'tmp')
         pid_file = '%s/%s.pid' % (base, username)
+        logsubscriber_name = 'filesubscriber'
         config = {'mxnode' : 
                     { 'mxjar_repo' : '/usr/local/share/mendix/'},
                 'm2ee' : 
                     {'app_name' : username, 'app_base' : base, 'admin_port' : admin_port, 
                         'admin_pass' : password, 'pidfile' : pid_file,
-                        'appcontainer_version' : 'latest'},
+                        'appcontainer_version' : 'latest',
+                     'javaopts' : ["-Djava.security.manager",
+                                   "-Djava.security.policy=%s" % policy_location,
+                                   "-Dfile.encoding=UTF-8",
+                                   "-Dsun.io.useCanonPrefixCache=false",
+                                   "-Djava.util.prefs.userRoot=%s" % base,
+                                   "-Djava.io.tmpdir=%s" % tmp_dir,
+                                   "-XX:MaxPermSize=128M",
+                                   "-Xmx%sM" % jvm_size]
+                     },
                 'mxruntime' : { 'DTAPMode' : 'P' },
                 'logging': [{
-                    'name' : 'XMPPLogSubscriber',
+                    'name' : logsubscriber_name,
                     'type' : 'file',
-                    'autosubscribe' : 'INFO',
+                    'autosubscribe' : 'TRACE',
                     'filename' : '%s/data/log/logging.log' % base}],
                 'mimetypes' : { 'bmp' : 'image/bmp', 'log' : 'text/plain'}
                 }
 
-        if jid is not None:
-            config['m2ee']['jid'] = jid
+        if jid:
+            config['m2ee']['xmpp'] = {'jid' : jid, 'password' : password, 
+                    'logsubscriber' : logsubscriber_name}
         if runtime_port is not None:
             config['m2ee']['runtime_port'] = runtime_port
 
         self.m2ee = M2EE(config=config)
 
     def start(self):
-        self.m2ee.start_appcontainer()
+        return self.m2ee.start_appcontainer()
 
     def stop(self):
-        self.m2ee._runner.terminate()
+        return self.m2ee._runner.terminate()
 
 def set_verbosity(options):
     # how verbose should we be? see http://docs.python.org/release/2.7/library/logging.html#logging-levels
@@ -52,16 +67,14 @@ def set_verbosity(options):
         verbosity = 5
     logger.setLevel(verbosity)
 
-def start(username, admin_port, password, runtime_port, jid, verbosity=50):
+def start(username, admin_port, password, runtime_port, jid, jvm_size=None, verbosity=5):
     logger.setLevel(verbosity)
-    API(username, admin_port,  password, runtime_port=runtime_port, jid=jid).start()
-    return True
+    return API(username, admin_port,  password, runtime_port=runtime_port, 
+            jid=jid, jvm_size=jvm_size).start()
 
-
-def stop(username, admin_port, runtime_port, verbosity=50):
+def stop(username, admin_port, password, verbosity=50):
     logger.setLevel(verbosity)
-    API(username, admin_port, runtime_port).stop()
-    return True
+    return API(username, admin_port, password).stop()
 
 if __name__ == '__main__':
     parser = OptionParser()
@@ -81,5 +94,5 @@ if __name__ == '__main__':
     admin_port = runtime_port + 1000
 
 
-    API(username, admin_port, runtime_port, password, jid).start()
+    API(username, admin_port, password, runtime_port, jid).start()
 
