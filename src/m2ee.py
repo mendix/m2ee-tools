@@ -107,7 +107,7 @@ class CLI(cmd.Cmd):
         return answer
     
     def _handle_ddl_commands(self):
-        feedback = self._client.get_ddl_commands({"verbose":True}).get_feedback()
+        feedback = self.m2ee._client.get_ddl_commands({"verbose":True}).get_feedback()
         answer = None
         while not answer in ('v','s','e','a'):
             answer = raw_input("Do you want to (v)iew queries, (s)ave them to a file, (e)xecute and save them, or (a)bort: ")
@@ -117,14 +117,10 @@ class CLI(cmd.Cmd):
                 print '\n'.join(feedback['ddl_commands'])
                 answer = None
             elif answer in ('e','s'):
-                query_file_name = os.path.join(self._config.get_database_dump_path(),
-                        "%s_database_commands.sql" % time.strftime("%Y%m%d_%H%M%S"))
-                logger.info("Saving DDL commands to %s" % query_file_name)
-                fd = codecs.open(query_file_name, mode='w', encoding='utf-8')
-                fd.write("%s" % '\n'.join(feedback['ddl_commands']))
-                fd.close()
+                ddl_commands = feedback['ddl_commands']
+                self.m2ee.save_ddl_commands(ddl_commands)
                 if answer == 'e':
-                    m2eeresponse = self._client.execute_ddl_commands()
+                    m2eeresponse = self.m2ee._client.execute_ddl_commands()
                     m2eeresponse.display_error()
             else:
                 print "Unknown option", answer
@@ -558,9 +554,9 @@ class CLI(cmd.Cmd):
         return False
 
     def _start_runtime(self):
-        self._fix_mxclientsystem_symlink()
+        self.m2ee.fix_mxclientsystem_symlink()
 
-        if not self._send_runtime_config():
+        if not self.m2ee.send_runtime_config():
             # stop when sending configuration causes error messages
             return
         # try hitting the runtime until it breaks or stops complaining

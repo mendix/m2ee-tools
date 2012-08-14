@@ -5,7 +5,7 @@
 # http://www.mendix.com/
 #
 
-import pwd, os
+import pwd, os, codecs, time
 from config import M2EEConfig
 from client import M2EEClient
 from runner import M2EERunner
@@ -97,7 +97,7 @@ class M2EE():
         return True
 
 
-    def _fix_mxclientsystem_symlink(self):
+    def fix_mxclientsystem_symlink(self):
         # check mxclientsystem symlink and refresh if necessary
         if self._config.get_symlink_mxclientsystem():
             mxclient_symlink = os.path.join(self._config.get_public_webroot_path(), 'mxclientsystem')
@@ -157,7 +157,7 @@ class M2EE():
             if result != 0:
                 logger.error("Setting mime types failed: %s" % m2eeresponse.get_cause())
 
-    def _send_runtime_config(self):
+    def send_runtime_config(self):
         # send runtime configuration
         # catch and report:
         # - configuration errors (X is not a file etc)
@@ -217,4 +217,12 @@ class M2EE():
         if line:
             logger.trace("Executing command: %s" % line)
         return line
+
+    def save_ddl_commands(self, ddl_commands):
+        query_file_name = os.path.join(self._config.get_database_dump_path(),
+                "%s_database_commands.sql" % time.strftime("%Y%m%d_%H%M%S"))
+        logger.info("Saving DDL commands to %s" % query_file_name)
+        fd = codecs.open(query_file_name, mode='w', encoding='utf-8')
+        fd.write("%s" % '\n'.join(ddl_commands))
+        fd.close()
 
