@@ -8,9 +8,9 @@
 import yaml
 import os, sys, pwd
 import re
-import codecs
 import subprocess
 import simplejson
+import copy
 from log import logger
 try:
     import sqlite3
@@ -22,43 +22,27 @@ except ImportError:
 
 class M2EEConfig:
 
-    def __init__(self, yamlfiles=None):
-
-        self._mtimes = {}
-
+    def __init__(self, yaml_files=None, config=None):
         self._conf = {}
-        self._conf['mxnode'] = {}
-        self._conf['m2ee'] = {}
-        self._conf['mimetypes'] = {}
-        self._conf['logging'] = []
-        self._conf['mxruntime'] = {}
-        self._conf['custom'] = {}
+        if yaml_files:
+            (self._mtimes, yaml_config) = read_yaml_files(yaml_files)
+            self._conf = merge_config(self._conf, yaml_config)
+        else:
+            self._mtimes = {}
 
-        if yamlfiles == None:
-            yamlfiles = []
-            # don't add deprecated m2eerc-file if yaml is present
-            # (if both exist, probably one is a symlink to the other...)
-            if os.path.isfile("/etc/m2ee/m2ee.yaml"):
-                yamlfiles.append("/etc/m2ee/m2ee.yaml")
-            elif os.path.isfile("/etc/m2ee/m2eerc"):
-                yamlfiles.append("/etc/m2ee/m2eerc")
-
-            homedir = pwd.getpwuid(os.getuid())[5]
-            if os.path.isfile(os.path.join(homedir, ".m2ee/m2ee.yaml")):
-                yamlfiles.append(os.path.join(homedir, ".m2ee/m2ee.yaml"))
-            elif os.path.isfile(os.path.join(homedir, ".m2eerc")):
-                yamlfiles.append(os.path.join(homedir, ".m2eerc"))
-
-        for yamlfile in yamlfiles:
-            self._load_config(yamlfile)
-
-        self._run_from_source = self._conf['mxnode'].get('run_from_source', False)
+        if config:
+            self._conf = merge_config(self._conf, config)
 
         # disable flag during pre-flight check if launch would fail
         self._all_systems_are_go = True
-        # raises exception when important config is missing
-        # also update basepath in mxruntime config
-        self._check_config()
+
+        self._check_appcontainer_config()
+
+        self._check_runtime_config()
+        self._conf['mxruntime'].setdefault('BasePath', self._conf['m2ee']['app_base'])
+
+        self.fix_permissions()
+
 
         self._appcontainer_version = self._conf['m2ee'].get('appcontainer_version',None)
 
@@ -188,42 +172,10 @@ class M2EEConfig:
     def dump(self):
         print yaml.dump(self._conf)
 
-    def _load_config(self, yamlfile):
-        logger.debug("Loading configuration from %s" % yamlfile)
-        fd = None
-        try:
-            fd = open(yamlfile)
-        except Exception, e:
-            logger.error("Error reading configuration file %s, ignoring..." % yamlfile)
-            return
 
-        config = None
-        try:
-            config = yaml.load(fd)
-        except Exception, e:
-            logger.error("Error parsing configuration file %s: %s" % (yamlfile, e))
-            return
-
-        # merge configuration, new replaces old when colliding
-        for section in ['mxnode','m2ee','mimetypes','mxruntime','custom']:
-            if section in config and type(config[section]) == dict:
-                self._conf[section].update(config[section])
-        for section in ['logging']:
-            if section in config and type(config[section]) == list:
-                self._conf[section].extend(config[section])
-        
-        self._mtimes[yamlfile] = os.stat(yamlfile)[8] # st_mtime
-
-    def _check_config(self):
+    def _check_appcontainer_config(self):
         # TODO: better exceptions
-
-        if not self._run_from_source or self._run_from_source == 'appcontainer':
-            if not self._conf['mxnode'].get('mxjar_repo', None):
-                logger.critical("mxnode/mxjar_repo is not specified!")
-                sys.exit(1)
-            # ensure mxjar_repo is a list, multiple locations are allowed for searching
-            if not type(self._conf['mxnode']['mxjar_repo']) == list:
-                self._conf['mxnode']['mxjar_repo'] = [self._conf['mxnode']['mxjar_repo']]
+        self._run_from_source = self._conf.get('mxnode', {}).get('run_from_source', False)
 
         # mxnode
         if self._run_from_source:
@@ -235,26 +187,36 @@ class M2EEConfig:
                 sys.exit(1)
 
         # m2ee
-        for option in ['app_name','app_base','admin_port','admin_pass','runtime_port','pidfile']:
+        for option in ['app_base','admin_port','admin_pass','pidfile']:
             if not self._conf['m2ee'].get(option, None):
                 logger.critical("Option %s in configuration section m2ee is not defined!" % option)
                 sys.exit(1)
-
-        # check some locations for existance and permissions
-        basepath = self._conf['m2ee']['app_base']
-        if not os.path.exists(basepath):
-            logger.critical("Application base directory %s does not exist!" % basepath)
-            sys.exit(1)
-
-        self._conf['mxruntime'].setdefault('BasePath', self._conf['m2ee']['app_base'])
-
-        self.fix_permissions()
 
         # database_dump_path
         if not 'database_dump_path' in self._conf['m2ee']:
             self._conf['m2ee']['database_dump_path'] = os.path.join(self._conf['m2ee']['app_base'], 'data', 'database')
         if not os.path.isdir(self._conf['m2ee']['database_dump_path']):
             logger.warn("Database dump path %s is not a directory" % self._conf['m2ee']['database_dump_path'])
+
+    def _check_runtime_config(self):
+        self._run_from_source = self._conf.get('mxnode', {}).get('run_from_source', False)
+
+        if not self._run_from_source or self._run_from_source == 'appcontainer':
+            if not self._conf.get('mxnode', {}).get('mxjar_repo', None):
+                logger.warn("mxnode/mxjar_repo is not specified!")
+            # ensure mxjar_repo is a list, multiple locations are allowed for searching
+            if not type(self._conf.get('mxnode', {})['mxjar_repo']) == list:
+                self._conf['mxnode']['mxjar_repo'] = [self._conf['mxnode']['mxjar_repo']]
+        # m2ee
+        for option in ['app_name','app_base','runtime_port']:
+            if not self._conf['m2ee'].get(option, None):
+                logger.warn("Option %s in configuration section m2ee is not defined!" % option)
+        # check some locations for existance and permissions
+        basepath = self._conf['m2ee']['app_base']
+        if not os.path.exists(basepath):
+            logger.critical("Application base directory %s does not exist!" % basepath)
+            sys.exit(1)
+
         # model_upload_path
         if not 'model_upload_path' in self._conf['m2ee']:
             self._conf['m2ee']['model_upload_path'] = os.path.join(self._conf['m2ee']['app_base'], 'data', 'model-upload')
@@ -278,7 +240,7 @@ class M2EEConfig:
         return self._conf['m2ee']['app_base']
 
     def get_runtime_blocking_connector(self):
-        return self._conf['m2ee']['runtime_blocking_connector']
+        return self._conf['m2ee'].get('runtime_blocking_connector', False)
 
     def get_symlink_mxclientsystem(self):
         return self._conf['m2ee'].get('symlink_mxclientsystem', False)
@@ -650,8 +612,74 @@ class M2EEConfig:
     def dirty_hack_is_25(self):
         return self._dirty_hack_is_25
 
+def find_yaml_files():
+    yaml_files = []
+    # don't add deprecated m2eerc-file if yaml is present
+    # (if both exist, probably one is a symlink to the other...)
+    if os.path.isfile("/etc/m2ee/m2ee.yaml"):
+        yaml_files.append("/etc/m2ee/m2ee.yaml")
+    elif os.path.isfile("/etc/m2ee/m2eerc"):
+        yaml_files.append("/etc/m2ee/m2eerc")
+
+    homedir = pwd.getpwuid(os.getuid())[5]
+    if os.path.isfile(os.path.join(homedir, ".m2ee/m2ee.yaml")):
+        yaml_files.append(os.path.join(homedir, ".m2ee/m2ee.yaml"))
+    elif os.path.isfile(os.path.join(homedir, ".m2eerc")):
+        yaml_files.append(os.path.join(homedir, ".m2eerc"))
+    return yaml_files
+
+
+def read_yaml_files(yaml_files=None):
+    config = {}
+    yaml_mtimes = {}
+    if not yaml_files:
+        yaml_files = find_yaml_files()
+
+    for yaml_file in yaml_files:
+        additional_config = load_config(yaml_file)
+        config = merge_config(config, additional_config)
+        yaml_mtimes[yaml_file] = os.stat(yaml_file)[8] # st_mtime
+
+    return (yaml_mtimes, config)
+
+def load_config(yaml_file):
+    logger.debug("Loading configuration from %s" % yaml_file)
+    fd = None
+    try:
+        fd = open(yaml_file)
+    except Exception, e:
+        logger.error("Error reading configuration file %s, ignoring..." % yaml_file)
+        return
+
+    try:
+        return yaml.load(fd)
+    except Exception, e:
+        logger.error("Error parsing configuration file %s: %s" % (yaml_file, e))
+        return
+
+def merge_config(initial_config, additional_config):
+    result = copy.deepcopy(initial_config)
+    if additional_config is None:
+        return result
+    additional_config = copy.deepcopy(additional_config)
+    if initial_config is None:
+        return additional_config
+
+    for section in set(initial_config.keys() + additional_config.keys()):
+        if section in initial_config: 
+            if section in additional_config: 
+                if isinstance(additional_config[section], dict):
+                    result[section] = merge_config(initial_config[section], additional_config[section])
+                elif isinstance(additional_config[section], list):
+                    result[section] = initial_config[section] + additional_config[section]
+                else:
+                    result[section] = additional_config[section]
+        else:
+            result[section] = additional_config[section]
+
+    return result
+
 if __name__ == '__main__':
-    import sys
     config = M2EEConfig(sys.argv[1:])
     config.dump()
 

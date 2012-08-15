@@ -176,7 +176,7 @@ class M2EEClient:
         return self.request("disconnect_xmpp")
 
     def create_runtime(self, params):
-        return self.request("create_runtime", params)
+        return self.request("createruntime", params)
 
 class M2EEResponse:
 
