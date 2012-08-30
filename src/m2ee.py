@@ -530,7 +530,7 @@ class CLI(cmd.Cmd):
             return True
         return False
 
-    def do_show_running_runtime_requests(self, args):
+    def do_show_current_runtime_requests(self, args):
         self.m2ee._reload_config_if_changed()
         if self._report_not_running():
             return
