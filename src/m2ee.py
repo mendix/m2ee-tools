@@ -516,7 +516,6 @@ class CLI(cmd.Cmd):
         return False
 
     def do_show_current_runtime_requests(self, args):
-        self.m2ee._reload_config_if_changed()
         if self._report_not_running():
             return
         m2eeresp = self.m2ee.client.get_current_runtime_requests()
