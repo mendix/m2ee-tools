@@ -1,16 +1,15 @@
-#!/usr/bin/env python
+#!/usr/bin/python
+
 import cmd
-import time
 import subprocess
 import atexit
 from m2ee import pgutil, M2EE, M2EEProfiler, mdautil
 from m2ee.log import logger
 from m2ee.config import find_yaml_files
-import os, sys, codecs, getpass, signal
+import os, pwd, sys, getpass, signal
 import string, pprint, yaml
 
 class CLI(cmd.Cmd):
-
 
     def __init__(self, yamlfiles=None):
         cmd.Cmd.__init__(self)

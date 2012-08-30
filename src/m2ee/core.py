@@ -199,4 +199,3 @@ class M2EE():
         fd = codecs.open(query_file_name, mode='w', encoding='utf-8')
         fd.write("%s" % '\n'.join(ddl_commands))
         fd.close()
-

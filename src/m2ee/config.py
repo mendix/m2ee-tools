@@ -37,12 +37,10 @@ class M2EEConfig:
         self._all_systems_are_go = True
 
         self._check_appcontainer_config()
-
         self._check_runtime_config()
         self._conf['mxruntime'].setdefault('BasePath', self._conf['m2ee']['app_base'])
 
         self.fix_permissions()
-
 
         self._appcontainer_version = self._conf['m2ee'].get('appcontainer_version',None)
 
