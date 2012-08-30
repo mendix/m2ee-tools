@@ -126,7 +126,9 @@ class M2EEConfig:
         if not self.get_dtap_mode()[0] in ('A','P'):
             merge_constants.update(config_json.get('Constants',{}))
         # custom yaml section can override defaults
-        merge_constants.update(self._conf['custom'])
+        yaml_custom = self._conf.get('custom',{})
+        if yaml_custom: # can still be None!
+            merge_constants.update(yaml_custom)
         # 'MicroflowConstants' from runtime yaml section can override default/custom
         yaml_mxruntime_mfconstants = self._conf['mxruntime'].get('MicroflowConstants',{})
         if yaml_mxruntime_mfconstants: # can still be None!
