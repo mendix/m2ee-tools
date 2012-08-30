@@ -33,7 +33,6 @@ class CLI(cmd.Cmd):
         self._start_runtime()
 
     def _stop(self):
-        self.m2ee._reload_config_if_changed()
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if not pid_alive and not m2ee_alive:
             logger.info("Nothing to stop, the application is not running.")
@@ -204,7 +203,6 @@ class CLI(cmd.Cmd):
                 print "Unknown option", answer
 
     def do_create_admin_user(self, args=None):
-        self.m2ee._reload_config_if_changed()
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if not m2ee_alive:
             logger.warn("The application process needs to be running to create a user object in the application.")
@@ -219,7 +217,6 @@ class CLI(cmd.Cmd):
             m2eeresponse.display_error()
 
     def do_update_admin_user(self, args=None):
-        self.m2ee._reload_config_if_changed()
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if not m2ee_alive:
             logger.warn("The application process needs to be running to change user objects in the application.")
@@ -241,7 +238,6 @@ class CLI(cmd.Cmd):
             code.interact(local=locals())
 
     def do_status(self, args):
-        self.m2ee._reload_config_if_changed()
         if self._report_not_running():
             return
         feedback = self.m2ee._client.runtime_status().get_feedback()
@@ -258,7 +254,6 @@ class CLI(cmd.Cmd):
             logger.info("Only showing %s logged in users. Use who to see a complete list." % max_show_users)
 
     def do_show_critical_log_messages(self, args):
-        self.m2ee._reload_config_if_changed()
         if self._report_not_running():
             return
 
@@ -295,7 +290,6 @@ class CLI(cmd.Cmd):
                 health_response.display_error()
 
     def do_statistics(self, args):
-        self.m2ee._reload_config_if_changed()
         if self._report_not_running():
             return
         stats = self.m2ee._client.runtime_statistics().get_feedback()
@@ -317,7 +311,6 @@ class CLI(cmd.Cmd):
         sys.exit(m2ee.nagios.check(self.m2ee._runner, self.m2ee._client))
 
     def do_about(self, args):
-        self.m2ee._reload_config_if_changed()
         if self._report_not_running():
             return
         feedback = self.m2ee._client.about().get_feedback()
@@ -329,7 +322,6 @@ class CLI(cmd.Cmd):
             print 'Project partner name is %s' % feedback['partner']
 
     def do_who(self, args):
-        self.m2ee._reload_config_if_changed()
         if self._report_not_running():
             return
         if args:
@@ -426,7 +418,6 @@ class CLI(cmd.Cmd):
         )
 
     def do_unpack(self, args):
-        self.m2ee._reload_config_if_changed()
         if not args:
             logger.error("unpack needs the name of a model upload zipfile in %s as argument" % self.m2ee._config.get_model_upload_path())
             return
@@ -548,7 +539,6 @@ class CLI(cmd.Cmd):
                 print yaml.dump(feedback)
 
     def do_interrupt_request(self, args):
-        self.m2ee._reload_config_if_changed()
         if self._report_not_running():
             return
         if args == "":
