@@ -655,9 +655,11 @@ if __name__ == '__main__':
         verbosity = 5
     logger.setLevel(verbosity)
 
-    yaml_files = find_yaml_files()
+    yaml_files = []
     if options.yamlfiles:
-        yaml_files.append(options.yamlfiles)
+        yaml_files = options.yamlfiles
+    else:
+        yaml_files = find_yaml_files()
 
     m2ee = CLI(yaml_files)
     atexit.register(m2ee._cleanup_logging)
