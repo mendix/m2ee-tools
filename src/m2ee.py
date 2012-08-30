@@ -16,6 +16,10 @@ class CLI(cmd.Cmd):
         cmd.Cmd.__init__(self)
         self.m2ee = M2EE(yamlfiles)
         self.do_status(None)
+        username = pwd.getpwuid(os.getuid())[0]
+        self._default_prompt = "m2ee(%s): " % username
+        self.prompt = self._default_prompt
+        logger.info("Application Name: %s" % self.m2ee.config.get_app_name())
 
     def do_restart(self, args):
         if self._stop():
@@ -83,6 +87,48 @@ class CLI(cmd.Cmd):
 
         logger.error("Stopping the application process failed thorougly.")
         return False
+
+    def _start_runtime(self):
+        self.m2ee.fix_mxclientsystem_symlink()
+
+        if not self.m2ee.send_runtime_config():
+            # stop when sending configuration causes error messages
+            return
+
+        # try hitting the runtime until it breaks or stops complaining
+        abort = False
+        params = {}
+        while not abort:
+            startresponse = self.m2ee.client.start(params)
+            result = startresponse.get_result()
+            if result == 0: # \o/
+                abort = True
+                logger.info("The MxRuntime is fully started now.")
+            else:
+                startresponse.display_error()
+                if result == 2: # db does not exist
+                    answer = self._ask_user_whether_to_create_db()
+                    if answer == 'a':
+                        abort = True
+                    elif self.m2ee.config._dirty_hack_is_25 and answer == 'c':
+                        params["autocreatedb"] = True
+                elif result == 3: # ddl commands needed to sync domain model with db structure
+                    answer = self._handle_ddl_commands()
+                    if answer == 'a':
+                        abort = True
+                elif result == 4: # missing constant definition
+                    answer = self._ask_user_to_fix_constants()
+                    if answer == 'a':
+                        abort = True
+                elif result == 5: # admin account with password 1 detected
+                    self._handle_admin_1(startresponse.get_feedback()['users'])
+                elif result == 6: # invalid_state
+                    abort = True
+                elif result == 7 or result == 8 or result == 9: # missing config values
+                    logger.error("You'll have to fix the configuration and run start again... (or ask for help..)")
+                    abort = True
+                else:
+                    abort = True
 
     def _ask_user_whether_to_create_db(self):
         answer = None
@@ -553,46 +599,29 @@ class CLI(cmd.Cmd):
             return True
         return False
 
-    def _start_runtime(self):
-        self.m2ee.fix_mxclientsystem_symlink()
+    def _who(self, limitint=None):
+        limit = {}
+        if limitint != None:
+            limit = {"limit": limitint}
+        m2eeresp = self.m2ee.client.get_logged_in_user_names(limit)
+        m2eeresp.display_error()
+        if not m2eeresp.has_error():
+            feedback = m2eeresp.get_feedback()
+            logger.info("Logged in users: (%s) %s" % (feedback['count'], feedback['users']))
+            return feedback['count']
+        return 0
 
-        if not self.m2ee.send_runtime_config():
-            # stop when sending configuration causes error messages
-            return
-        # try hitting the runtime until it breaks or stops complaining
-        abort = False
-        params = {}
-        while not abort:
-            startresponse = self.m2ee._client.start(params)
-            result = startresponse.get_result()
-            if result == 0: # \o/
-                abort = True
-                logger.info("The MxRuntime is fully started now.")
-            else:
-                startresponse.display_error()
-                if result == 2: # db does not exist
-                    answer = self._ask_user_whether_to_create_db()
-                    if answer == 'a':
-                        abort = True
-                    elif self._config._dirty_hack_is_25 and answer == 'c':
-                        params["autocreatedb"] = True
-                elif result == 3: # ddl commands needed to sync domain model with db structure
-                    answer = self._handle_ddl_commands()
-                    if answer == 'a':
-                        abort = True
-                elif result == 4: # missing constant definition
-                    answer = self._ask_user_to_fix_constants()
-                    if answer == 'a':
-                        abort = True
-                elif result == 5: # admin account with password 1 detected
-                    self._handle_admin_1(startresponse.get_feedback()['users'])
-                elif result == 6: # invalid_state
-                    abort = True
-                elif result == 7 or result == 8 or result == 9: # missing config values
-                    logger.error("You'll have to fix the configuration and run start again... (or ask for help..)")
-                    abort = True
-                else:
-                    abort = True
+    # simple hook to log usage and reload config if changed
+    def precmd(self, line):
+        self.m2ee.reload_config_if_changed()
+        if line:
+            logger.trace("Executing command: %s" % line)
+        return line
+
+    # if the emptyline function is not defined, Cmd will automagically
+    # repeat the previous command given, and that's not what we want
+    def emptyline(self):
+        pass
 
     def do_help(self, args):
         print "Welcome to m2ee, the Mendix Runtime helper tools."

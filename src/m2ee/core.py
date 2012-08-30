@@ -5,7 +5,7 @@
 # http://www.mendix.com/
 #
 
-import pwd, os, codecs, time
+import os, codecs, time
 from config import M2EEConfig
 from client import M2EEClient
 from runner import M2EERunner
@@ -16,11 +16,7 @@ class M2EE():
 
     def __init__(self, yamlfiles=None, config=None):
         self._yamlfiles = yamlfiles
-        self._reload_config(config)
-        username = pwd.getpwuid(os.getuid())[0]
-        self._default_prompt = "m2ee(%s): " % username
-        self.prompt = self._default_prompt
-        logger.info("Application Name: %s" % self._config.get_app_name())
+        self.reload_config(config)
         self._logproc = None
 
     def _reload_config_if_changed(self):
@@ -184,18 +180,6 @@ class M2EE():
 
         return True
 
-    def _who(self, limitint=None):
-        limit = {}
-        if limitint != None:
-            limit = {"limit": limitint}
-        m2eeresp = self._client.get_logged_in_user_names(limit)
-        m2eeresp.display_error()
-        if not m2eeresp.has_error():
-            feedback = m2eeresp.get_feedback()
-            logger.info("Logged in users: (%s) %s" % (feedback['count'], feedback['users']))
-            return feedback['count']
-        return 0
-
     def complete_unpack(self, text, line, begidx, endidx):
         return mdautil.complete_unpack(self._config.get_model_upload_path(), text)
 
@@ -207,16 +191,6 @@ class M2EE():
         params = {"sort" : "subscriber"}
         m2ee_response =  self._client.get_log_settings(params)
         return m2ee_response.get_feedback()
-
-    def emptyline(self):
-        self._reload_config_if_changed()
-        pass
-
-    # simple hook to log usage
-    def precmd(self, line):
-        if line:
-            logger.trace("Executing command: %s" % line)
-        return line
 
     def save_ddl_commands(self, ddl_commands):
         query_file_name = os.path.join(self._config.get_database_dump_path(),
