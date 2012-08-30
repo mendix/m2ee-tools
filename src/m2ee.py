@@ -43,7 +43,7 @@ class CLI(cmd.Cmd):
 
         # first of all, try issuing shutdown command, so the mendix process can cleanup and stop stuff correctly
         logger.info("Waiting for the application to shutdown...")
-        stopped = self.m2ee._runner.stop(timeout=10) # waits a bit for the process to disappear
+        stopped = self.m2ee.runner.stop(timeout=10) # waits a bit for the process to disappear
         # if stopped, the process and pidfile are gone
         if stopped:
             logger.info("The application has been stopped successfully.")
@@ -56,7 +56,7 @@ class CLI(cmd.Cmd):
             answer = raw_input("Do you want to try to signal the JVM process to stop immediately? (y)es, (n)o? ")
             if answer == 'y':
                 logger.info("Waiting for the JVM process to disappear...")
-                stopped = self.m2ee._runner.terminate(timeout=10)
+                stopped = self.m2ee.runner.terminate(timeout=10)
                 if stopped:
                     logger.info("The JVM process has been stopped.")
                     return True
@@ -73,7 +73,7 @@ class CLI(cmd.Cmd):
             answer = raw_input("Do you want to kill the JVM process? (y)es, (n)o? ")
             if answer == 'y':
                 logger.info("Waiting for the JVM process to disappear...")
-                stopped = self.m2ee._runner.kill(timeout=10)
+                stopped = self.m2ee.runner.kill(timeout=10)
                 if stopped:
                     logger.info("The JVM process has been destroyed.")
                     return True
@@ -131,27 +131,27 @@ class CLI(cmd.Cmd):
     def _ask_user_whether_to_create_db(self):
         answer = None
         while not answer in ('c','r','a'):
-            if self._config.get_dtap_mode()[0] in 'DT':
+            if self.m2ee.config.get_dtap_mode()[0] in 'DT':
                 answer = raw_input("Do you want to (c)reate, (r)etry, or (a)bort: ")
             else:
                 answer = raw_input("Do you want to (r)etry, or (a)bort: ")
             if answer in ('a','r'):
                 pass
             elif answer == 'c':
-                if not self._config.get_dtap_mode()[0] in ('D','T'):
+                if not self.m2ee.config.get_dtap_mode()[0] in ('D','T'):
                     logger.error("Automatic Database creation is disabled in Acceptance and Production mode!")
                     answer = None
-                elif not self._config.dirty_hack_is_25():
+                elif not self.m2ee.config.dirty_hack_is_25():
                     # call execute_ddl_commands, because since 3.0, this tries to create a database
                     # and immediately executes initial ddl commands
-                    m2eeresponse = self._client.execute_ddl_commands()
+                    m2eeresponse = self.m2ee.client.execute_ddl_commands()
                     m2eeresponse.display_error()
             else:
                 print "Unknown option", answer
         return answer
     
     def _handle_ddl_commands(self):
-        feedback = self.m2ee._client.get_ddl_commands({"verbose":True}).get_feedback()
+        feedback = self.m2ee.client.get_ddl_commands({"verbose":True}).get_feedback()
         answer = None
         while not answer in ('v','s','e','a'):
             answer = raw_input("Do you want to (v)iew queries, (s)ave them to a file, (e)xecute and save them, or (a)bort: ")
@@ -164,7 +164,7 @@ class CLI(cmd.Cmd):
                 ddl_commands = feedback['ddl_commands']
                 self.m2ee.save_ddl_commands(ddl_commands)
                 if answer == 'e':
-                    m2eeresponse = self.m2ee._client.execute_ddl_commands()
+                    m2eeresponse = self.m2ee.client.execute_ddl_commands()
                     m2eeresponse.display_error()
             else:
                 print "Unknown option", answer
@@ -195,7 +195,7 @@ class CLI(cmd.Cmd):
                         if newpw1 != newpw2:
                             print "The passwords are not equal!"
                         else:
-                            m2eeresponse = self._client.update_admin_user({"username": username, "password": newpw1})
+                            m2eeresponse = self.m2ee.client.update_admin_user({"username": username, "password": newpw1})
                             m2eeresponse.display_error()
                             if not m2eeresponse.has_error():
                                 changed = True
@@ -213,7 +213,7 @@ class CLI(cmd.Cmd):
         if newpw1 != newpw2:
             print "The passwords are not equal!"
         else:
-            m2eeresponse = self.m2ee._client.create_admin_user({"password": newpw1})
+            m2eeresponse = self.m2ee.client.create_admin_user({"password": newpw1})
             m2eeresponse.display_error()
 
     def do_update_admin_user(self, args=None):
@@ -228,7 +228,7 @@ class CLI(cmd.Cmd):
         if newpw1 != newpw2:
             print "The passwords are not equal!"
         else:
-            m2eeresponse = self.m2ee._client.update_admin_user({"username": username, "password": newpw1})
+            m2eeresponse = self.m2ee.client.update_admin_user({"username": username, "password": newpw1})
             m2eeresponse.display_error()
 
     def do_debug(self, args):
@@ -240,16 +240,16 @@ class CLI(cmd.Cmd):
     def do_status(self, args):
         if self._report_not_running():
             return
-        feedback = self.m2ee._client.runtime_status().get_feedback()
+        feedback = self.m2ee.client.runtime_status().get_feedback()
         logger.info("The application process is running, the MxRuntime has status: %s" % feedback['status'])
 
         # look if any critical message was logged
-        critlist = self.m2ee._client.get_critical_log_messages()
+        critlist = self.m2ee.client.get_critical_log_messages()
         if len(critlist) > 0:
             logger.error("%d critical error(s) were logged. Use show_critical_log_messages to view them." % len(critlist))
 
         max_show_users = 10
-        total_users = self.m2ee._who(max_show_users)
+        total_users = self._who(max_show_users)
         if total_users > max_show_users:
             logger.info("Only showing %s logged in users. Use who to see a complete list." % max_show_users)
 
@@ -257,7 +257,7 @@ class CLI(cmd.Cmd):
         if self._report_not_running():
             return
 
-        critlist = self.m2ee._client.get_critical_log_messages()
+        critlist = self.m2ee.client.get_critical_log_messages()
         if len(critlist) == 0:
             logger.info("No messages were logged to a critical loglevel since starting the application.")
             return
@@ -266,7 +266,7 @@ class CLI(cmd.Cmd):
     def do_check_health(self, args):
         if self._report_not_running():
             return
-        health_response = self.m2ee._client.check_health()
+        health_response = self.m2ee.client.check_health()
         if not health_response.has_error():
             feedback = health_response.get_feedback()
             if feedback['health'] == 'healthy':
@@ -292,28 +292,28 @@ class CLI(cmd.Cmd):
     def do_statistics(self, args):
         if self._report_not_running():
             return
-        stats = self.m2ee._client.runtime_statistics().get_feedback()
-        stats.update(self.m2ee._client.server_statistics().get_feedback())
+        stats = self.m2ee.client.runtime_statistics().get_feedback()
+        stats.update(self.m2ee.client.server_statistics().get_feedback())
         pprint.pprint(stats)
 
     def do_munin_config(self, args):
         import m2ee.munin
-        m2ee.munin.print_all(self.m2ee._client, self.m2ee._config.get_munin_options(), args, config=True)
+        m2ee.munin.print_all(self.m2ee.client, self.m2ee.config.get_munin_options(), args, config=True)
 
     def do_munin_values(self, args):
         import m2ee.munin
-        m2ee.munin.print_all(self.m2ee._client, self.m2ee._config.get_munin_options(), args)
+        m2ee.munin.print_all(self.m2ee.client, self.m2ee.config.get_munin_options(), args)
 
     def do_nagios(self, args):
         import m2ee.nagios
         logger.info("The nagios plugin will exit m2ee after running, this is by design, don't report it as bug.")
         # TODO: possible to propagate return value through cmd to exit?
-        sys.exit(m2ee.nagios.check(self.m2ee._runner, self.m2ee._client))
+        sys.exit(m2ee.nagios.check(self.m2ee.runner, self.m2ee.client))
 
     def do_about(self, args):
         if self._report_not_running():
             return
-        feedback = self.m2ee._client.about().get_feedback()
+        feedback = self.m2ee.client.about().get_feedback()
         print "Using %s version %s" % (feedback['name'], feedback['version'])
         print feedback['copyright']
         if 'company' in feedback:
@@ -327,11 +327,11 @@ class CLI(cmd.Cmd):
         if args:
             try:
                 limitint = int(args)
-                self.m2ee._who(limitint)
+                self._who(limitint)
             except ValueError:
                 logger.warn("Could not parse argument to an integer. Use a number as argument to limit the amount of logged in users shown.")
         else:
-            self.m2ee._who()
+            self._who()
 
     def do_w(self, args):
         self.do_who(args)
@@ -343,69 +343,64 @@ class CLI(cmd.Cmd):
 
     def do_reload(self, args):
         logger.debug("Reloading configuration...")
-        self.m2ee._reload_config()
+        self.m2ee.reload_config()
 
     def do_dump_config(self, args):
-        self.m2ee._reload_config_if_changed()
-        self.m2ee._config.dump()
+        self.m2ee.config.dump()
 
     def do_psql(self, args):
-        self.m2ee._reload_config_if_changed()
-        if not self.m2ee._config.is_using_postgresql():
+        if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
             return
         pgutil.psql(
-            self.m2ee._config.get_pg_environment(),
-            self.m2ee._config.get_psql_binary(),
+            self.m2ee.config.get_pg_environment(),
+            self.m2ee.config.get_psql_binary(),
         )
 
     def do_dumpdb(self, args):
-        self.m2ee._reload_config_if_changed()
-        if not self.m2ee._config.is_using_postgresql():
+        if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
             return
         pgutil.dumpdb(
-            self.m2ee._config.get_pg_environment(),
-            self.m2ee._config.get_pg_dump_binary(),
-            self.m2ee._config.get_database_dump_path(),
+            self.m2ee.config.get_pg_environment(),
+            self.m2ee.config.get_pg_dump_binary(),
+            self.m2ee.config.get_database_dump_path(),
         )
 
     def do_restoredb(self, args):
-        self.m2ee._reload_config_if_changed()
-        if not self.m2ee._config.is_using_postgresql():
+        if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
             return
-        if not self.m2ee._config.allow_destroy_db():
+        if not self.m2ee.config.allow_destroy_db():
             logger.error("Destructive database operations are turned off.")
             return
         if not args:
-            logger.error("restoredb needs the name of a dump file in %s as argument" % self.m2ee._config.get_database_dump_path())
+            logger.error("restoredb needs the name of a dump file in %s as argument" % self.m2ee.config.get_database_dump_path())
             return
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if pid_alive or m2ee_alive:
             logger.warn("The application is still running, refusing to restore the database right now.")
             return
         pgutil.restoredb(
-            self.m2ee._config.get_pg_environment(),
-            self.m2ee._config.get_pg_restore_binary(),
-            self.m2ee._config.get_database_dump_path(),
+            self.m2ee.config.get_pg_environment(),
+            self.m2ee.config.get_pg_restore_binary(),
+            self.m2ee.config.get_database_dump_path(),
             args,
         )
 
     def complete_restoredb(self, text, line, begidx, endidx):
-        if not self.m2ee._config.is_using_postgresql():
+        if not self.m2ee.config.is_using_postgresql():
             return []
         return pgutil.complete_restoredb(
-            self.m2ee._config.get_database_dump_path(),
+            self.m2ee.config.get_database_dump_path(),
             text,
         )
 
     def do_emptydb(self, args):
-        self.m2ee._reload_config_if_changed()
-        if not self.m2ee._config.is_using_postgresql():
+        if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
             return
-        if not self.m2ee._config.allow_destroy_db():
+        if not self.m2ee.config.allow_destroy_db():
             logger.error("Destructive database operations are turned off.")
             return
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
@@ -413,25 +408,25 @@ class CLI(cmd.Cmd):
             logger.warn("The application process is still running, refusing to empty the database right now.")
             return
         pgutil.emptydb(
-            self.m2ee._config.get_pg_environment(),
-            self.m2ee._config.get_psql_binary(),
+            self.m2ee.config.get_pg_environment(),
+            self.m2ee.config.get_psql_binary(),
         )
 
     def do_unpack(self, args):
         if not args:
-            logger.error("unpack needs the name of a model upload zipfile in %s as argument" % self.m2ee._config.get_model_upload_path())
+            logger.error("unpack needs the name of a model upload zipfile in %s as argument" % self.m2ee.config.get_model_upload_path())
             return
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if pid_alive or m2ee_alive:
             logger.error("The application process is still running, refusing to unpack a new application model right now.")
             return
         if mdautil.unpack(
-            self.m2ee._config.get_model_upload_path(),
+            self.m2ee.config.get_model_upload_path(),
             args,
-            self.m2ee._config.get_app_base(),
+            self.m2ee.config.get_app_base(),
         ):
-            self.m2ee._reload_config()
-        post_unpack_hook = self.m2ee._config.get_post_unpack_hook()
+            self.m2ee.reload_config()
+        post_unpack_hook = self.m2ee.config.get_post_unpack_hook()
         if post_unpack_hook:
             if os.path.isfile(post_unpack_hook):
                 if os.access(post_unpack_hook, os.X_OK):
@@ -447,7 +442,7 @@ class CLI(cmd.Cmd):
     def do_log(self, args):
         if self._cleanup_logging():
             return
-        logfile = self.m2ee._config.get_logfile()
+        logfile = self.m2ee.config.get_logfile()
         if not logfile:
             logger.warn("logfile location is not specified")
             return
@@ -461,7 +456,7 @@ class CLI(cmd.Cmd):
             cmd = ("tail", "-F", logfile)
             proc = subprocess.Popen(cmd)
             self.m2ee._logproc = proc
-            self.prompt = "LOG %s" % self.m2ee._default_prompt
+            self.prompt = "LOG %s" % self._default_prompt
 
     def do_loglevel(self, args):
         if self._report_not_running():
@@ -524,7 +519,7 @@ class CLI(cmd.Cmd):
         self.m2ee._reload_config_if_changed()
         if self._report_not_running():
             return
-        m2eeresp = self.m2ee._client.get_current_runtime_requests()
+        m2eeresp = self.m2ee.client.get_current_runtime_requests()
         if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
             logger.error("This action is not available in the Mendix Runtime version you are currently using.")
             logger.error("It was implemented in Mendix 2.5.8 and 3.1.0")
@@ -544,12 +539,12 @@ class CLI(cmd.Cmd):
         if args == "":
             logger.error("This function needs a request id as parameter")
             logger.error("Use show_running_runtime_requests to view currently running requests")
-        m2eeresp = self.m2ee._client.get_current_runtime_requests()
+        m2eeresp = self.m2ee.client.get_current_runtime_requests()
         if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
             logger.error("This action is not available in the Mendix Runtime version you are currently using.")
             logger.error("It was implemented in Mendix 2.5.8 and 3.1.0")
             return
-        m2eeresp = self.m2ee._client.interrupt_request({"request_id":args})
+        m2eeresp = self.m2ee.client.interrupt_request({"request_id":args})
         m2eeresp.display_error()
         if not m2eeresp.has_error():
             feedback = m2eeresp.get_feedback()
@@ -575,7 +570,7 @@ class CLI(cmd.Cmd):
         print "a lot of requests."
         answer = raw_input("Start profiler? (y/N): ")
         if answer == 'y':
-            M2EEProfiler(self.m2ee._client).cmdloop()
+            M2EEProfiler(self.m2ee.client).cmdloop()
 
     def _cleanup_logging(self):
         # atexit
