@@ -119,7 +119,9 @@ class CLI(cmd.Cmd):
                     if answer == 'a':
                         abort = True
                 elif result == 5: # admin account with password 1 detected
-                    self._handle_admin_1(startresponse.get_feedback()['users'])
+                    answer = self._handle_admin_1(startresponse.get_feedback()['users'])
+                    if answer == 'a':
+                        abort = True
                 elif result == 6: # invalid_state
                     abort = True
                 elif result == 7 or result == 8 or result == 9: # missing config values
@@ -201,6 +203,7 @@ class CLI(cmd.Cmd):
                                 changed = True
             else:
                 print "Unknown option", answer
+        return answer
 
     def do_create_admin_user(self, args=None):
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
