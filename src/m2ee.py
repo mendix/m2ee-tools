@@ -540,18 +540,18 @@ class CLI(cmd.Cmd):
             return
         if args == "":
             logger.error("This function needs a request id as parameter")
-            logger.error("Use show_running_runtime_requests to view currently running requests")
-        m2eeresp = self.m2ee.client.get_current_runtime_requests()
+            logger.error("Use show_current_runtime_requests to view currently running requests")
+            return
+        m2eeresp = self.m2ee.client.interrupt_request({"request_id":args})
         if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
             logger.error("This action is not available in the Mendix Runtime version you are currently using.")
             logger.error("It was implemented in Mendix 2.5.8 and 3.1.0")
             return
-        m2eeresp = self.m2ee.client.interrupt_request({"request_id":args})
         m2eeresp.display_error()
         if not m2eeresp.has_error():
             feedback = m2eeresp.get_feedback()
             if feedback["result"] == False:
-                logger.error("A request with ID %s was not found % args")
+                logger.error("A request with ID %s was not found" % args)
             else:
                 logger.info("An attempt to cancel the running action was made.")
 
