@@ -578,7 +578,7 @@ class CLI(cmd.Cmd):
         # atexit
         if self.m2ee._logproc:
             logger.debug("Stopping log output...")
-            self.prompt = self.m2ee._default_prompt
+            self.prompt = self._default_prompt
             if not self.m2ee._logproc.poll():
                 os.kill(self.m2ee._logproc.pid, signal.SIGTERM)
             self.m2ee._logproc = None
