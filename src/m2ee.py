@@ -632,35 +632,45 @@ class CLI(cmd.Cmd):
         print " stop - stop the application"
         print " restart - restart the application"
         print " status - display Mendix Runtime status (is the application running?)"
-        print " check_health - manually execute health check"
         print " create_admin_user - create first user when starting with an empty database"
         print " update_admin_user - reset the password of an application user"
         print " who, w - show currently logged in users"
         print " log - follow live logging from the application"
         print " loglevel - view and configure loglevels"
-        print " show_current_runtime_requests - show action stack of currently handled requests"
-        print " interrupt_request - cancel a running runtime request"
-        print " show_all_thread_stack_traces - show all low-level JVM threads with stack trace"
-        print " profiler - start the profiler (experimental) "
         print " about - show Mendix Runtime version information"
         print " exit, quit, <ctrl>-d - exit m2ee"
         print
-        print "When using PostgreSQL, you can also use:"
-        print " psql - start the postgresql shell"
-        print " dumpdb - create a database dump into the data/database folder"
-        print " emptydb - drop all tables and sequences from the database"
-        print " restoredb - restore a database dump from the data/database folder"
-        print 
-        print "Extra commands you probably don't need:"
-        print " debug - dive into a local python debug session inside this program"
-        print " dump_config - dump the yaml configuration information"
-        print " reload - reload configuration from yaml files (this is done automatically)"
-        print " statistics - show all application statistics that can be used for monitoring"
-        print " munin_config - configure option for the built-in munin plugin"
-        print " munin_values - show monitoring output gathered by the built-in munin plugin"
-        print " nagios - execute the built-in nagios plugin (will exit m2ee)"
-        print
+
+        if self.m2ee.config.is_using_postgresql():
+            print "When using PostgreSQL, you can also use:"
+            print " psql - start the postgresql shell"
+            print " dumpdb - create a database dump into the data/database folder"
+            print " emptydb - drop all tables and sequences from the database"
+            print " restoredb - restore a database dump from the data/database folder"
+            print
+
+        if args == 'expert':
+            print "Advanced commands:"
+            print " statistics - show all application statistics that can be used for monitoring"
+            print " show_current_runtime_requests - show action stack of currently handled requests"
+            print " interrupt_request - cancel a running runtime request"
+            print " show_all_thread_stack_traces - show all low-level JVM threads with stack trace"
+            print " profiler - start the profiler (experimental) "
+            print " check_health - manually execute health check"
+            print
+            print "Extra commands you probably don't need:"
+            print " debug - dive into a local python debug session inside this program"
+            print " dump_config - dump the yaml configuration information"
+            print " reload - reload configuration from yaml files (this is done automatically)"
+            print " munin_config - configure option for the built-in munin plugin"
+            print " munin_values - show monitoring output gathered by the built-in munin plugin"
+            print " nagios - execute the built-in nagios plugin (will exit m2ee)"
+            print
+
         print "Hint: use tab autocompletion for commands!"
+
+        if args != 'expert':
+            print "Use help expert to show expert and debugging commands" 
 
 if __name__ == '__main__':
     from optparse import OptionParser
