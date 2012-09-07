@@ -169,6 +169,9 @@ class M2EEClient:
     def interrupt_request(self, params):
         return self.request("interrupt_request", params)
 
+    def get_all_thread_stack_traces(self):
+        return self.request("get_all_thread_stack_traces")
+
     def connect_xmpp(self, params):
         return self.request("connect_xmpp", params)
 
