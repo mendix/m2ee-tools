@@ -324,6 +324,46 @@ class CLI(cmd.Cmd):
         if 'partner' in feedback:
             print 'Project partner name is %s' % feedback['partner']
 
+    def do_show_license_information(self, args):
+        if self._report_not_running():
+            return
+        m2eeresp = self.m2ee.client.get_license_information()
+        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
+            logger.error("This action is not available in the Mendix Runtime version you are currently using.")
+            logger.error("It was implemented in Mendix 3.0.0")
+            return
+        m2eeresp.display_error()
+        if not m2eeresp.has_error():
+            feedback = m2eeresp.get_feedback()
+            if 'license' in feedback:
+                print yaml.dump((feedback['license']))
+            elif 'license_id' in feedback:
+                print "Unlicensed environment."
+                print "Server ID: %s" % feedback['license_id']
+            else:
+                print "Unlicensed environment."
+
+    def do_activate_license(self, args):
+        if self._report_not_running():
+            return
+        print "The command activate_license will set the license key used in this application. " \
+              "As far as currently known, recent Mendix Runtime versions do not check the submitted " \
+              "license key for validity, so incorrect input will unconditionally un-license " \
+              "your Mendix application! After setting the license, there will be no feedback about " \
+              "validity of the license. You can use show_license_information to check the active license."
+        answer = raw_input("Do you want to continue anyway? (type YES if you want to): ")
+        if answer != 'YES':
+            print "Aborting."
+            return
+        license_key = raw_input("Paste your license key (a long text string without newlines line): ")
+        m2eeresp = self.m2ee.client.set_license({'license_key': license_key})
+        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
+            logger.error("This action is not available in the Mendix Runtime version you are currently using.")
+            logger.error("It was implemented in Mendix 3.0.0")
+            return
+        m2eeresp.display_error()
+        # no usable feedback, anyway, not as of 4.1.0
+
     def do_who(self, args):
         if self._report_not_running():
             return
@@ -657,6 +697,7 @@ class CLI(cmd.Cmd):
             print " show_all_thread_stack_traces - show all low-level JVM threads with stack trace"
             print " profiler - start the profiler (experimental) "
             print " check_health - manually execute health check"
+            print " show_license_information - show details about current mendix license key"
             print
             print "Extra commands you probably don't need:"
             print " debug - dive into a local python debug session inside this program"
@@ -665,6 +706,7 @@ class CLI(cmd.Cmd):
             print " munin_config - configure option for the built-in munin plugin"
             print " munin_values - show monitoring output gathered by the built-in munin plugin"
             print " nagios - execute the built-in nagios plugin (will exit m2ee)"
+            print " activate_license - DANGEROUS - replace/set license key"
             print
 
         print "Hint: use tab autocompletion for commands!"

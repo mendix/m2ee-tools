@@ -172,6 +172,12 @@ class M2EEClient:
     def get_all_thread_stack_traces(self):
         return self.request("get_all_thread_stack_traces")
 
+    def get_license_information(self):
+        return self.request("get_license_information")
+
+    def set_license(self, params):
+        return self.request("set_license", params)
+
     def connect_xmpp(self, params):
         return self.request("connect_xmpp", params)
 
