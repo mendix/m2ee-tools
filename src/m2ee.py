@@ -489,11 +489,11 @@ class CLI(cmd.Cmd):
         if not logfile:
             logger.warn("logfile location is not specified")
             return
-        print "This command will start printing log information from the application"
-        print "right in the middle of all of the other output on your screen. This can"
-        print "be confusing, especially when you're typing something and everything"
-        print "gets messed up by the logging. Typing log again will turn off logging"
-        print "output."
+        print "This command will start printing log information from the application " \
+              "right in the middle of all of the other output on your screen. This can " \
+              "be confusing, especially when you're typing something and everything " \
+              "gets messed up by the logging. Typing log again will turn off logging " \
+              "output."
         answer = raw_input("Do you want to start log output (y/N): ")
         if answer == 'y':
             cmd = ("tail", "-F", logfile)
