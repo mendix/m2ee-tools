@@ -1,10 +1,16 @@
 m2ee-tools UNRELEASED
-  * 'pretty' print statistics output
-  * Add show_current_runtime_requests and interrupt_request to show and
+  * Move source code to github: https://github.com/mendix/m2ee-tools/
+  * Implement show_current_runtime_requests and interrupt_request to show and
     terminate running requests. (>= 2.5.8, 3.1.0)
-	But... interrupt_request seems to be broken in 4.0 and 4.1... :-|
   * Implement hybrid appcontainer support (allowing the appcontainer
-    to connect to xmpp)
+    to connect to xmpp) see commit message in git for details
+  * Code-refactoring to APIfy parts of the code, so we can create other programs
+    beside the current m2ee CLI variant to use functions. (appcontroller,
+	munin/nagios plugins)
+  * More code refactoring, small fixes and cosmetics
+  * 'pretty' print statistics output
+  * Implement show_all_thread_stack_traces (>= 3.2.0)
+  * Implement show_license_information and activate_license. (>= 3.0.0)
 
 m2ee-tools 0.3.6.1, 19 Mar 2012
   * m2ee-tools is python 2.4 compatible again (remove a conditional expression)
