@@ -6,7 +6,7 @@ m2ee-tools UNRELEASED
     to connect to xmpp) see commit message in git for details
   * Code-refactoring to APIfy parts of the code, so we can create other programs
     beside the current m2ee CLI variant to use functions. (appcontroller,
-	munin/nagios plugins)
+    munin/nagios plugins)
   * More code refactoring, small fixes and cosmetics
   * 'pretty' print statistics output
   * Implement show_all_thread_stack_traces (>= 3.2.0)
@@ -29,7 +29,7 @@ m2ee-tools 0.3.5, 2 Jan 2012
 m2ee-tools 0.3.4, 17 Oct 2011
   * Fix MicroFlowConstants -> MicroflowConstants typo, which causes mf
     constants not to be recognized if put in custom section in m2ee.yaml
-	Thanks to Jonathan van Alteren <jvalteren@flowfabric.com>
+    Thanks to Jonathan van Alteren <jvalteren@flowfabric.com>
 
 m2ee-tools 0.3.3, 7 Sep 2011
 
