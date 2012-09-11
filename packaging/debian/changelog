@@ -1,3 +1,26 @@
+m2ee-tools (0.4.0-1) unstable; urgency=low
+
+  * upstream changes in 0.4.0:
+    - Move source code to github: https://github.com/mendix/m2ee-tools/
+    - Implement show_current_runtime_requests and interrupt_request to show and
+      terminate running requests. (>= 2.5.8, 3.1.0)
+    - Implement hybrid appcontainer support (allowing the appcontainer
+      to connect to xmpp) see commit message in git for details
+    - Code-refactoring to APIfy parts of the code, so we can create other
+      programs beside the current m2ee CLI variant to use functions.
+      (appcontroller, munin/nagios plugins)
+    - More code refactoring, small fixes and cosmetics
+    - 'pretty' print statistics output
+    - Implement show_all_thread_stack_traces (>= 3.2.0)
+    - Implement show_license_information and activate_license. (>= 3.0.0)
+  * upstream changes in 0.3.6.1:
+    - m2ee-tools is python 2.4 compatible again (remove a conditional
+      expression)
+    - Add missing autosubscribe option in file logging example config
+    - Use sys.exit() instead of exit()
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Tue, 11 Sep 2012 11:42:29 +0200
+
 m2ee-tools (0.3.6-1) unstable; urgency=low
 
   * Fix crash when message field in critical logmessage is not present
