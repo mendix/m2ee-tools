@@ -1,3 +1,4 @@
 [ ] man m2ee.yaml instead of lots of documentation in the example file itself
 [ ] implement munin/nagios plugins by importing m2ee instead of abusing the CLI tool
+[ ] change debian package description (it says Mendix 2.5)
 
