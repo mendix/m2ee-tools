@@ -12,6 +12,7 @@ import subprocess
 import simplejson
 import copy
 from log import logger
+from collections import defaultdict
 try:
     import sqlite3
     python_sqlite3 = True
@@ -23,7 +24,7 @@ except ImportError:
 class M2EEConfig:
 
     def __init__(self, yaml_files=None, config=None):
-        self._conf = {}
+        self._conf = defaultdict(dict)
         if yaml_files:
             (self._mtimes, yaml_config) = read_yaml_files(yaml_files)
             self._conf = merge_config(self._conf, yaml_config)
