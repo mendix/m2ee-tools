@@ -241,10 +241,10 @@ class M2EEConfig:
         return self._conf['m2ee']['app_base']
 
     def get_runtime_blocking_connector(self):
-        return self._conf['m2ee'].get('runtime_blocking_connector', False)
+        return self._conf['m2ee'].get('runtime_blocking_connector', True)
 
     def get_symlink_mxclientsystem(self):
-        return self._conf['m2ee'].get('symlink_mxclientsystem', False)
+        return self._conf['m2ee'].get('symlink_mxclientsystem', True)
 
     def get_post_unpack_hook(self):
         return self._conf['m2ee'].get('post_unpack_hook', False)
@@ -383,8 +383,8 @@ class M2EEConfig:
         return self._conf['m2ee'].get('munin', None)
 
     def get_dtap_mode(self):
-        # option is mandatory, fail if not present
-        return self._conf['mxruntime']['DTAPMode']
+        # DTAP mode defaults to Production
+        return self._conf['mxruntime'].get('DTAPMode','P')
 
     def allow_destroy_db(self):
         return self._conf['m2ee'].get('allow_destroy_db', False)
