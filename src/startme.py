@@ -10,10 +10,7 @@ class API():
 
     def __init__(self, username, admin_port, password, runtime_port=None, 
             jid=None, jvm_size=128):
-        base = '/srv/cloud/slots/%s/deploy/' % username
-        policy_location = os.path.join('/srv/cloud/slots/', username, 'config', '.policy')
-        tmp_dir = os.path.join(base, 'data', 'tmp')
-        pid_file = '%s/%s.pid' % (base, username)
+        (base, pid_file, policy_location, tmp_dir) = get_file_locations(username)
         logsubscriber_name = 'filesubscriber'
         config = {'mxnode' : 
                     { 'mxjar_repo' : '/usr/local/share/mendix/'},
@@ -51,7 +48,22 @@ class API():
         return self.m2ee.start_appcontainer()
 
     def stop(self):
-        return self.m2ee._runner.terminate()
+        return self.m2ee.runner._terminate()
+
+def get_file_locations(username):
+    slots_dir = '/srv/cloud/slots/'
+    base = os.path.realpath(os.path.join(slots_dir, username, 'deploy'))
+    if not base.startswith(slots_dir):
+        raise Exception('Directory traversal attempt detected')
+    policy_location = os.path.join(slots_dir, username, 'config', '.policy')
+    if not policy_location.startswith(slots_dir):
+        raise Exception('Directory traversal attempt detected')
+    tmp_dir = os.path.join(base, 'data', 'tmp')
+    pid_file = os.path.join(base, '%s.pid' % username)
+    if not pid_file.startswith(slots_dir):
+        raise Exception('Directory traversal attempt detected')
+    return (base, pid_file, policy_location, tmp_dir)
+
 
 def set_verbosity(options):
     # how verbose should we be? see http://docs.python.org/release/2.7/library/logging.html#logging-levels
