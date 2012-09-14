@@ -48,7 +48,11 @@ class API():
         return self.m2ee.start_appcontainer()
 
     def stop(self):
-        return self.m2ee.runner._terminate()
+        if self.m2ee.runner.check_pid():
+            return self.m2ee.runner.stop()
+        else:
+            self.m2ee.runner.cleanup_pid()
+        return True
 
 def get_file_locations(username):
     slots_dir = '/srv/cloud/slots/'

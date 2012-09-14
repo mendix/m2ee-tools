@@ -40,7 +40,7 @@ class M2EERunner:
             except IOError, e:
                 logger.error("Cannot write pidfile: %s" % e)
 
-    def _cleanup_pid(self):
+    def cleanup_pid(self):
         logger.debug("cleaning up pid & pidfile")
         self._pid = None
         pidfile = self._config.get_pidfile()
@@ -164,6 +164,6 @@ class M2EERunner:
             if t >= timeout:
                 logger.trace("Timeout: Process %s takes too long to disappear." % self._pid)
                 return False
-        self._cleanup_pid()
+        self.cleanup_pid()
         return True
 
