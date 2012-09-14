@@ -58,7 +58,7 @@ class M2EERunner:
         if not pid:
             return False
         try:
-            os.kill(pid, 0)
+            os.kill(pid, 0) # doesn't actually kill process
             return True
         except OSError:
             logger.trace("No process with pid %s, or not ours." % pid)
