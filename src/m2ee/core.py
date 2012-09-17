@@ -88,6 +88,12 @@ class M2EE():
 
         return True
 
+    def stop(self):
+        if self.runner.check_pid():
+            return self.runner.stop()
+        else:
+            self.runner.cleanup_pid()
+        return True
 
     def fix_mxclientsystem_symlink(self):
         # check mxclientsystem symlink and refresh if necessary
