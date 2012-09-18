@@ -118,8 +118,6 @@ class M2EEConfig:
 
     def _merge_runtime_configuration(self):
         config_json = self._try_load_json(os.path.join(self._conf['m2ee']['app_base'],'model','config.json'))
-        if not config_json:
-            return
 
         # figure out which constants to use
         merge_constants = {}
