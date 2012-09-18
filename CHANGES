@@ -1,3 +1,7 @@
+m2ee-tools 0.4.1, 18 Sep 2012
+  * Fix bug introduced in 0.4.0 that prevents backwards-compatible loading of
+    MicroflowConstants from the custom section in yaml config.
+
 m2ee-tools 0.4.0, 11 Sep 2012
   * Move source code to github: https://github.com/mendix/m2ee-tools/
   * Implement show_current_runtime_requests and interrupt_request to show and
