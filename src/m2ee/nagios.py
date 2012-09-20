@@ -12,7 +12,6 @@ STATE_UNKNOWN=3
 STATE_DEPENDENT=4
 
 RUNNING=-1
-HEALTHY=-2
 
 def check(runner, client):
 
@@ -22,8 +21,12 @@ def check(runner, client):
 
     runtime_health = check_health(client)
 
-    if runtime_health != HEALTHY:
+    if runtime_health != STATE_OK:
         return runtime_health
+
+	critical_log_status = check_critical_logs(client)
+	if critical_log_status != STATE_OK:
+		return critical_log_status
 
     # everything seems to be fine, print version info and exit
     about_feedback = client.about().get_feedback()
@@ -45,12 +48,6 @@ def check_process(runner, client):
 
     if not pid_alive and not m2ee_alive:
         print "MxRuntime CRITICAL: pid %s is not available, m2ee does not respond." % pid
-        return STATE_CRITICAL
-
-    errors = client.get_critical_log_messages()
-    if len(errors) != 0:
-        print "MxRuntime CRITICAL: %d critical error(s) were logged" % len(errors)
-        print '\n'.join(errors)
         return STATE_CRITICAL
 
     if not pid_alive and m2ee_alive:
@@ -99,5 +96,13 @@ def check_health(client):
         else:
             print "MxRuntime WARNING: Health check failed unexpectedly: %s" % health_response.get_error()
             return STATE_WARNING
-    return HEALTHY
+    return STATE_OK
+
+def check_critical_logs(client):
+    errors = client.get_critical_log_messages()
+    if len(errors) != 0:
+        print "MxRuntime CRITICAL: %d critical error(s) were logged" % len(errors)
+        print '\n'.join(errors)
+        return STATE_CRITICAL
+	return STATE_OK
 
