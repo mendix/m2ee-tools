@@ -175,7 +175,7 @@ class CLI(cmd.Cmd):
     def _ask_user_to_fix_constants(self):
         answer = None
         # list of constant names was already printed as part of the error message from the runtime
-        logger.error("You'll have to add the constant definitions to the configuration in the 'custom' section.")
+        logger.error("You'll have to add the constant definitions to the configuration in the MicroflowConstants section.")
         while not answer in ('r','a'):
             answer = raw_input("Do you want to (r)etry, or (a)bort: ")
             if answer not in ('a','r'):

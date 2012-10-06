@@ -8,7 +8,6 @@ m2ee:
  # m2ee http admin interface and password
  admin_port: __MXADMPORT__
  admin_pass: __MXADMPASS__
- monitoring_pass: __MXMONPASS__
  # mxruntime web interface port
  runtime_port: __MXPORT__
  # custom java options, like -Xmx256m or -Djava.foo=bar
@@ -18,9 +17,7 @@ m2ee:
    "-Dfile.encoding=UTF-8", "-XX:MaxPermSize=64M", "-Xmx128M", "-Xms128M",
    "-Djava.io.tmpdir=/srv/mendix/__MXUSER__/data/tmp",
  ]
- # setting False disables the emtpydb and restoredb commands
- allow_destroy_db: true
- # experimental: log file location to use for a quick tail call
+ # file which will be read back by the m2ee log command to provide live logging info
  logfile: /var/log/xas2/__MXUSER__.log
 mimetypes:
  bmp: image/bmp
@@ -40,26 +37,27 @@ logging:
 #   filename: /path/to/your/favorite/logfile
 #   max_size: 10485760 # bytes(!!)
 #   max_rotation: 7
-custom:
- # put microflow constants in here
- #"Module.Constant": text
- #"AnotherModule.AnotherConstant": bla
 mxruntime:
  # License key file (2.5.x only) 
  #KeyFile: /home/__MXUSER__/.m2ee/key.mx
- 
- # The following options will *not* be read from the modeler file in A/P mode:
- #
+
+ # Application root URL will be used when generating wsdl documentation on the fly at /ws-doc/
  ApplicationRootUrl: https://__MXURL__/
+
+ # Database login credentials
  DatabaseType: PostgreSQL
- DatabaseHost: localhost
+ DatabaseHost: "[::1]:5432"
  DatabaseName: __MXUSER__
  DatabaseUserName: __MXUSER__
  DatabasePassword: __MXPGPASS__
  
+ MicroflowConstants:
+  # put microflow constants in here
+  #"Module.Constant": text
+  #"AnotherModule.AnotherConstant": bla
+
  # ScheduledEventExecution can be set to ALL, NONE (default) or SPECIFIED
  ScheduledEventExecution: NONE
  # When using ScheduledEventExecution SPECIFIED, provide a comma-separated list
  # of actions to enable:
  #MyScheduledEvents: "Module.Comma,Module.Seperated,Module.Stuff"
-
