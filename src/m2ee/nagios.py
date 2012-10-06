@@ -24,9 +24,9 @@ def check(runner, client):
     if runtime_health != STATE_OK:
         return runtime_health
 
-	critical_log_status = check_critical_logs(client)
-	if critical_log_status != STATE_OK:
-		return critical_log_status
+    critical_log_status = check_critical_logs(client)
+    if critical_log_status != STATE_OK:
+        return critical_log_status
 
     # everything seems to be fine, print version info and exit
     about_feedback = client.about().get_feedback()
@@ -104,5 +104,5 @@ def check_critical_logs(client):
         print "MxRuntime CRITICAL: %d critical error(s) were logged" % len(errors)
         print '\n'.join(errors)
         return STATE_CRITICAL
-	return STATE_OK
+    return STATE_OK
 
