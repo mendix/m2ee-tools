@@ -11,12 +11,12 @@ STATE_CRITICAL=2
 STATE_UNKNOWN=3
 STATE_DEPENDENT=4
 
-RUNNING=-1
+DUNNO=-1
 
 def check(runner, client):
 
     runtime_state = check_process(runner, client)
-    if runtime_state != RUNNING:
+    if runtime_state != DUNNO:
         return runtime_state
 
     runtime_health = check_health(client)
@@ -67,7 +67,7 @@ def check_process(runner, client):
         print "MxRuntime CRITICAL: application is in state %s" % status_feedback['status']
         return STATE_CRITICAL
 
-    return RUNNING
+    return DUNNO 
 
 def check_health(client):
     health_response = client.check_health()
