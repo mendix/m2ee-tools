@@ -10,6 +10,10 @@ import shutil
 import subprocess
 from log import logger
 
+# allow - in filenames we're completing without messing up completion
+import readline
+readline.set_completer_delims(readline.get_completer_delims().replace('-', ''))
+
 def unpack(model_upload_path, mda_name, app_base):
     
     mda_file_name = os.path.join(model_upload_path, mda_name)
