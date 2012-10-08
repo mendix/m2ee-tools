@@ -481,6 +481,12 @@ class CLI(cmd.Cmd):
                     logger.error("post-unpack-hook script %s is not executable." % post_unpack_hook)
             else:
                 logger.error("post-unpack-hook script %s does not exist." % post_unpack_hook)
+
+    def complete_unpack(self, text, line, begidx, endidx):
+        # these complete functions seem to eat exceptions, which is very bad behaviour
+        # if anything here throws an excaption, you just won't get completion, without
+        # knowing why
+        return mdautil.complete_unpack(self.m2ee.config.get_model_upload_path(), text)
     
     def do_log(self, args):
         if self._cleanup_logging():

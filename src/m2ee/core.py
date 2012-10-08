@@ -182,9 +182,6 @@ class M2EE():
 
         return True
 
-    def complete_unpack(self, text, line, begidx, endidx):
-        return mdautil.complete_unpack(self.config.get_model_upload_path(), text)
-
     def set_log_level(self, subscriber, node, level):
         params = {"subscriber":subscriber,"node":node,"level":level}
         return self.client.set_log_level(params)
