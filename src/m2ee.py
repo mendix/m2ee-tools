@@ -507,7 +507,7 @@ class CLI(cmd.Cmd):
         args = string.split(args)
         if len(args) == 3:
             (subscriber, node, level) = args
-            self.m2ee.set_log_level(subscriber, node, level)
+            self._set_log_level(subscriber, node, level)
         else:
             if len(args) == 0:
                 self._get_log_levels()
