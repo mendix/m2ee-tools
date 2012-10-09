@@ -363,14 +363,6 @@ class M2EEConfig:
     def get_runtime_config(self):
         return self._conf['mxruntime']
 
-    def get_custom_config(self):
-        # 2.5 uses update_custom_configuration to send mfconstants to the runtime,
-        #     which are only read from the custom yaml section
-        # 3.0 puts them as a dict into 'MicroflowConstants' in update_configuration itself, see above
-        if self._dirty_hack_is_25:
-            return self._conf['custom']
-        return None
-
     def get_logging_config(self):
         return self._conf['logging']
 

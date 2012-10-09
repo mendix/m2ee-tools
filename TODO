@@ -3,6 +3,5 @@
 [ ] add command to display cache_statistics
 [ ] man m2ee.yaml instead of lots of documentation in the example file itself
 [ ] change debian package description (it says Mendix 2.5)
-[ ] when specifying MicroflowConstants in the runtime section, put them back into custom for 2.5.x
 [ ] allow scheduled event names to be specified by a yaml list instead of comma separated string
 [ ] implement munin/nagios plugins by importing m2ee instead of abusing the CLI tool

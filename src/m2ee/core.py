@@ -161,20 +161,24 @@ class M2EE():
         # - configuration errors (X is not a file etc)
         # XXX: fix mxruntime to report all errors and warnings in adminaction feedback instead of stopping to process input
         # if errors, abort.
+
+        config = self.config.get_runtime_config()
+        custom_config_25 = None
+        if self.config.dirty_hack_is_25():
+            custom_config_25 = config.pop('MicroflowConstants',None)
+
         logger.debug("Sending MxRuntime configuration...")
-        m2eeresponse = self.client.update_configuration(self.config.get_runtime_config())
+        m2eeresponse = self.client.update_configuration(config)
         result = m2eeresponse.get_result()
         if result == 1:
             logger.error("Sending configuration failed: %s" % m2eeresponse.get_cause())
             logger.error("You'll have to fix the configuration and run start again...")
             return False
 
-        # send custom configuration
-        custom_config = self.config.get_custom_config()
-        # custom_config will be None if running 3.0+ because update_custom_configuration is gone in 3.0
-        if custom_config:
-            logger.debug("Sending custom configuration...")
-            m2eeresponse = self.client.update_custom_configuration(self.config.get_custom_config())
+        # if running 2.5.x we send the MicroflowConstants via update_custom_configuration
+        if custom_config_25:
+            logger.debug("Sending 2.5.x custom configuration...")
+            m2eeresponse = self.client.update_custom_configuration(custom_config_25)
             result = m2eeresponse.get_result()
             if result == 1:
                 logger.error("Sending custom configuration failed: %s" % m2eeresponse.get_cause())
