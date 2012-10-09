@@ -680,6 +680,9 @@ class CLI(cmd.Cmd):
         print " log - follow live logging from the application"
         print " loglevel - view and configure loglevels"
         print " about - show Mendix Runtime version information"
+        print " show_current_runtime_requests - show action stack of currently handled requests"
+        print " interrupt_request - cancel a running runtime request"
+        print " show_license_information - show details about current mendix license key"
         print " exit, quit, <ctrl>-d - exit m2ee"
         print
 
@@ -694,12 +697,9 @@ class CLI(cmd.Cmd):
         if args == 'expert':
             print "Advanced commands:"
             print " statistics - show all application statistics that can be used for monitoring"
-            print " show_current_runtime_requests - show action stack of currently handled requests"
-            print " interrupt_request - cancel a running runtime request"
             print " show_all_thread_stack_traces - show all low-level JVM threads with stack trace"
             print " profiler - start the profiler (experimental) "
             print " check_health - manually execute health check"
-            print " show_license_information - show details about current mendix license key"
             print
             print "Extra commands you probably don't need:"
             print " debug - dive into a local python debug session inside this program"
