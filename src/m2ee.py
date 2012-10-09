@@ -515,8 +515,6 @@ class CLI(cmd.Cmd):
             print "Available levels: NONE, CRITICAL, ERROR, WARNING, INFO, DEBUG, TRACE"
 
     def _get_log_levels(self):
-        if self._report_not_running():
-            return
         log_levels = self.m2ee.get_log_levels()
         print "Current loglevels:"
         log_subscribers = []
@@ -528,8 +526,6 @@ class CLI(cmd.Cmd):
         print("\n".join(log_subscribers))
 
     def _set_log_level(self, subscriber, node, level):
-        if self._report_not_running():
-            return
         level = level.upper()
         response = self.m2ee.set_log_level(subscriber, node, level)
         if response.has_error():
