@@ -5,3 +5,4 @@
 [ ] change debian package description (it says Mendix 2.5)
 [ ] allow scheduled event names to be specified by a yaml list instead of comma separated string
 [ ] implement munin/nagios plugins by importing m2ee instead of abusing the CLI tool
+[ ] when choosing abort after errors (e.g. ddl commands, invalid database host, mf constants) completely shutdown runtime again, instead of leaving it at the stage it was during startup. this behaviour is more intuitive.
