@@ -23,15 +23,19 @@ def unpack(model_upload_path, mda_name, app_base):
 
     logger.debug("Testing archive...")
     cmd = ("unzip", "-tqq", mda_file_name)
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    (stdout,stderr) = proc.communicate()
+    try:
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (stdout,stderr) = proc.communicate()
 
-    if proc.returncode != 0:
-        logger.error("An error occured while testing archive consistency: ")
-        if stdout != '':
-            logger.error(stdout)
-        if stderr != '':
-            logger.error(stderr)
+        if proc.returncode != 0:
+            logger.error("An error occured while testing archive consistency: ")
+            if stdout != '':
+                logger.error(stdout)
+            if stderr != '':
+                logger.error(stderr)
+            return False
+    except OSError, ose:
+        logger.error("An error occured while executing unzip: %s" % ose)
         return False
 
     logger.info("This command will replace the contents of the model/ and web/ locations, using the files extracted from the archive")
