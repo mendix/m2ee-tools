@@ -41,6 +41,9 @@ class M2EEConfig:
         self._check_runtime_config()
         self._conf['mxruntime'].setdefault('BasePath', self._conf['m2ee']['app_base'])
 
+        # set default DTAPMode if not present
+        self._conf['mxruntime'].setdefault('DTAPMode','P')
+
         self.fix_permissions()
 
         self._appcontainer_version = self._conf['m2ee'].get('appcontainer_version',None)
@@ -385,8 +388,7 @@ class M2EEConfig:
         return self._conf['m2ee'].get('munin', None)
 
     def get_dtap_mode(self):
-        # DTAP mode defaults to Production
-        return self._conf['mxruntime'].get('DTAPMode','P')
+        return self._conf['mxruntime']['DTAPMode']
 
     def allow_destroy_db(self):
         return self._conf['m2ee'].get('allow_destroy_db', False)
