@@ -186,7 +186,7 @@ class M2EEConfig:
                 sys.exit(1)
 
         # m2ee
-        for option in ['app_base','admin_port','admin_pass','pidfile']:
+        for option in ['app_base','admin_port','admin_pass']:
             if not self._conf['m2ee'].get(option, None):
                 logger.critical("Option %s in configuration section m2ee is not defined!" % option)
                 sys.exit(1)
@@ -237,6 +237,18 @@ class M2EEConfig:
 
     def get_app_base(self):
         return self._conf['m2ee']['app_base']
+
+    def get_default_dotm2ee_directory(self):
+        dotm2ee = os.path.join(pwd.getpwuid(os.getuid())[5], ".m2ee")
+        if not os.path.isdir(dotm2ee):
+            try:
+                os.mkdir(dotm2ee)
+            except OSError, ose:
+                logger.critical("Directory %s does not exist, and cannot be created!")
+                logger.critical("If you do not want to use .m2ee in your home directory, you have to specify pidfile, munin -> config_cache in your configuration file")
+                sys.exit(1)
+
+        return dotm2ee
 
     def get_runtime_blocking_connector(self):
         return self._conf['m2ee'].get('runtime_blocking_connector', True)
@@ -355,7 +367,7 @@ class M2EEConfig:
         return self._conf['m2ee']['runtime_port']
 
     def get_pidfile(self):
-        return self._conf['m2ee']['pidfile']
+        return self._conf['m2ee'].get('pidfile', os.path.join(self.get_default_dotm2ee_directory(),'m2ee.pid'))
 
     def get_logfile(self):
         return self._conf['m2ee'].get('logfile', None)

@@ -301,11 +301,11 @@ class CLI(cmd.Cmd):
 
     def do_munin_config(self, args):
         import m2ee.munin
-        m2ee.munin.print_all(self.m2ee.client, self.m2ee.config.get_munin_options(), args, config=True)
+        m2ee.munin.print_all(self.m2ee.client, self.m2ee.config, self.m2ee.config.get_munin_options(), args, print_config=True)
 
     def do_munin_values(self, args):
         import m2ee.munin
-        m2ee.munin.print_all(self.m2ee.client, self.m2ee.config.get_munin_options(), args)
+        m2ee.munin.print_all(self.m2ee.client, self.m2ee.config, self.m2ee.config.get_munin_options(), args)
 
     def do_nagios(self, args):
         import m2ee.nagios

@@ -12,12 +12,12 @@ from m2ee.log import logger
 config_funcs = {}
 values_funcs = {}
 
-def print_all(client, options, name, config=False):
+def print_all(client, config, options, name, print_config=False):
 
     if name == "":
         name = pwd.getpwuid(os.getuid())[0]
 
-    if config:
+    if print_config:
         funcs = config_funcs
     else:
         funcs = values_funcs
@@ -25,7 +25,7 @@ def print_all(client, options, name, config=False):
     if options == None:
         options = {}
     # place to store last known good statistics result to be used for munin config when the app is down or b0rked
-    config_cache = options.get('config_cache', os.path.join(pwd.getpwuid(os.getuid())[5], '.m2ee', 'munin-cache.json'))
+    config_cache = options.get('config_cache', os.path.join(config.get_default_dotm2ee_directory(),'munin-cache.json'))
     # this option does not exist.
     graph_total_named_users = options.get('graph_total_named_users', True)
 
@@ -54,7 +54,7 @@ def print_all(client, options, name, config=False):
         # assume something bad happened, like
         # socket.error: [Errno 111] Connection refused
         logger.error("Error fetching runtime/server statstics: %s", e)
-        if config:
+        if print_config:
             logger.debug("Loading munin cache from %s" % config_cache)
             fd = None
             try:
