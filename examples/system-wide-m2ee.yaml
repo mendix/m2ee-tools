@@ -10,11 +10,3 @@ mxnode:
  #pg_dump: /usr/lib/postgresql/8.3/bin/pg_dump
  #pg_restore: /usr/lib/postgresql/8.4/bin/pg_restore
  #psql: /usr/lib/postgresql/8.3/bin/psql
-
-m2ee:
- # force specific appcontainer version to use
- # if empty/undefined the appcontainer version bundled with the runtime to be used
- #   will be started. (default)
- # if non-empty, the version number will be appended to 'appcontainer-' and the
- #   corresponding directory will be searched for in mxjar_repo.
- #appcontainer_version: latest
