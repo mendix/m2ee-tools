@@ -1,3 +1,13 @@
+m2ee-tools 0.4.2, 15 oct 2012
+  * Fix incorrect unpack tab completion when filenames contain dashes
+  * Fix unpack tab completion anyway, it was broken since 0.4.0
+  * When specifying MicroflowConstants in the runtime section, put them back
+    into custom for 2.5.x to get allwards-compatibility for MF Constants
+    handling
+  * Create ~/.m2ee by default if not present, and if for any of the files to
+    be placed in there defaults are used.
+  * Remove non-essential options from example yaml configuration files.
+
 m2ee-tools 0.4.1, 18 Sep 2012
   * Fix bug introduced in 0.4.0 that prevents backwards-compatible loading of
     MicroflowConstants from the custom section in yaml config.
