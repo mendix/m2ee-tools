@@ -1,3 +1,6 @@
+m2ee-tools UNRELEASED
+  * Drop support for python 2.4
+
 m2ee-tools 0.4.2, 15 oct 2012
   * Fix incorrect unpack tab completion when filenames contain dashes
   * Fix unpack tab completion anyway, it was broken since 0.4.0

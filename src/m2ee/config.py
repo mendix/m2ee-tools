@@ -11,15 +11,9 @@ import re
 import subprocess
 import simplejson
 import copy
+import sqlite3
 from log import logger
 from collections import defaultdict
-try:
-    import sqlite3
-    python_sqlite3 = True
-except ImportError:
-    # python 2.4, fall back to calling sqlite3 binary
-    logger.debug("import sqlite3 failed, trying to use external sqlite3 binary")
-    python_sqlite3 = False
 
 class M2EEConfig:
 
@@ -536,40 +530,16 @@ class M2EEConfig:
             logger.warn("%s is not a file!" % model_mdp)
             return None
         version = None
-        if python_sqlite3:
-            try:
-                conn = sqlite3.connect(model_mdp)
-                c = conn.cursor()
-                c.execute('SELECT _ProductVersion FROM _MetaData LIMIT 1;')
-                version = c.fetchone()[0]
-                c.close()
-                conn.close()
-            except sqlite3.Error, e:
-                logger.error("An error occured while trying to read mendix version number from model.mdp: %s" % e)
-                return None
-        else:
-            cmd = ("sqlite3", model_mdp, "SELECT _ProductVersion FROM _MetaData LIMIT 1;")
-            proc = None
-            try:
-                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            except OSError, ose:
-                if ose.errno == 2:
-                    logger.error("sqlite3 binary not found, unable to read mendix version number from model.mdp")
-                else:
-                    logger.error("An error occured while trying to read mendix version number from model.mdp: %s" % ose)
-                return None
-
-            (stdout,stderr) = proc.communicate()
-
-            if proc.returncode != 0:
-                logger.error("An error occured while trying to read mendix version number from model.mdp:")
-                if stdout != '':
-                    logger.error(stdout)
-                if stderr != '':
-                    logger.error(stderr)
-                return None
-
-            version = stdout.strip()
+        try:
+            conn = sqlite3.connect(model_mdp)
+            c = conn.cursor()
+            c.execute('SELECT _ProductVersion FROM _MetaData LIMIT 1;')
+            version = c.fetchone()[0]
+            c.close()
+            conn.close()
+        except sqlite3.Error, e:
+            logger.error("An error occured while trying to read mendix version number from model.mdp: %s" % e)
+            return None
 
         # hack: force convert sqlite string to ascii, this prevents syslog from stumbling over it
         # because a BOM will appear which messes up syslog
