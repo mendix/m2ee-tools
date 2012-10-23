@@ -32,9 +32,13 @@ class M2EE():
         m2ee_alive = self.client.ping()
 
         if pid_alive and not m2ee_alive:
-            logger.error("The application process seems to be running (pid %s is alive), but does not respond to administrative requests." % self.runner.get_pid())
-            logger.error("This could be caused by JVM Heap Space / Out of memory errors. Please review the application logfiles.")
-            logger.error("You should consider restarting the application process, because it is likely to be in an undetermined broken state right now.")
+            logger.error("The application process seems to be running (pid %s is alive)," \
+                    " but is not accessible for administrative requests." % self.runner.get_pid())
+            logger.error("If this is not caused by a configuration error (e.g. wrong" \
+                    " admin_port) setting, it could be caused by JVM Heap Space / Out" \
+                    " of memory errors. Please review the application logfiles.")
+            logger.error("In case of JVM errors, you should consider restarting the application" \
+                    " process, because it is likely to be in an undetermined broken state right now.")
         elif not pid_alive and m2ee_alive:
             logger.error("pid %s is not available, but m2ee responds" % self.runner.get_pid())
         return (pid_alive, m2ee_alive)

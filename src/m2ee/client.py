@@ -9,7 +9,6 @@ import httplib2
 import simplejson
 from base64 import b64encode
 import socket
-from socket import error as SocketError # python 2.5
 from log import logger
 
 class M2EEClient:
@@ -42,12 +41,12 @@ class M2EEClient:
             response = self.request("echo", {"echo":"ping"}, timeout)
             if response.get_result() == 0:
                 return True
-        except AttributeError:
-            # httplib throws AttributeError: 'NoneType' object has no attribute 'makefile' :-|
-            pass
-        except SocketError, e:
-            logger.trace("Got SocketError: %s (%s)" % (e.errno, e.strerror))
-            pass
+        except (socket.error, socket.timeout), e:
+            logger.trace("Got %s: %s" % (type(e), e))
+        except Exception, e:
+            logger.error("Got %s: %s" % (type(e), e))
+            import traceback
+            logger.error(traceback.format_exc())
         return False
 
     def echo(self, params=None):
