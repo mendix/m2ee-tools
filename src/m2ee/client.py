@@ -41,6 +41,10 @@ class M2EEClient:
             response = self.request("echo", {"echo":"ping"}, timeout)
             if response.get_result() == 0:
                 return True
+        except AttributeError, e:
+            # httplib 0.6 throws AttributeError: 'NoneType' object has no attribute 'makefile'
+            # in case of a connection refused :-|
+            logger.trace("Got %s: %s" % (type(e), e))
         except (socket.error, socket.timeout), e:
             logger.trace("Got %s: %s" % (type(e), e))
         except Exception, e:
