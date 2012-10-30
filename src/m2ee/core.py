@@ -3,7 +3,7 @@
 # http://www.mendix.com/
 #
 
-import os, codecs, time
+import os, codecs, time, copy
 from config import M2EEConfig
 from client import M2EEClient
 from runner import M2EERunner
@@ -166,7 +166,7 @@ class M2EE():
         # XXX: fix mxruntime to report all errors and warnings in adminaction feedback instead of stopping to process input
         # if errors, abort.
 
-        config = self.config.get_runtime_config()
+        config = copy.deepcopy(self.config.get_runtime_config())
         custom_config_25 = None
         if self.config.dirty_hack_is_25():
             custom_config_25 = config.pop('MicroflowConstants',None)
