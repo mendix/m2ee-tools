@@ -1,5 +1,9 @@
-m2ee-tools UNRELEASED
+m2ee-tools 0.4.3, 30 oct 2012
   * Drop support for python 2.4
+  * Simplify exception handling on unusable m2ee api.
+  * Re-introduce fix for incorrect httplib2 AttributeError
+  * More debug/trace logging about merge_runtime_configuration
+  * Fix: prevent losing MicroflowConstants at next (re)start
 
 m2ee-tools 0.4.2, 15 oct 2012
   * Fix incorrect unpack tab completion when filenames contain dashes
