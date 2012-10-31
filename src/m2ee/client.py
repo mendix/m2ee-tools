@@ -5,10 +5,16 @@
 # http://www.mendix.com/
 #
 
-import httplib2
 from base64 import b64encode
 import socket
 from log import logger
+
+try:
+    import httplib2
+except ImportError:
+    logger.critical("Failed to import httplib2. This module is needed by m2ee. Please " \
+            "provide it on the python library path")
+    raise
 
 # Use json if available. If not (python 2.5) we need to import
 # the simplejson module instead, which has to be available.
