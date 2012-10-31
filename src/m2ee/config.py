@@ -197,6 +197,13 @@ class M2EEConfig:
 
 
     def _check_appcontainer_config(self):
+        # did we load any configuration at all?
+        if not self._conf:
+            logger.critical("No configuration present. Please put a m2ee.yaml configuration file at " \
+                    "the default location ~/.m2ee/m2ee.yaml or specify an alternate configuration " \
+                    "file using the -c option.")
+            sys.exit(1)
+
         # TODO: better exceptions
         self._run_from_source = self._conf.get('mxnode', {}).get('run_from_source', False)
 
