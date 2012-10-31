@@ -46,7 +46,7 @@ class M2EE():
     def start_appcontainer(self):
         if not self.config.all_systems_are_go():
             logger.error("Cannot start MxRuntime due to previous critical errors.")
-            return
+            return False
 
         logger.debug("Checking if the runtime is already alive...")
         (pid_alive, m2ee_alive) = self.check_alive()
