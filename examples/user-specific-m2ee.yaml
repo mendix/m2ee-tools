@@ -19,8 +19,6 @@ m2ee:
  ]
  # file which will be read back by the m2ee log command to provide live logging info
  logfile: /var/log/xas2/__MXUSER__.log
-mimetypes:
- bmp: image/bmp
 logging:
  - # <- list of dicts
    name: SysLogSubscriber
