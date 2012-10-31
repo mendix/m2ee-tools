@@ -2,6 +2,10 @@
 # ~/.m2ee/m2ee.yaml
 # user/application specific configuration
 #
+# All non-essential configuration settings have been omitted in this example
+# file. Refer to the full-documented-m2ee.yaml in the examples directory for
+# a full list of available options and explanation about them.
+#
 m2ee:
  app_name: __MXPROJECT__
  app_base: /srv/mendix/__MXUSER__

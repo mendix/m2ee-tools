@@ -1,0 +1,81 @@
+#
+# This file documents configuration options that can be set in the
+# m2ee configuration file.
+#
+# This file is in YAML format (see: http://yaml.org/), a simple but very
+# effective data serialization format which is human readable/writable
+# as well.
+#
+# Basic YAML constructs are:
+# 
+# # this is a comment, the next line contains a simple key/value pair:
+# key: value
+#
+# dictionary:
+#  key1: value1
+#  key2: value2
+#  key3: # this is a list
+#   - item1
+#   - item2
+#   - item3
+#  key4: [another, way, to, specify, a, list]
+#
+# The indentation level of one space is used a lot, as you can see.
+# Most values don't need quotes around them in yaml, but it doesn't hurt to
+# use them. A colon (:) for example, can't be used without quoting. Also,
+# when text highlighting of your editor starts to get fancy, you might use
+# some extra quotes. :-)
+#
+# By default, the m2ee program tries to load configuration from the locations
+# /etc/m2ee/m2ee.yaml and ~/.m2ee/m2ee.yaml
+#
+# The configuration in /etc/ can be used to set server-wide configuration
+# options without having to specify them again for each user. (if you run
+# multiple applications on a single operating system installation, which is
+# perfectly possible). Examples are the file system location where you put
+# Mendix Runtime distributions (the unpacked mendix-x.y.z.tar.gz files)
+
+mxnode:
+ # mxjar_repo can be a single location, or a list of locations which need to
+ # be searched for installed Mendix Runtime versions
+ mxjar_repo: /usr/local/share/mendix/
+ # or, when specifying multiple locations:
+ #mxjar_repo: ["/opt/mendix/runtime/","/usr/local/share/mendix/"]
+ # so, e.g. when starting an application that has been created using version
+ # 4.2.2 of the Mendix Business Modeler, the following location would be 
+ # checked for existence: /usr/local/share/mendix/4.2.2/ when the configuration
+ # above is used.
+
+ # When using PostgreSQL as database, the m2ee program contains functionality
+ # to quickly dump or restore a database snapshot to the data/database directory
+ # of the project, or empty the complete database (e.g. before restoring an old
+ # dump). The following configuration options can override the specific programs
+ # that are used when executing these commands. During a transition when moving
+ # from e.g. PostgreSQL 8.3 to 8.4 we used these to always dump databases using
+ # 8.3 and restore them using 8.4 client tools, so it didn't matter what version
+ # (either 8.3 or 8.4) a developer was using on his/her local workstation.
+ #
+ # Note: not all operating system distributions support running different
+ # PostgreSQL versions at the same time on a server, so YMMV.
+
+ # override postgres client tools versions to use
+ pg_dump: /usr/lib/postgresql/8.3/bin/pg_dump
+ pg_restore: /usr/lib/postgresql/8.4/bin/pg_restore
+ psql: /usr/lib/postgresql/8.4/bin/psql
+
+# The m2ee section defines configuration about a single application we're
+# going to run.
+
+m2ee:
+ # The project name, which will be displayed when you start the m2ee program
+ app_name: My Project Name
+ # The base path of your project directory. This is the location that contains
+ # the data, model and web directories.
+ app_base: /home/example/mendix/project/
+ # or, directly use a deployment directory on a windows machine running the
+ # Business Modeler remotely... The modeler deployment directory has the
+ # same directory structure setup.
+ #app_base: /home/example/mnt/windows/D/Projects/HelloWorld/deployment/
+
+TODO:
+ please: [complete, me]
