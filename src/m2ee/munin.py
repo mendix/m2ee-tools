@@ -6,8 +6,19 @@
 #
 
 import pwd, os, string
-import simplejson
 from m2ee.log import logger
+
+# Use json if available. If not (python 2.5) we need to import
+# the simplejson module instead, which has to be available.
+try:
+    import json
+except ImportError:
+    try:
+        import simplejson as json
+    except ImportError, ie:
+        logger.critical("Failed to import json as well as simplejson. If using python 2.5, " \
+                "you need to provide the simplejson module in your python library path.")
+        raise
 
 config_funcs = {}
 values_funcs = {}
@@ -47,7 +58,7 @@ def print_all(client, config, options, name, print_config=False):
             stats['requests'] = bork
         # write last-known-good stats to cache
         try:
-            file(config_cache,'w+').write(simplejson.dumps(stats))
+            file(config_cache,'w+').write(json.dumps(stats))
         except Exception, e:
             logger.error("Error writing munin config cache to %s: %s", (config_cache, e))
     except Exception, e:
@@ -63,7 +74,7 @@ def print_all(client, config, options, name, print_config=False):
                 logger.error("Error reading munin cache file %s: %s" % (config_cache, e))
                 return # kill -9; wegwezen!
             try:
-                stats = simplejson.loads(fd.read())
+                stats = json.loads(fd.read())
                 fd.close()
             except Exception, e:
                 logger.error("Error parsing munin cache file %s: %s" % (config_cache, e))

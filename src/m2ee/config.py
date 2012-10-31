@@ -9,11 +9,22 @@ import yaml
 import os, sys, pwd
 import re
 import subprocess
-import simplejson
 import copy
 import sqlite3
 from log import logger
 from collections import defaultdict
+
+# Use json if available. If not (python 2.5) we need to import
+# the simplejson module instead, which has to be available.
+try:
+    import json
+except ImportError:
+    try:
+        import simplejson as json
+    except ImportError, ie:
+        logger.critical("Failed to import json as well as simplejson. If using python 2.5, " \
+                "you need to provide the simplejson module in your python library path.")
+        raise
 
 class M2EEConfig:
 
@@ -167,7 +178,7 @@ class M2EEConfig:
 
         config = None
         try:
-            config = simplejson.load(fd)
+            config = json.load(fd)
         except Exception, e:
             logger.error("Error parsing configuration file %s: %s" % (jsonfile, e))
             return {}

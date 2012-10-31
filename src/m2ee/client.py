@@ -6,10 +6,21 @@
 #
 
 import httplib2
-import simplejson
 from base64 import b64encode
 import socket
 from log import logger
+
+# Use json if available. If not (python 2.5) we need to import
+# the simplejson module instead, which has to be available.
+try:
+    import json
+except ImportError:
+    try:
+        import simplejson as json
+    except ImportError, ie:
+        logger.critical("Failed to import json as well as simplejson. If using python 2.5, " \
+                "you need to provide the simplejson module in your python library path.")
+        raise
 
 class M2EEClient:
 
@@ -24,7 +35,7 @@ class M2EEClient:
         body = {"action":action}
         if params:
             body["params"] = params
-        body=simplejson.dumps(body)
+        body=json.dumps(body)
         # there are no parallel requests done, so we mess with socket timeout right before the request
         socket.setdefaulttimeout(timeout)
         h = httplib2.Http() # httplib does not like os.fork
@@ -32,7 +43,7 @@ class M2EEClient:
         (response_headers, response_body) = h.request(self._url, "POST", body, headers=self._headers)
         if (response_headers['status'] == "200"):
             logger.trace("M2EE response: %s" % response_body)
-            return M2EEResponse(action, simplejson.loads(response_body))
+            return M2EEResponse(action, json.loads(response_body))
         else:
             logger.error("non-200 http status code: %s %s" % (response_headers, response_body))
 

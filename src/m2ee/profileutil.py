@@ -4,16 +4,27 @@
 # http://www.mendix.com/
 #
 
-import simplejson
 import datetime
 
 from profileutildp import format_dict_table
+
+# Use json if available. If not (python 2.5) we need to import
+# the simplejson module instead, which has to be available.
+try:
+    import json
+except ImportError:
+    try:
+        import simplejson as json
+    except ImportError, ie:
+        logger.critical("Failed to import json as well as simplejson. If using python 2.5, " \
+                "you need to provide the simplejson module in your python library path.")
+        raise
 
 class Log:
   def __init__(self, request_id, data): 
     self.__dict__.update(data)
     self.request_id = request_id
-    self.action = simplejson.loads(data['request_content'])['action']
+    self.action = json.loads(data['request_content'])['action']
     self.queries = data['database_queries']
     if hasattr(self, "start_time"):
         self.end_time_formatted = datetime.datetime.fromtimestamp((self.start_time+self.duration)//1000)
