@@ -18,23 +18,15 @@ m2ee:
    "-Djava.io.tmpdir=/srv/mendix/__MXUSER__/data/tmp",
  ]
  # file which will be read back by the m2ee log command to provide live logging info
- logfile: /var/log/xas2/__MXUSER__.log
+ logfile: /path/to/your/favorite/logfile
 logging:
- - # <- list of dicts
-   name: SysLogSubscriber
-   type: syslog
+ - # example of file logging by the platform itself
+   name: FileSubscriber
+   type: file
    autosubscribe: INFO
-   host: localhost
-   port: 514
-   facility: LOG_LOCAL6
-   prefix: __MXUSER__
-# - # example of file logging by the platform itself
-#   name: FileSubscriber
-#   type: file
-#   autosubscribe: INFO
-#   filename: /path/to/your/favorite/logfile
-#   max_size: 10485760 # bytes(!!)
-#   max_rotation: 7
+   filename: /path/to/your/favorite/logfile
+   max_size: 10485760 # bytes(!!)
+   max_rotation: 7
 mxruntime:
  # License key file (2.5.x only) 
  #KeyFile: /home/__MXUSER__/.m2ee/key.mx
