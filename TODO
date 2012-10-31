@@ -6,3 +6,6 @@
 [ ] implement munin/nagios plugins by importing m2ee instead of abusing the CLI tool
 [ ] when choosing abort after errors (e.g. ddl commands, invalid database host, mf constants) completely shutdown runtime again, instead of leaving it at the stage it was during startup. this behaviour is more intuitive.
 [ ] somehow remember the name of the last unpacked .mda file (see mendix support #14621)
+[ ] don't even try to load config.json when in A/P mode
+[ ] check DTAPMode case insensitive
+[ ] remove all left-overs of user interaction from lib files (raw_input etc)
