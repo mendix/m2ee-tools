@@ -127,7 +127,12 @@ class M2EEConfig:
 
     def _merge_runtime_configuration(self):
         logger.debug("Merging runtime configuration...")
-        config_json = self._try_load_json(os.path.join(self._conf['m2ee']['app_base'],'model','config.json'))
+
+        config_json = {}
+        if not self.get_dtap_mode()[0] in ('A','P'):
+            config_json_file = os.path.join(self._conf['m2ee']['app_base'],'model','config.json')
+            logger.trace("In DTAPMode %s, so loading configuration from %s" % (self.get_dtap_mode(),config_json_file))
+            config_json = self._try_load_json(config_json_file)
 
         # figure out which constants to use
         merge_constants = {}
