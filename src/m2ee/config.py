@@ -355,7 +355,7 @@ class M2EEConfig:
             logger.critical("Unable to determine JVM startup parameters.")
             return None
 
-        logger.trace("Command line to be used when starting the JVM: %s" % cmd)
+        logger.trace("Command line to be used when starting the JVM: %s" % ' '.join(cmd))
         return cmd
 
     def _lookup_appcontainer_jar(self):
