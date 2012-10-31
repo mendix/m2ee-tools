@@ -118,12 +118,21 @@ class M2EERunner:
         os.umask(0022)
         # start java subprocess (second fork)
         logger.trace("[%s] Starting the JVM..." % os.getpid())
-        proc = subprocess.Popen(
-            cmd,
-            close_fds=True,
-            cwd='/',
-            env=env,
-        )
+        try:
+            proc = subprocess.Popen(
+                cmd,
+                close_fds=True,
+                cwd='/',
+                env=env,
+            )
+        except OSError, ose:
+            if ose.errno == errno.ENOENT:
+                logger.error("The java binary cannot be found in the default search path!")
+                logger.error("By default, when starting the JVM, the environment is not preserved. " \
+                        "If you don't set preserve_environment to true or specify PATH in preserve_environment " \
+                        "or custom_environment in the m2ee section of your m2ee.yaml configuration file, the " \
+                        "search path is likely a very basic default list like '/bin:/usr/bin'")
+                os._exit(1)
         # always write pid asap, so that monitoring can detect apps that should
         # be started but fail to do so
         self._pid = proc.pid
