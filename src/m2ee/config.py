@@ -227,6 +227,9 @@ class M2EEConfig:
                 logger.critical("Option %s in configuration section m2ee is not defined!" % option)
                 sys.exit(1)
 
+        # force admin_pass to a string, prevent TypeError when base64-ing it before sending to m2ee api
+        self._conf['m2ee']['admin_pass'] = str(self._conf['m2ee']['admin_pass'])
+
         # database_dump_path
         if not 'database_dump_path' in self._conf['m2ee']:
             self._conf['m2ee']['database_dump_path'] = os.path.join(self._conf['m2ee']['app_base'], 'data', 'database')
