@@ -230,6 +230,12 @@ class M2EEConfig:
         # force admin_pass to a string, prevent TypeError when base64-ing it before sending to m2ee api
         self._conf['m2ee']['admin_pass'] = str(self._conf['m2ee']['admin_pass'])
 
+        # check admin_pass 1 or password... refuse to accept when users don't change default passwords
+        if self._conf['m2ee']['admin_pass'] == '1' or self._conf['m2ee']['admin_pass'] == 'password':
+            logger.critical("Using admin_pass '1' or 'password' is not allowed. Please put a long, random " \
+                    "password into the admin_pass configuration option. At least change the default!")
+            sys.exit(1)
+
         # database_dump_path
         if not 'database_dump_path' in self._conf['m2ee']:
             self._conf['m2ee']['database_dump_path'] = os.path.join(self._conf['m2ee']['app_base'], 'data', 'database')
