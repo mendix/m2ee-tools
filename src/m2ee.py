@@ -352,7 +352,9 @@ class CLI(cmd.Cmd):
               "As far as currently known, recent Mendix Runtime versions do not check the submitted " \
               "license key for validity, so incorrect input will unconditionally un-license " \
               "your Mendix application! After setting the license, there will be no feedback about " \
-              "validity of the license. You can use show_license_information to check the active license."
+              "validity of the license. You can use show_license_information to check the active license. " \
+              "Also... after setting the license you will need to restart the application again to " \
+              "be sure it is fully activated."
         answer = raw_input("Do you want to continue anyway? (type YES if you want to): ")
         if answer != 'YES':
             print "Aborting."
