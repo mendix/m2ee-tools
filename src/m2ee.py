@@ -357,7 +357,10 @@ class CLI(cmd.Cmd):
         if answer != 'YES':
             print "Aborting."
             return
-        license_key = raw_input("Paste your license key (a long text string without newlines line): ")
+        if not args:
+            license_key = raw_input("Paste your license key (a long text string without newlines line): ")
+        else:
+            license_key = args
         m2eeresp = self.m2ee.client.set_license({'license_key': license_key})
         if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
             logger.error("This action is not available in the Mendix Runtime version you are currently using.")
