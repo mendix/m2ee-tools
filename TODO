@@ -2,7 +2,6 @@
 [ ] possibility to use units (ms,s,h,d,w,y) for time length values
 [ ] add command to display cache_statistics
 [ ] man m2ee.yaml instead of lots of documentation in the example file itself
-[ ] allow scheduled event names to be specified by a yaml list instead of comma separated string
 [ ] implement munin/nagios plugins by importing m2ee instead of abusing the CLI tool
 [ ] when choosing abort after errors (e.g. ddl commands, invalid database host, mf constants) completely shutdown runtime again, instead of leaving it at the stage it was during startup. this behaviour is more intuitive.
 [ ] somehow remember the name of the last unpacked .mda file (see mendix support #14621)

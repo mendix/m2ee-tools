@@ -171,6 +171,11 @@ class M2EE():
         if self.config.dirty_hack_is_25():
             custom_config_25 = config.pop('MicroflowConstants',None)
 
+        # convert MyScheduledEvents from list to dumb comma separated string if needed:
+        if isinstance(config.get('MyScheduledEvents',None), list):
+            logger.trace("Converting mxruntime MyScheduledEvents from list to comma separated string...")
+            config['MyScheduledEvents'] = ','.join(config['MyScheduledEvents'])
+
         logger.debug("Sending MxRuntime configuration...")
         m2eeresponse = self.client.update_configuration(config)
         result = m2eeresponse.get_result()
