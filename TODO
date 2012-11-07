@@ -6,3 +6,5 @@
 [ ] when choosing abort after errors (e.g. ddl commands, invalid database host, mf constants) completely shutdown runtime again, instead of leaving it at the stage it was during startup. this behaviour is more intuitive.
 [ ] somehow remember the name of the last unpacked .mda file (see mendix support #14621)
 [ ] remove all left-overs of user interaction from lib files (raw_input etc)
+[ ] munin: graph max license user limits (named/concurrent)
+[ ] nagios: alert when license limits are (almost) reached
