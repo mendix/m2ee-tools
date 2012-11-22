@@ -3,11 +3,11 @@
 # m2ee configuration file.
 #
 # This file is in YAML format (see: http://yaml.org/), a simple but very
-# effective data serialization format which is human readable/writable
+# effective data serialization format which is easily human readable/writable
 # as well.
 #
 # Basic YAML constructs are:
-# 
+#
 # # this is a comment, the next line contains a simple key/value pair:
 # key: value
 #
@@ -19,6 +19,18 @@
 #   - item2
 #   - item3
 #  key4: [another, way, to, specify, a, list]
+#  key5: [
+#   also,
+#   a,
+#   list
+#  ]
+#  key6:
+#   - # a list containing dictionaries
+#    subkey: subvalue
+#    subkey2: subvalue2
+#   -
+#    subkeyinlistitem2: value
+#    anotherkeyinlistitem2: anothervalue
 #
 # The indentation level of one space is used a lot, as you can see.
 # Most values don't need quotes around them in yaml, but it doesn't hurt to
@@ -29,11 +41,16 @@
 # By default, the m2ee program tries to load configuration from the locations
 # /etc/m2ee/m2ee.yaml and ~/.m2ee/m2ee.yaml
 #
+# Instead of the above defaults, it is possible to specify one or more
+# configuration files using the -c parameter when starting m2ee. If the -c
+# option is used more than once, configuration file content will be deep-merged.
+#
 # The configuration in /etc/ can be used to set server-wide configuration
 # options without having to specify them again for each user. (if you run
 # multiple applications on a single operating system installation, which is
 # perfectly possible). Examples are the file system location where you put
 # Mendix Runtime distributions (the unpacked mendix-x.y.z.tar.gz files)
+#
 
 mxnode:
  # mxjar_repo can be a single location, or a list of locations which need to
@@ -42,7 +59,7 @@ mxnode:
  # or, when specifying multiple locations:
  #mxjar_repo: ["/opt/mendix/runtime/","/usr/local/share/mendix/"]
  # so, e.g. when starting an application that has been created using version
- # 4.2.2 of the Mendix Business Modeler, the following location would be 
+ # 4.2.2 of the Mendix Business Modeler, the following location would be
  # checked for existence: /usr/local/share/mendix/4.2.2/ when the configuration
  # above is used.
 
@@ -57,25 +74,315 @@ mxnode:
  #
  # Note: not all operating system distributions support running different
  # PostgreSQL versions at the same time on a server, so YMMV.
-
- # override postgres client tools versions to use
- pg_dump: /usr/lib/postgresql/8.3/bin/pg_dump
- pg_restore: /usr/lib/postgresql/8.4/bin/pg_restore
- psql: /usr/lib/postgresql/8.4/bin/psql
+ #
+ # default: just search for the default programs on the current OS search path
+ #pg_dump: /usr/lib/postgresql/8.3/bin/pg_dump
+ #pg_restore: /usr/lib/postgresql/8.4/bin/pg_restore
+ #psql: /usr/lib/postgresql/8.4/bin/psql
 
 # The m2ee section defines configuration about a single application we're
 # going to run.
 
 m2ee:
  # The project name, which will be displayed when you start the m2ee program
+ #
+ # no default, configuration is mandatory
  app_name: My Project Name
+
  # The base path of your project directory. This is the location that contains
  # the data, model and web directories.
- app_base: /home/example/mendix/project/
+ #
+ # no default, configuration is mandatory
+ app_base: /path/to/project/
  # or, directly use a deployment directory on a windows machine running the
  # Business Modeler remotely... The modeler deployment directory has the
  # same directory structure setup.
  #app_base: /home/example/mnt/windows/D/Projects/HelloWorld/deployment/
 
-TODO:
- please: [complete, me]
+ # The Mendix Runtime will listen on an 'administrative' TCP port after startup.
+ # The 'admin port' is used by m2ee-tools for administrative commands like
+ # sending configuration options, setting loglevels, requesting information
+ # about the current status of the application proces, version information,
+ # statistics about usage etc... This admin port only provides a simple custom
+ # json-rpc style API over HTTP, so there's no visual web-interface or the like
+ # present that can be used via a normal web browser. A user interface is provided
+ # by the m2ee command line tool you're configuring right now. Make sure access
+ # to this port is properly firewalled. Only local access is needed.
+ #
+ # no default, configuration is mandatory
+ admin_port: 9000
+
+ # A password which protects the administrative interface, running on the admin
+ # TCP port. set this password to e.g. a long random string, it's not used
+ # manually anywhere. It's passed to the Mendix Runtime using an environment
+ # variable, to make it possible for m2ee-tools to connect when running.
+ #
+ # no default, configuration is mandatory
+ admin_pass: password
+
+ # The TCP port we want the application to present itself on for end users.
+ # When using a reverse proxy, only sub-urls presenting dynamic content, like
+ # /xas/, /ws/ and /file are proxied to this port, and end users connect to
+ # that reverse proxy instead of directly to this port.
+ #
+ # no default, configuration is mandatory
+ runtime_port: 8000
+
+ # By default, a pid file containing the process id of the running Mendix Runtime
+ # JVM is stored into the m2ee.pid file into the .m2ee directory of the home
+ # directory of the user which runs this mendix application. Well, it is possible
+ # to override the location.
+ #
+ # default: .m2ee/m2ee.pid under the current users home directory
+ #pidfile: /somwhere/else/m2ee.pid
+
+ # The runtime_blocking_connector option specifies whether the Mendix Runtime will
+ # use a Jetty BlockingChannelConnector for the runtime port http interface, or a
+ # SelectChannelConnector.
+ #
+ # When using the BlockingChannelConnector implementation, a dedicated JVM thread
+ # is allocated per connection. This solution fits situations where http connection
+ # offloading is done at a reverse proxy between the end user and the Mendix
+ # Runtime. If end users are directly connecting to this port (which is not
+ # recommended) use runtime_blocking_connector false to prevent idle open browser
+ # connections from unnecessarily occupying JVM threads.
+ #
+ # There might be uses cases in which not using runtime_blocking_connector is
+ # better, e.g. when using custom request handlers and long polling, but these
+ # are very specific edge cases.
+ #
+ # default: true
+ runtime_blocking_connector: true
+
+ # By default, the Mendix Runtime is started using an emptied environment map for
+ # security reasons. There may be situations in which it is desired to keep some
+ # specific environment variables, or set them to specific values. In this case, the
+ # preserve_environment and custom_environment options come to the rescue!
+ #
+ # preserve_environment can be eiter:
+ #   true -> keep all environment variables when starting the JVM process
+ #   false -> keep none (default)
+ #   a list of env variable names to keep (e.g. [LOGNAME,LANG]), while ignoring all
+ #   others
+ #
+ # default: false
+ preserve_environment: false
+ #preserve_environment: [LOGNAME,LANG]
+
+ # custom_environment can be used to add custom enviroment variables when starting the
+ # JVM process. When starting the Mendix Runtime JVM, XXX: complete sentence
+ #
+ # default: empty
+ #custom_environment:
+  #PATH: "/bin:/usr/bin/:/opt/some/weird/jre/version/bin/"
+
+ # javaopts are custom command line options that will be inserted when starting the
+ # Mendix Runtime JVM process. Any command line option that is accepted by the JVM
+ # you are using can be inserted here. Options that are recommended to set here are
+ # dedicated heap size (always set Xms to the same value as Xmx), temporary files
+ # folder (to prevent using the system default /tmp) and default file encoding.
+ #
+ # default: no default, always configure this properly
+ javaopts: [
+    "-Dfile.encoding=UTF-8", "-XX:MaxPermSize=64M", "-Xmx256M", "-Xms256M",
+    "-Djava.io.tmpdir=/path/to/project/data/tmp",
+ ]
+
+ # Using runtime_version, a specific runtime version can be forced to be used when
+ # starting the Mendix Runtime. By default, the version of the Mendix software used
+ # when creating an application using the Mendix Business Modeler is read from the
+ # deployment files, based on which the same Runtime distribution is started.
+ #
+ # You should never need to use this option. Even urgent hotfixes or security updates
+ # should be coordinated with the project team using the Modeler.
+ #
+ # default: autodetected version from deployment files
+ #runtime_version: x.y.z
+
+ # If symlink_mxclientsystem is set to true, try to symlink web/mxclientsystem to
+ # the mxclientsystem directory of the runtime distribution currently in use. This is
+ # useful for fixed web server configuration that followes symlinks, so auto-detection
+ # of Mendix Runtime versions on application startup will automatically update the
+ # /mxclientsystem/ url on which the javascript client will be loaded. When setting this
+ # to false, you will need to (re)configure your web server configuration to explicitely
+ # point the /mxclientsystem url to the file system path of mxclientsystem in the
+ # mendix runtime distribution every time the project team switches Mendix versions.
+ #
+ # default: true
+ symlink_mxclientsystem: true
+
+ # The 'post unpack hook' will be triggered right after a 'deployment archive' is
+ # unpacked. There might be reasons why you might want to execute specific actions
+ # to alter files or configuration that is contained in the deployment archive that
+ # just has been unpacked into the model/ and web/ locations of the project directory.
+ #
+ # default: undefined
+ #post_unpack_hook: '/path/to/project/data/hooks/post-unpack.sh'
+
+ # When set to false, the allow_destroy_db option makes m2ee refuse to execute the
+ # restoredb and emptydb commands. This option is particularly useful for use in
+ # production environments, where you never ever want to have someone make a mistake,
+ # messing up terminal windows and remove all of your production data at once, instead
+ # of removing data in a test environment.
+ #
+ # Note: this only applies to the built-in PostgreSQL helper commands.
+ #
+ # default: true
+ allow_destroy_db: true
+
+ # This location is used for writing/reading database dumps and writing validation
+ # query logs.
+ #
+ # defaults to data/database under app_base path
+ #database_dump_path:
+
+ # This location is used for reading deployment archive uploads (.mda)
+ #
+ # defaults to data/model-upload under app_base path
+ #model_upload_path:
+
+ # When using the log command in the m2ee shell, m2ee-tools will execute a tail -F on
+ # the log file of your Mendix Runtime. Unfortunately, it does not automagically know
+ # where this file is located. You might be logging via syslog to a file somewhere,
+ # or configure file based logging to some file directly. To be able to live follow
+ # the logging, you need to hint m2ee-tools about where the actual logfile will be
+ # located.
+ #
+ # default: no default
+ #logfile: /path/to/project/data/log/logfile.txt
+ #logfile: /var/log/mendix/myproject.log
+
+ # The munin sub-section of m2ee defines some behaviour of the munin_config and
+ # munin_values commands that are provided to be used as munin plugin for monitoring
+ # the Mendix Runtime process.
+ munin:
+  # config_cache points to a little file that contains the response that should be
+  # sent when the munin config call is done. Providing the cached results of this
+  # call prevents graphs from disappearing when the actual monitoring data is not
+  # accessible (e.g. when the admin interface is crashed because of JVM out of
+  # memory errors or other causes of instability)
+  #
+  # defaults to .m2ee/munin-cache.json under the current users home directory
+  config_cache: /home/example/.m2ee/munin-cache.json
+  #
+  # The graph_total_named_users is a little hack that defines whether the total
+  # amount of named users available in the application database should be plotted
+  # into the graph of current user sessions. When the difference between registered
+  # named users and actual amount of concurrent users is really big, not displaying
+  # the total amount of registered users may make the graph look more interesting.
+  #
+  # default: true
+  graph_total_named_users: true
+
+# The mimetypes section can be used to specify custom mime types to be used for
+# file downloads.
+#
+# default: empty
+mimetypes:
+ #ext: mime/type
+ #foo: mime/bar
+
+# The logging section defines what sort of logging will be configured when starting
+# the Mendix Runtime. Logging in the Mendix Runtime is done using a simple publish/
+# subscribe model. When logging messages from the application, they are published
+# to log nodes, and we can subscribe to messages using loglevels on a log node.
+#
+# Use the loglevel command at the m2ee command line to alter log levels on the fly.
+#
+# The logging section uses a list of dictionaries to specify startup logging
+# configuration. The two most important log subscriber implementations will log
+# messages they receive directly to a file, or to the unix syslog over UDP.
+#
+# no default
+logging:
+ -
+   # Example of Syslog Subscriber configuration. Using syslog is the recommended
+   # logging method on *nix. Standard available tools like logrotate can be used
+   # to rotate/compress logs. As a bonus, logs will be tamper-resistant because
+   # they can be written to a place where the application user does not have
+   # write permissions.
+   type: syslog
+   # Some unique name which will be used to refer to this log subscriber when setting
+   # log levels.
+   name: SysLogSubscriber
+   # If autosubscribe is set, this log subscriber will subscribe to messages on all new
+   # log nodes published having the specified log level or higher severity.
+   # Effectively this means that if you don't set it, you won't ever see no log message. :-)
+   # Available log levels are: NONE, CRITICAL, ERROR, WARNING, INFO, DEBUG, TRACE
+   autosubscribe: INFO
+   # Well-known syslog specific parameters:
+   host: localhost
+   port: 514
+   facility: LOCAL6
+   prefix: example
+ -
+   # Example of File Subscriber configuration. This log subscriber will output all
+   # log messages directly to a text file.
+   type: file
+   # Some unique name which will be used to refer to this log subscriber when setting
+   # log levels.
+   name: FileSubscriber
+   # If autosubscribe is set, this log subscriber will subscribe to messages on all new
+   # log nodes published having the specified log level or higher severity.
+   # Effectively this means that if you don't set it, you won't ever see no log message. :-)
+   # Available log levels are: NONE, CRITICAL, ERROR, WARNING, INFO, DEBUG, TRACE
+   autosubscribe: INFO
+   # File to log to.
+   filename: /home/knorrie/mnt/windoos_k/Projects/logging/out.log
+   # The file subscriber implements very simple rotate functionality, which stops
+   # writing a log file when the size of the file reaches max_size bytes.
+   # Sadly, there's no m2ee api call to make the Mendix Runtime re-open its logfile (yet),
+   # so directly using logrotate on these files (together with setting max_rotation 0
+   # is not possible. When requiring more advanced log rotate and compression
+   # functionality, it is recommended to use logging via unix syslog.
+   # default: 2097152 bytes (2MB)
+   max_size: 10485760 # specify this value in bytes
+   # After opening a new log file, max_rotation amount of files will be kept, and will
+   # be renamed with a dot-number suffix like file.1, file.2, file.3 etc.
+   # Set max_rotation to 0 to never rotate
+   # default: 10
+   max_rotation: 10
+
+# The last section of this file contains the 'mxruntime' section, which contains
+# configuration which will be sent to the Mendix Runtime when it's started.
+#
+mxruntime:
+ # DTAPMode is an old setting that specifies in which DTAP (Development, Test, Acceptance,
+ # Production) step the application is running. The Mendix Runtime will behave differently
+ # when using Development/Test setting than in Acceptance/Production. In D/T, more
+ # 'development'-like extra magic functionality like automatically creating/updating an
+ # administrative account or trying to create a database when it does not exist is enabled.
+ #
+ # Nowadays this DTAP stages are replaced by the 'Configurations' tab page in Project Settings
+ # in the Modeler, which allows to create any number of sets of configuration settings to be
+ # used. (e.g. run on built-in database for development, switch to test-database of
+ # the project team etc...) The Modeler always starts using the Development mode.
+ #
+ # NEVER EVER use Development or Test on a production server.
+ #
+ # Also, NEVER EVER run the Modeler on a production database using e.g. an ssh tunnel to
+ # the database. Because the Modeler is always using development mode, it will
+ # instantaneously reset the password of the 'admin user' which is defined in the modeler
+ # to its development default (which likely means there will be a user MxAdmin with password
+ # set to '1' and/or create this account when it does not exist, which you DO NOT WANT TO
+ # HAPPEN.
+ #
+ # default: P(roduction)
+ #DTAPMode: P
+
+ # microflow constants are ... blah blah
+ MicroflowConstants:
+  key:value
+
+ ApplicationRootUrl:
+
+ DatabaseType:
+ DatabaseHost:
+ DatabaseName:
+ DatabaseUserName:
+ DatabasePassword:
+
+ ScheduledEventExecution:
+ MyScheduledEvents:
+
+ More...
