@@ -6,7 +6,10 @@
 # http://www.mendix.com/
 #
 
-import cmd, sys, datetime
+import cmd
+import datetime
+import sys
+
 from client import M2EEClient
 from profileutil import print_logs, print_log, sort_logs, to_csv, format_as_csv
 
@@ -21,7 +24,7 @@ class M2EEProfiler(cmd.Cmd):
  \n stop \t\t(stops profiler server-side) \
  \n clear \t\t(flushes all requests to the logs)\
  \n get \t\t(retrieve and display all current requests)\
- \n xxxx \t\t(where xxxx is an existing requestid. add -nodb flag to omit queries) \
+ \n xxxx \t\t(where xxxx is a requestid. add -nodb flag to omit queries) \
  \n csv \t\t(dumps to csv onscreen) \
  \n b \t\t(back)\
  \n> "
@@ -31,7 +34,8 @@ class M2EEProfiler(cmd.Cmd):
         flush_interval = self.get_flush_interval(args.split())
 
         self.last_args = "%s %s" % (minimum_duration_to_log, flush_interval)
-        response = self.m2ee_client.start_profiler(minimum_duration_to_log, flush_interval)
+        response = self.m2ee_client.start_profiler(minimum_duration_to_log,
+                                                   flush_interval)
         if response is not None:
             self.print_response(response.get_feedback())
 
@@ -42,7 +46,7 @@ class M2EEProfiler(cmd.Cmd):
 
     def do_clear(self, args):
         self.do_stop(None)
-        if hasattr(self, 'last_args') :
+        if hasattr(self, 'last_args'):
             self.do_start(self.last_args)
         else:
             self.do_start("1000 30")
@@ -75,24 +79,25 @@ class M2EEProfiler(cmd.Cmd):
         if hasattr(self, 'logs_cache'):
             print_logs(self.logs_cache)
         else:
-            print "no logs cached at this moment"
+            print("no logs cached at this moment")
 
     def default(self, args=None):
         arglist = args.split()
         should_print_queries = len(arglist) == 1 or not arglist[1] == "-nodb"
 
         if not hasattr(self, 'logs_cache'):
-            print "haven't retrieved any logs yet, can't show you anything with id %s" % args
+            print("haven't retrieved any logs yet, can't show you anything "
+                  "with id %s" % args)
             return
 
         try:
             sorted_logs = sort_logs(self.logs_cache)
             nr = int(args[0])
-            if nr<0 or nr>(len(sorted_logs)-1):
+            if nr < 0 or nr > (len(sorted_logs) - 1):
                 raise ValueError
             print_log(sorted_logs, nr, should_print_queries)
         except ValueError:
-            print "must provide a number between 0 and %s" % len(sorted_logs)
+            print("must provide a number between 0 and %s" % len(sorted_logs))
 
     def get_minimum_duration(self, args):
         minimum_duration_to_log = None
@@ -104,13 +109,14 @@ class M2EEProfiler(cmd.Cmd):
 
         while minimum_duration_to_log is None:
             try:
-                answer = raw_input("Minimum duration to log? Defaults to 1000(ms) ")
+                answer = raw_input("Minimum duration to log? Defaults to "
+                                   "1000(ms) ")
                 if answer == "":
                     minimum_duration_to_log = 1000
                 else:
                     minimum_duration_to_log = int(answer)
             except ValueError:
-                print "Valid integer needed"
+                print("Valid integer needed")
 
         return minimum_duration_to_log
 
@@ -130,15 +136,15 @@ class M2EEProfiler(cmd.Cmd):
                 else:
                     flush_interval = int(answer)
             except ValueError:
-                print "Valid integer needed"
+                print("Valid integer needed")
 
         return flush_interval
 
     def print_response(self, json):
         if "message" in json:
-            print json["message"]
+            print(json["message"])
         else:
-            print json
+            print(json)
 
 if __name__ == '__main__':
     server = "http://agile:8090"
@@ -146,16 +152,17 @@ if __name__ == '__main__':
     profiler = M2EEProfiler(client)
 
     if not client.ping():
-        print "can't reach (or ping) server '%s', exiting..." % server
+        print("can't reach (or ping) server '%s', exiting..." % server)
         sys.exit()
 
-    if len(sys.argv)>1 and sys.argv[1] == '-csv':
+    if len(sys.argv) > 1 and sys.argv[1] == '-csv':
         filename = "profile_%s.log" % str(datetime.datetime.now())
-        if len(sys.argv)>2:
+        if len(sys.argv) > 2:
             filename = sys.argv[2]
 
         out = open(filename, "w")
-        out.write(format_as_csv(profiler.m2ee_client.get_profiler_logs().get_feedback()))
+        out.write(format_as_csv(
+            profiler.m2ee_client.get_profiler_logs().get_feedback()))
         out.close()
     else:
         profiler.cmdloop()

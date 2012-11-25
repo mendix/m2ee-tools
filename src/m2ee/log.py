@@ -5,12 +5,14 @@
 # http://www.mendix.com/
 #
 
-import logging, logging.handlers
+import logging
+import logging.handlers
 import sys
 
 # register trace logging possibility
 LOG_TRACE = 5
-logging.addLevelName(LOG_TRACE,'TRACE')
+logging.addLevelName(LOG_TRACE, 'TRACE')
+
 
 # subclass Logger to provide trace convenience method
 class M2EELogger(logging.Logger):
@@ -25,10 +27,12 @@ logging.setLoggerClass(M2EELogger)
 logger = logging.getLogger("m2ee")
 # level will be set at startup
 
+
 class M2EELogFilter(logging.Filter):
     def __init__(self, level, ge):
         self.level = level
-        self.ge = ge # log levels greater than and equal to (True), or below (False)
+        # log levels greater than and equal to (True), or below (False)
+        self.ge = ge
 
     def filter(self, record):
         if self.ge:
@@ -51,4 +55,3 @@ stderrlog.addFilter(stderrfilter)
 
 logger.addHandler(stdoutlog)
 logger.addHandler(stderrlog)
-
