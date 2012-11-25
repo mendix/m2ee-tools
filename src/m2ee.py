@@ -130,12 +130,13 @@ class CLI(cmd.Cmd):
             return
 
         abort = False
+        fully_started = False
         params = {}
-        while not abort:
+        while not (fully_started or abort):
             startresponse = self.m2ee.client.start(params)
             result = startresponse.get_result()
             if result == 0:
-                abort = True
+                fully_started = True
                 logger.info("The MxRuntime is fully started now.")
             else:
                 startresponse.display_error()
@@ -166,6 +167,9 @@ class CLI(cmd.Cmd):
                     abort = True
                 else:
                     abort = True
+
+        if abort:
+            self._stop()
 
     def _ask_user_whether_to_create_db(self):
         answer = None
