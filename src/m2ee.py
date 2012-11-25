@@ -416,7 +416,7 @@ class CLI(cmd.Cmd):
         if not m2eeresp.has_error():
             feedback = m2eeresp.get_feedback()
             if 'license' in feedback:
-                print(yaml.dump((feedback['license'])))
+                print(yaml.safe_dump(feedback['license'], allow_unicode=True))
             elif 'license_id' in feedback:
                 print("Unlicensed environment.")
                 print("Server ID: %s" % feedback['license_id'])
@@ -686,7 +686,7 @@ class CLI(cmd.Cmd):
                 logger.info("There are no currently running runtime requests.")
             else:
                 print("Current running Runtime Requests:")
-                print(yaml.dump(feedback))
+                print(yaml.safe_dump(feedback))
 
     def do_show_all_thread_stack_traces(self, args):
         if self._report_not_running():
