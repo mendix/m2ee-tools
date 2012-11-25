@@ -30,14 +30,15 @@ class CLI(cmd.Cmd):
 
     def do_restart(self, args):
         if self._stop():
-            if not self.m2ee.start_appcontainer():
-                return
-            self._start_runtime()
+            self._start()
 
     def do_stop(self, args):
         self._stop()
 
     def do_start(self, args):
+        self._start()
+
+    def _start(self):
         if not self.m2ee.start_appcontainer():
             return
         self._start_runtime()
