@@ -880,6 +880,9 @@ Available commands:
  show_all_thread_stack_traces - show all low-level JVM threads with stack trace
  profiler - start the profiler (experimental)
  check_health - manually execute health check
+ enable_debugger - enable remote debugger API
+ disable_debugger - disable remote debugger API
+ show_debugger_status - show whether debugger is enabled or not
 
 Extra commands you probably don't need:
  debug - dive into a local python debug session inside this program
