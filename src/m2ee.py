@@ -9,6 +9,7 @@ import sys
 import getpass
 import signal
 import string
+import random
 import pprint
 import yaml
 
@@ -458,6 +459,65 @@ class CLI(cmd.Cmd):
             return
         m2eeresp.display_error()
         # no usable feedback, anyway, not as of 4.1.0
+
+    def do_enable_debugger(self, args):
+        if self._report_not_running():
+            return
+
+        if not args:
+            debugger_password = raw_input(
+                "Please enter the password to be used for remote debugger "
+                "access from the modeler, or leave blank to auto-generate "
+                "a password: ")
+            if not debugger_password:
+                debugger_password = ''.join(
+                    random.choice(string.letters + string.digits)
+                    for x in range(random.randint(20, 30)))
+        else:
+            debugger_password = args
+        m2eeresp = self.m2ee.client.enable_debugger(
+            {'password': debugger_password})
+        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
+            logger.error("This action is not available in the Mendix Runtime "
+                         "version you are currently using.")
+            logger.error("It was implemented in Mendix 4.3.0")
+            return
+        m2eeresp.display_error()
+        if not m2eeresp.has_error():
+            print("The remote debugger is now enabled, the password to use "
+                  "is %s" % debugger_password)
+
+    def do_disable_debugger(self, args):
+        if self._report_not_running():
+            return
+
+        m2eeresp = self.m2ee.client.disable_debugger()
+        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
+            logger.error("This action is not available in the Mendix Runtime "
+                         "version you are currently using.")
+            logger.error("It was implemented in Mendix 4.3.0")
+            return
+        if not m2eeresp.has_error():
+            logger.info("The remote debugger is now disabled.")
+        else:
+            m2eeresp.display_error()
+
+    def do_show_debugger_status(self, args):
+        if self._report_not_running():
+            return
+
+        m2eeresp = self.m2ee.client.get_debugger_status()
+        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
+            logger.error("This action is not available in the Mendix Runtime "
+                         "version you are currently using.")
+            logger.error("It was implemented in Mendix 4.3.0")
+            return
+        if not m2eeresp.has_error():
+            enabled = m2eeresp.get_feedback()['enabled']
+            logger.info("The remote debugger is currently %s." %
+                        ("enabled" if enabled else "disabled"))
+        else:
+            m2eeresp.display_error()
 
     def do_who(self, args):
         if self._report_not_running():

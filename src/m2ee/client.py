@@ -218,6 +218,15 @@ class M2EEClient:
     def create_runtime(self, params):
         return self.request("createruntime", params)
 
+    def enable_debugger(self, params):
+        return self.request("enable_debugger", params)
+
+    def disable_debugger(self):
+        return self.request("disable_debugger")
+
+    def get_debugger_status(self):
+        return self.request("get_debugger_status")
+
 
 class M2EEResponse:
 
