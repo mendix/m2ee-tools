@@ -445,6 +445,8 @@ class M2EEConfig:
         if 'monitoring_pass' in self._conf['m2ee']:
             env['M2EE_MONITORING_PASS'] = str(
                 self._conf['m2ee']['monitoring_pass'])
+
+        logger.trace("Environment to be used when starting the JVM: %s" % env)
         return env
 
     def get_java_cmd(self):
