@@ -272,6 +272,13 @@ class M2EEConfig:
         self._conf['m2ee']['admin_pass'] = str(
             self._conf['m2ee']['admin_pass'])
 
+        # Mendix >= 4.3: admin and runtime port only bind to localhost by
+        # default
+        self._conf['m2ee']['admin_listen_addresses'] = (
+            self._conf['m2ee'].get('admin_listen_addresses', ""))
+        self._conf['m2ee']['runtime_listen_addresses'] = (
+            self._conf['m2ee'].get('runtime_listen_addresses', ""))
+
         # check admin_pass 1 or password... refuse to accept when users don't
         # change default passwords
         if (self._conf['m2ee']['admin_pass'] == '1' or
@@ -421,6 +428,12 @@ class M2EEConfig:
         env.update({
             'M2EE_ADMIN_PORT': str(self._conf['m2ee']['admin_port']),
             'M2EE_ADMIN_PASS': str(self._conf['m2ee']['admin_pass']),
+            # only has effect with Mendix >= 4.3, but include anyway as
+            # it does not break earlier versions
+            'M2EE_ADMIN_LISTEN_ADDRESSES': str(
+                self._conf['m2ee']['admin_listen_addresses']),
+            'M2EE_RUNTIME_LISTEN_ADDRESSES': str(
+                self._conf['m2ee']['runtime_listen_addresses']),
         })
 
         # only add RUNTIME environment variables when using default
