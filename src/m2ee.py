@@ -514,8 +514,21 @@ class CLI(cmd.Cmd):
             return
         if not m2eeresp.has_error():
             enabled = m2eeresp.get_feedback()['enabled']
+            connected = m2eeresp.get_feedback()['client_connected']
+            paused = m2eeresp.get_feedback()['number_of_paused_microflows']
+
             logger.info("The remote debugger is currently %s." %
                         ("enabled" if enabled else "disabled"))
+            if connected:
+                logger.info("A debugger session is connected.")
+            elif enabled:
+                logger.info("There is no connected debugger session.")
+            if enabled and paused == 0:
+                logger.info("There are no paused microflows.")
+            elif paused == 1:
+                logger.info("There is 1 paused microflow.")
+            elif paused > 1:
+                logger.info("There are %s paused microflows." % paused)
         else:
             m2eeresp.display_error()
 
