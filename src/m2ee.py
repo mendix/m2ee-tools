@@ -484,8 +484,12 @@ class CLI(cmd.Cmd):
             return
         m2eeresp.display_error()
         if not m2eeresp.has_error():
-            print("The remote debugger is now enabled, the password to use "
-                  "is %s" % debugger_password)
+            logger.info("The remote debugger is now enabled, the password to "
+                        "use is %s" % debugger_password)
+            logger.info("You can use the remote debugger option in the Mendix "
+                        "Business Modeler to connect to the /debugger/ sub "
+                        "url on your application (e.g. "
+                        "https://app.example.com/debugger/). ")
 
     def do_disable_debugger(self, args):
         if self._report_not_running():
