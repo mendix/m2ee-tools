@@ -90,7 +90,7 @@ class M2EERunner:
             logger.debug("OSError! Process already gone?")
         return self._wait_pid(timeout)
 
-    def start(self, timeout=10, step=0.25):
+    def start(self, timeout=60, step=0.25):
         if self.check_pid():
             logger.error("The application process is already started!")
             return False
