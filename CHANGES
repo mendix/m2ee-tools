@@ -9,7 +9,7 @@ m2ee-tools 0.4.4, 12 Dec 2012
     before 4.3.0
   * Include extensive documentation about configuration settings in the
     full-documented-m2ee.yaml example file. Also, remove all non-essential
-	settings from the default example configuration file.
+    settings from the default example configuration file.
   * MyScheduledEvents configuration can be a pretty yaml list now
   * Small fixes and error handling improvements
 
