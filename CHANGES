@@ -1,3 +1,18 @@
+m2ee-tools 0.4.4, 12 Dec 2012
+  * Increase start timeout to 60 seconds
+  * Implement admin/runtime_listen_addresses settings (new in Mendix 4.3.0)
+  * Implement remote debugger API (new in Mendix 4.3.0)
+  * Shutdown the runtime entirely when choosing abort during startup, instead
+    of leaving it in a half started state.
+  * Eliminate simplejson dependency for python >= 2.6
+  * Warn user to restart after activating license when using a Mendix version
+    before 4.3.0
+  * Include extensive documentation about configuration settings in the
+    full-documented-m2ee.yaml example file. Also, remove all non-essential
+	settings from the default example configuration file.
+  * MyScheduledEvents configuration can be a pretty yaml list now
+  * Small fixes and error handling improvements
+
 m2ee-tools 0.4.3, 30 oct 2012
   * Drop support for python 2.4
   * Simplify exception handling on unusable m2ee api.
