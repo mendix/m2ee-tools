@@ -3,8 +3,8 @@
 # user/application specific configuration
 #
 # All non-essential configuration settings have been omitted in this example
-# file. Refer to the full-documented-m2ee.yaml in the examples directory for
-# a full list of available options and explanation about them.
+# file. Refer to the full-documented-m2ee.yaml in the examples directory for a
+# full list of available options and explanation about them.
 #
 m2ee:
  app_name: My Project Name
@@ -14,19 +14,17 @@ m2ee:
  admin_pass: password
  # mxruntime web interface port
  runtime_port: 8000
- # set to * if you want to have the public runtime port accessible from other hosts
- # than localhost (Mendix >= 4.3)
+ # set to * if you want to have the public runtime port accessible from other
+ # hosts than localhost (Mendix >= 4.3.0)
  #runtime_listen_addresses: "*"
  # custom java options, like -Xmx256m or -Djava.foo=bar
- # note: in case you are using ia32-sun-java6-bin, you want to add the following option:
- #   "-Dsun.io.useCanonPrefixCache=false". Also see http://bugs.debian.org/617402.
  javaopts: [
    "-Dfile.encoding=UTF-8", "-XX:MaxPermSize=64M", "-Xmx128M", "-Xms128M",
    "-Djava.io.tmpdir=/path/to/project/directory/data/tmp",
  ]
- # file which will be read back by the m2ee log command to provide live logging info
- # this is *not* a file m2ee-tools is going to write to, it is a hint about where
- # to find the log which is written by the mendix application
+ # file which will be read back by the m2ee log command to provide live logging
+ # info this is *not* a file m2ee-tools is going to write to, it is a hint
+ # about where to find the log which is written by the mendix application
  logfile: /path/to/your/favorite/logfile
 logging:
  - # example of file logging by the platform itself
@@ -37,31 +35,26 @@ logging:
    max_size: 10485760 # bytes(!!)
    max_rotation: 7
 mxruntime:
- # Application root URL will be used when generating wsdl documentation on the fly at /ws-doc/
- ApplicationRootUrl: https://example.mendix.com/
-
  # Database login credentials
  DatabaseType: PostgreSQL
- # The DatabaseHost contains the database hostname and optionally, also the TCP port number.
- # It's possible to use a plain IPv6 address by enclosing it in brackets, like: "[::1]:5432"
+ # The DatabaseHost contains the database hostname and optionally, also the TCP
+ # port number.  It's possible to use a plain IPv6 address by enclosing it in
+ # brackets, like: "[::1]:5432"
  DatabaseHost: "127.0.0.1:5432"
  DatabaseName: database
  DatabaseUserName: username
  DatabasePassword: password
- 
+
  MicroflowConstants:
   # put microflow constants in here
-  #"Module.Constant": text
-  #"AnotherModule.AnotherConstant": bla
+  Module.Constant: text
+  AnotherModule.AnotherConstant: bla
 
  # ScheduledEventExecution can be set to ALL, NONE (default) or SPECIFIED
  ScheduledEventExecution: NONE
- # When using ScheduledEventExecution SPECIFIED, provide a list of actions to enable:
+ # When using ScheduledEventExecution SPECIFIED, provide a list of actions to
+ # enable:
  MyScheduledEvents:
   - Module1.Event1
   - Module2.Event2
   - Module3.Event3
-
- # License key file (2.5.x only, for 3.x+ use the activate_license m2ee command)
- #KeyFile: /path/to/some/place/key.mx
-
