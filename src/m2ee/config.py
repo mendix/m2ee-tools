@@ -11,7 +11,6 @@ import sys
 import pwd
 import re
 import copy
-import sqlite3
 
 from log import logger
 from collections import defaultdict
@@ -686,6 +685,7 @@ class M2EEConfig:
             return self._model_metadata['RuntimeVersion']
 
         # else, 2.5: try to read from model.mdp using sqlite
+        import sqlite3
         model_mdp = os.path.join(
             self._conf['m2ee']['app_base'],
             'model',
