@@ -16,16 +16,16 @@ DUNNO = -1
 
 def check(runner, client):
 
-    runtime_state = check_process(runner, client)
+    runtime_state = _check_process(runner, client)
     if runtime_state != DUNNO:
         return runtime_state
 
-    runtime_health = check_health(client)
+    runtime_health = _check_health(client)
 
     if runtime_health != STATE_OK:
         return runtime_health
 
-    critical_log_status = check_critical_logs(client)
+    critical_log_status = _check_critical_logs(client)
     if critical_log_status != STATE_OK:
         return critical_log_status
 
@@ -36,7 +36,7 @@ def check(runner, client):
     return STATE_OK
 
 
-def check_process(runner, client):
+def _check_process(runner, client):
     pid = runner.get_pid()
 
     if pid is None:
@@ -77,7 +77,7 @@ def check_process(runner, client):
     return DUNNO
 
 
-def check_health(client):
+def _check_health(client):
     health_response = client.check_health()
     if not health_response.has_error():
         feedback = health_response.get_feedback()
@@ -112,7 +112,7 @@ def check_health(client):
     return STATE_OK
 
 
-def check_critical_logs(client):
+def _check_critical_logs(client):
     errors = client.get_critical_log_messages()
     if len(errors) != 0:
         print("MxRuntime CRITICAL: %d critical error(s) were logged" %
