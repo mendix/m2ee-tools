@@ -16,17 +16,19 @@ DUNNO = -1
 
 def check(runner, client):
 
-    runtime_state = _check_process(runner, client)
+    (runtime_state, message) = _check_process(runner, client)
     if runtime_state != DUNNO:
+        print message
         return runtime_state
 
-    runtime_health = _check_health(client)
-
+    (runtime_health, message) = _check_health(client)
     if runtime_health != STATE_OK:
+        print message
         return runtime_health
 
-    critical_log_status = _check_critical_logs(client)
+    (critical_log_status, message) = _check_critical_logs(client)
     if critical_log_status != STATE_OK:
+        print message
         return critical_log_status
 
     # everything seems to be fine, print version info and exit
@@ -40,41 +42,41 @@ def _check_process(runner, client):
     pid = runner.get_pid()
 
     if pid is None:
-        print("MxRuntime OK: Not running.")
-        return STATE_OK
+        message = "MxRuntime OK: Not running."
+        return (STATE_OK, message)
     pid_alive = runner.check_pid()
     m2ee_alive = client.ping()
 
     if pid_alive and not m2ee_alive:
-        print("MxRuntime CRITICAL: pid %s is alive, but m2ee does not "
-              "respond." % pid)
-        return STATE_CRITICAL
+        message = "MxRuntime CRITICAL: pid %s is alive, but m2ee does not " \
+                  "respond." % runner.get_pid()
+        return (STATE_CRITICAL, message)
 
     if not pid_alive and not m2ee_alive:
-        print("MxRuntime CRITICAL: pid %s is not available, m2ee does not "
-              "respond." % pid)
-        return STATE_CRITICAL
+        message = "MxRuntime CRITICAL: pid %s is not available, m2ee does " \
+                  "not respond." % runner.get_pid()
+        return (STATE_CRITICAL, message)
 
     if not pid_alive and m2ee_alive:
-        print("MxRuntime WARNING: pid %s is not available, but m2ee "
-              "responds." % pid)
-        return STATE_WARNING
+        message = "MxRuntime WARNING: pid %s is not available, but m2ee " \
+                  "responds." % runner.get_pid()
+        return (STATE_WARNING, message)
 
     if not m2ee_alive:
-        print("MxRuntime WARNING: plugin has broken logic, m2ee should be "
-              "alive")
-        return STATE_WARNING
+        message = "MxRuntime WARNING: plugin has broken logic, m2ee should " \
+                  "be alive"
+        return (STATE_WARNING, message)
 
     status_feedback = client.runtime_status().get_feedback()
     if status_feedback['status'] == 'starting':
-        print("MxRuntime WARNING: application is still starting up...")
-        return STATE_WARNING
+        message = "MxRuntime WARNING: application is still starting up..."
+        return (STATE_WARNING, message)
     elif status_feedback['status'] != 'running':
-        print("MxRuntime CRITICAL: application is in state %s" %
-              status_feedback['status'])
-        return STATE_CRITICAL
+        message = "MxRuntime CRITICAL: application is in state %s" % \
+                  status_feedback['status']
+        return (STATE_CRITICAL, message)
 
-    return DUNNO
+    return (DUNNO, None)
 
 
 def _check_health(client):
@@ -84,15 +86,15 @@ def _check_health(client):
         if feedback['health'] == 'healthy':
             pass
         elif feedback['health'] == 'sick':
-            print("MxRuntime WARNING: Health: %s" % feedback['diagnosis'])
-            return STATE_WARNING
+            message = "MxRuntime WARNING: Health: %s" % feedback['diagnosis']
+            return (STATE_WARNING, message)
         elif feedback['health'] == 'unknown':
             # no health check action was configured
             pass
         else:
-            print("MxRuntime WARNING: Unexpected health check status: %s" %
-                  feedback['health'])
-            return STATE_WARNING
+            message = "MxRuntime WARNING: Unexpected health check status: %s" \
+                      % feedback['health']
+            return (STATE_WARNING, message)
     else:
         if (health_response.get_result() == 3 and
                 health_response.get_cause() == "java.lang.IllegalArgument"
@@ -106,17 +108,17 @@ def _check_health(client):
             # Admin action 'check_health' does not exist.
             pass
         else:
-            print("MxRuntime WARNING: Health check failed unexpectedly: %s" %
-                  health_response.get_error())
-            return STATE_WARNING
-    return STATE_OK
+            message = "MxRuntime WARNING: Health check failed unexpectedly: " \
+                      "%s" % health_response.get_error()
+            return (STATE_WARNING, message)
+    return (STATE_OK, None)
 
 
 def _check_critical_logs(client):
     errors = client.get_critical_log_messages()
     if len(errors) != 0:
-        print("MxRuntime CRITICAL: %d critical error(s) were logged" %
-              len(errors))
-        print('\n'.join(errors))
-        return STATE_CRITICAL
-    return STATE_OK
+        message = "MxRuntime CRITICAL: %d critical error(s) were logged" % \
+                  len(errors)
+        message += '\n'.join(errors)
+        return (STATE_CRITICAL, message)
+    return (STATE_OK, None)
