@@ -15,7 +15,6 @@ DUNNO = -1
 
 
 def check(runner, client):
-
     (runtime_state, message) = _check_process(runner, client)
     if runtime_state != DUNNO:
         print message
