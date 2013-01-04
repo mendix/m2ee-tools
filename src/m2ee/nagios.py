@@ -36,6 +36,42 @@ def check(runner, client):
           about_feedback['version'])
     return STATE_OK
 
+def check_process(runner, client):
+    (status, message) = _check_process(runner, client)
+    print message
+    return status
+
+
+def check_health(runner, client):
+    (process_status, process_message) = _check_process(runner, client)
+    if process_status == STATE_OK:
+        if client.ping():
+            (health_status, health_message) = _check_health(client)
+            if health_status == STATE_OK:
+                print "Health check OK"
+                return STATE_OK
+            else:
+                print health_message
+                return health_status
+    print "Health could not be determined"
+    return STATE_UNKNOWN
+
+
+def check_critical_logs(runner, client):
+    (process_status, process_message) = _check_process(runner, client)
+    if process_status == STATE_OK:
+        if client.ping():
+            (critical_logs_status, critical_logs_message) = \
+                _check_critical_logs(client)
+            if critical_logs_status == STATE_OK:
+                print "No critical log messages"
+                return STATE_OK
+            else:
+                print critical_logs_message
+                return critical_logs_status
+    print "Critical logs could not be determined"
+    return STATE_UNKNOWN
+
 
 def _check_process(runner, client):
     pid = runner.get_pid()
