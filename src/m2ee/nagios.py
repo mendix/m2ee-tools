@@ -53,7 +53,7 @@ def check_health(runner, client):
             else:
                 print health_message
                 return health_status
-    print "Health could not be determined"
+    print "Runtime not running. Health could not be determined"
     return STATE_UNKNOWN
 
 
@@ -69,7 +69,7 @@ def check_critical_logs(runner, client):
             else:
                 print critical_logs_message
                 return critical_logs_status
-    print "Critical logs could not be determined"
+    print "Runtime not running. Critical Logs could not be determined"
     return STATE_UNKNOWN
 
 
