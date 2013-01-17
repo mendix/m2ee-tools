@@ -39,6 +39,8 @@ def check(runner, client):
 def check_process(runner, client):
     (status, message) = _check_process(runner, client)
     print message
+    if status is DUNNO:
+        return 0
     return status
 
 
