@@ -46,7 +46,7 @@ def check_process(runner, client):
 
 def check_health(runner, client):
     (process_status, process_message) = _check_process(runner, client)
-    if process_status == STATE_OK:
+    if process_status == DUNNO:
         if client.ping():
             (health_status, health_message) = _check_health(client)
             if health_status == STATE_OK:
@@ -61,7 +61,7 @@ def check_health(runner, client):
 
 def check_critical_logs(runner, client):
     (process_status, process_message) = _check_process(runner, client)
-    if process_status == STATE_OK:
+    if process_status == DUNNO:
         if client.ping():
             (critical_logs_status, critical_logs_message) = \
                 _check_critical_logs(client)
