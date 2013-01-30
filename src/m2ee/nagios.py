@@ -36,6 +36,7 @@ def check(runner, client):
           about_feedback['version'])
     return STATE_OK
 
+
 def check_process(runner, client):
     (status, message) = _check_process(runner, client)
     print message
