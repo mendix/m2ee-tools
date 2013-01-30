@@ -50,12 +50,8 @@ def check_health(runner, client):
     if process_status == DUNNO:
         if client.ping():
             (health_status, health_message) = _check_health(client)
-            if health_status == STATE_OK:
-                print "Health check OK"
-                return STATE_OK
-            else:
-                print health_message
-                return health_status
+            print health_message
+            return health_status
     print "Runtime not running. Health could not be determined"
     return STATE_UNKNOWN
 
@@ -149,7 +145,7 @@ def _check_health(client):
             message = "MxRuntime WARNING: Health check failed unexpectedly: " \
                       "%s" % health_response.get_error()
             return (STATE_WARNING, message)
-    return (STATE_OK, None)
+    return (STATE_OK, "Health check OK")
 
 
 def _check_critical_logs(client):
