@@ -58,12 +58,8 @@ def check_critical_logs(runner, client):
     if client.ping():
         (critical_logs_status, critical_logs_message) = \
             _check_critical_logs(client)
-        if critical_logs_status == STATE_OK:
-            print "No critical log messages"
-            return STATE_OK
-        else:
-            print critical_logs_message
-            return critical_logs_status
+        print critical_logs_message
+        return critical_logs_status
     print "Runtime not running. Critical Logs could not be determined"
     return STATE_UNKNOWN
 
@@ -151,4 +147,4 @@ def _check_critical_logs(client):
                   len(errors)
         message += '\n'.join(errors)
         return (STATE_CRITICAL, message)
-    return (STATE_OK, None)
+    return (STATE_OK, "No critical log messages")
