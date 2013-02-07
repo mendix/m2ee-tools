@@ -102,7 +102,7 @@ def _check_process(runner, client):
                   status_feedback['status']
         return (STATE_CRITICAL, message)
 
-    return (DUNNO, None)
+    return (DUNNO, "MxRuntime OK")
 
 
 def _check_health(client):
