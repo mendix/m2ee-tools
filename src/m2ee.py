@@ -409,6 +409,8 @@ class CLI(cmd.Cmd):
             print('Project company name is %s' % feedback['company'])
         if 'partner' in feedback:
             print('Project partner name is %s' % feedback['partner'])
+        if 'model_version' in feedback:  # since 4.4.0
+            print('Model version: %s' % feedback['model_version'])
 
     def do_show_license_information(self, args):
         if self._report_not_running():
