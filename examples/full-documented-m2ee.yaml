@@ -51,6 +51,10 @@
 # perfectly possible). Examples are the file system location where you put
 # Mendix Runtime distributions (the unpacked mendix-x.y.z.tar.gz files)
 #
+# In configuration options explained below, the uncommented shown values are in
+# most cases not default values, but just an example value. When an option has
+# a default value, this is explained in the text.
+#
 
 mxnode:
  # mxjar_repo can be a single location, or a list of locations which need to be
@@ -76,9 +80,9 @@ mxnode:
  # PostgreSQL versions at the same time on a server, so YMMV.
  #
  # default: just search for the default programs on the current OS search path
- #pg_dump: /usr/lib/postgresql/8.3/bin/pg_dump
- #pg_restore: /usr/lib/postgresql/8.4/bin/pg_restore
- #psql: /usr/lib/postgresql/8.4/bin/psql
+ pg_dump: /usr/lib/postgresql/8.3/bin/pg_dump
+ pg_restore: /usr/lib/postgresql/8.4/bin/pg_restore
+ psql: /usr/lib/postgresql/8.4/bin/psql
 
 # The m2ee section defines configuration about a single application we're going
 # to run.
@@ -121,7 +125,7 @@ m2ee:
  # It is highly recommended to use the default value "127.0.0.1,::1" for the
  # admin interface, since the m2ee program always has to be run on the server
  # itself.
- #admin_listen_addresses: "127.0.0.1,::1"
+ admin_listen_addresses: "127.0.0.1,::1"
 
  # A password which protects the administrative interface, running on the admin
  # TCP port. set this password to e.g. a long random string, it's not used
@@ -150,7 +154,7 @@ m2ee:
  # which the http traffic arrives.
  #
  # default: "127.0.0.1,::1"
- #runtime_listen_addresses: "127.0.0.1,::1"
+ runtime_listen_addresses: "127.0.0.1,::1"
 
  # By default, a pid file containing the process id of the running Mendix
  # Runtime JVM is stored into the m2ee.pid file into the .m2ee directory of the
@@ -158,7 +162,7 @@ m2ee:
  # possible to override the location.
  #
  # default: .m2ee/m2ee.pid under the current users home directory
- #pidfile: /somwhere/else/m2ee.pid
+ pidfile: /somwhere/else/m2ee.pid
 
  # The runtime_blocking_connector option specifies whether the Mendix Runtime
  # will use a Jetty BlockingChannelConnector for the runtime port http
@@ -199,8 +203,8 @@ m2ee:
  # starting the JVM process.
  #
  # default: empty
- #custom_environment:
-  #PATH: "/bin:/usr/bin/:/opt/some/weird/jre/version/bin/"
+ custom_environment:
+  PATH: "/bin:/usr/bin/:/opt/some/weird/jre/version/bin/"
 
  # javaopts are custom command line options that will be inserted when starting
  # the Mendix Runtime JVM process. Any command line option that is accepted by
@@ -225,7 +229,7 @@ m2ee:
  # updates should be coordinated with the project team using the Modeler.
  #
  # default: autodetected version from deployment files
- #runtime_version: x.y.z
+ runtime_version: x.y.z
 
  # If symlink_mxclientsystem is set to true, try to symlink web/mxclientsystem
  # to the mxclientsystem directory of the runtime distribution currently in use.
@@ -247,7 +251,7 @@ m2ee:
  # project directory.
  #
  # default: undefined
- #post_unpack_hook: '/path/to/project/data/hooks/post-unpack.sh'
+ post_unpack_hook: '/path/to/project/data/hooks/post-unpack.sh'
 
  # When set to false, the allow_destroy_db option makes m2ee refuse to execute
  # the restoredb and emptydb commands. This option is particularly useful for
@@ -264,12 +268,12 @@ m2ee:
  # validation query logs.
  #
  # defaults to data/database under app_base path
- #database_dump_path:
+ database_dump_path: '/path/to/project/data/database'
 
  # This location is used for reading deployment archive uploads (.mda)
  #
  # defaults to data/model-upload under app_base path
- #model_upload_path:
+ model_upload_path: '/path/to/project/data/model-upload'
 
  # When using the log command in the m2ee shell, m2ee-tools will execute a tail
  # -F on the log file of your Mendix Runtime. Unfortunately, it does not
@@ -280,7 +284,7 @@ m2ee:
  #
  # default: no default
  #logfile: /path/to/project/data/log/logfile.txt
- #logfile: /var/log/mendix/myproject.log
+ logfile: /var/log/mendix/myproject.log
 
  # The munin sub-section of m2ee defines some behaviour of the munin_config and
  # munin_values commands that are provided to be used as munin plugin for
@@ -310,8 +314,8 @@ m2ee:
 #
 # default: empty
 mimetypes:
- #ext: mime/type
- #foo: mime/bar
+ ext: mime/type
+ foo: mime/bar
 
 # The logging section defines what sort of logging will be configured when
 # starting the Mendix Runtime. Logging in the Mendix Runtime is done using a
@@ -418,9 +422,9 @@ mxruntime:
  # sure to test this extensively in your setup before enabling this in
  # production, to be sure you know the quircks about long living transactions,
  # data transfer volumes and SSL renegotiation.
- #DatabaseUseSsl: False
+ DatabaseUseSsl: False
  # Defines the SERVICE_NAME when you have a connection with an Oracle DBMS.
- #OracleServiceName:
+ OracleServiceName: MyServiceName
 
  # Advanced Database connection pooling configuration
  #
@@ -486,7 +490,7 @@ mxruntime:
  # The value is specified in milliseconds.
  #
  # default: not set, no logging
- #LogMinDurationQuery: 10000
+ LogMinDurationQuery: 10000
 
  # TrackWebServiceUserLastLogin defines whether to update the web service users
  # 'LastLogin' field on each login. When this happens a database update query
@@ -497,7 +501,7 @@ mxruntime:
  # This option was introduced in Mendix version 4.3.0
  #
  # default: True
- #TrackWebServiceUserLastLogin: True
+ TrackWebServiceUserLastLogin: True
 
  # 'Session Fingerprinting' is a feature that was introduced in Mendix 3.2.0
  # On login, a fingerprint of browser information is taken, which is compared to
