@@ -1,4 +1,10 @@
 #!/usr/bin/python
+#
+# Copyright (c) 2009-2013, Mendix bv
+# All Rights Reserved.
+#
+# http://www.mendix.com/
+#
 
 import cmd
 import subprocess
