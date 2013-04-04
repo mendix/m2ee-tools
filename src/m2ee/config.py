@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009-2012, Mendix bv
+# Copyright (c) 2009-2013, Mendix bv
 # All Rights Reserved.
 #
 # http://www.mendix.com/
@@ -11,7 +11,6 @@ import sys
 import pwd
 import re
 import copy
-import sqlite3
 
 from log import logger
 from collections import defaultdict
@@ -677,15 +676,22 @@ class M2EEConfig:
         return classpath
 
     def _lookup_runtime_version(self):
+        logger.debug("Determining runtime version to be used...")
+
         # force to a specific version
         if self._conf['m2ee'].get('runtime_version', None):
+            logger.debug("Runtime version forced to %s in configuration" %
+                         self._conf['m2ee']['runtime_version'])
             return self._conf['m2ee']['runtime_version']
 
         # 3.0 has runtime version in metadata.json
         if 'RuntimeVersion' in self._model_metadata:
+            logger.debug("MxRuntime version listed in model metadata: %s" %
+                         self._model_metadata['RuntimeVersion'])
             return self._model_metadata['RuntimeVersion']
 
         # else, 2.5: try to read from model.mdp using sqlite
+        import sqlite3
         model_mdp = os.path.join(
             self._conf['m2ee']['app_base'],
             'model',

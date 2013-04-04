@@ -1,4 +1,10 @@
 #!/usr/bin/python
+#
+# Copyright (c) 2009-2013, Mendix bv
+# All Rights Reserved.
+#
+# http://www.mendix.com/
+#
 
 import cmd
 import subprocess
@@ -12,6 +18,7 @@ import string
 import random
 import pprint
 import yaml
+import datetime
 
 from m2ee import pgutil, M2EE, M2EEProfiler, mdautil
 from m2ee.log import logger
@@ -408,6 +415,8 @@ class CLI(cmd.Cmd):
             print('Project company name is %s' % feedback['company'])
         if 'partner' in feedback:
             print('Project partner name is %s' % feedback['partner'])
+        if 'model_version' in feedback:  # since 4.4.0
+            print('Model version: %s' % feedback['model_version'])
 
     def do_show_license_information(self, args):
         if self._report_not_running():
@@ -422,12 +431,68 @@ class CLI(cmd.Cmd):
         if not m2eeresp.has_error():
             feedback = m2eeresp.get_feedback()
             if 'license' in feedback:
-                print(yaml.safe_dump(feedback['license'], allow_unicode=True))
+                logger.debug(yaml.safe_dump(feedback['license'],
+                             allow_unicode=True))
+                import copy
+                licensecopy = copy.deepcopy(feedback['license'])
+                self._print_license(licensecopy)
             elif 'license_id' in feedback:
                 print("Unlicensed environment.")
                 print("Server ID: %s" % feedback['license_id'])
             else:
                 print("Unlicensed environment.")
+
+    def _print_license(self, licensecopy):
+        print("Server ID: %s" % licensecopy.pop('LicenseID', 'Unknown'))
+        print("License Type: %s" % licensecopy.pop('LicenseType', 'Unknown'))
+        if 'ExpirationDate' in licensecopy:
+            print("Expiration Date: %s" %
+                  datetime.datetime.fromtimestamp(
+                  licensecopy.pop('ExpirationDate') / 1000)
+                  .strftime("%a, %d %b %Y %H:%M:%S %z")
+                  .rstrip())
+        print("Runtime Mode: %s" % licensecopy.pop('RuntimeMode', 'Unknown'))
+        print("Company: %s" % licensecopy.pop('Company', 'Unknown'))
+
+        limitations = licensecopy.pop('UserLimitations', None)
+        separate_anonymous = licensecopy.pop('SeparateAnonymousUsers')
+        if limitations is not None:
+            print("License Limitations:")
+            for limitation in limitations:
+                self._print_license_limitation(limitation, separate_anonymous)
+
+        if len(licensecopy) > 1:
+            print(yaml.safe_dump(licensecopy, allow_unicode=True))
+
+    def _print_license_limitation(self, limitation, separate_anonymous):
+        if limitation['LimitationType'] == 'Named':
+            if limitation['AmountType'] == 'Unlimited':
+                print("- Unlimited named %suser accounts allowed." %
+                      ('' if separate_anonymous else "and anonymous "))
+            else:
+                print(" - %s named user account%s allowed" %
+                      (limitation['NumberOfAllowedUsers'],
+                       's' if limitation['NumberOfAllowedUsers'] != 1 else ''))
+        elif limitation['LimitationType'] == 'Concurrent':
+            if limitation['AmountType'] == 'Unlimited':
+                print("- Unlimited concurrent named %suser sessions allowed."
+                      % ("" if separate_anonymous else "and anonymous "))
+            else:
+                print("- %s concurrent named %suser session%s allowed." %
+                      (limitation['NumberOfAllowedUsers'],
+                      '' if separate_anonymous else "and anonymous ",
+                      ('s' if limitation['NumberOfAllowedUsers'] != 1
+                      else '')))
+        elif (limitation['LimitationType'] == 'ConcurrentAnonymous' and
+              separate_anonymous):
+            if limitation['AmountType'] == 'Unlimited':
+                print("- Unlimited concurrent anonymous user sessions "
+                      "allowed.")
+            else:
+                print("- %s concurrent anonymous session%s allowed." %
+                      (limitation['NumberOfAllowedUsers'],
+                      ('s' if limitation['NumberOfAllowedUsers'] != 1
+                      else '')))
 
     def do_activate_license(self, args):
         if self._report_not_running():

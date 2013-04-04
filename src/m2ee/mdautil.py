@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009-2012, Mendix bv
+# Copyright (c) 2009-2013, Mendix bv
 # All Rights Reserved.
 #
 # http://www.mendix.com/
@@ -10,10 +10,12 @@ import shutil
 import subprocess
 from log import logger
 
-# allow - in filenames we're completing without messing up completion
-import readline
-readline.set_completer_delims(readline.get_completer_delims().replace('-', ''))
-
+try:
+    import readline
+    # allow - in filenames we're completing without messing up completion
+    readline.set_completer_delims(readline.get_completer_delims().replace('-', ''))
+except ImportError:
+    pass
 
 def unpack(model_upload_path, mda_name, app_base):
 

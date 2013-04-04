@@ -1,0 +1,39 @@
+.TH M2EE 1 " 2012" "" "Mendix Runtime"
+.nh
+.ad l
+
+.SH NAME
+m2ee \- mendix runtime deployment tools
+
+.SH SYNOPSIS
+.HP \w'm2ee\ 'u
+m2ee [ \fIoptions\fR ] [ \fIaction\fR ]
+
+.SH DESCRIPTION
+\fBm2ee\fR provides an interactive way to manage a Mendix Business Server process.
+
+.SH OPTIONS
+.PP
+\fB\-c \fR\fB\fIconfigfile\fR\fR
+.RS 4
+Use a specific configuration file instead of searching for default configuration 
+files (/etc/m2ee/m2ee\&.yaml and ~/\&.m2ee/m2ee\&.yaml)\&. This option can be specified multiple times\&.
+.RE
+.PP
+\fB\-v\fR, \fB\-\-verbose\fR
+.RS 4
+Increase verbosity of output. (\-vv to be even more verbose)
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+Decrease verbosity of output (\-qq to be even more quiet)
+.RE
+.SH "SEE ALSO"
+.B
+More installation documentation:
+https://world.mendix.com/ -> Documentation -> Deployment -> Mendix on GNU/Linux
+.PP
+.B
+Source on github:
+https://github.com/mendix/m2ee-tools/

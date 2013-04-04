@@ -7,3 +7,5 @@
 [ ] remove all left-overs of user interaction from lib files (raw_input etc)
 [ ] munin: graph max license user limits (named/concurrent)
 [ ] nagios: alert when license limits are (almost) reached
+[ ] document in full-documented-m2ee.yaml: EnableKeepAlive, PersistentSessions, SessionTimeout
+[ ] document in full-documented-m2ee.yaml: options for web service client certificates
