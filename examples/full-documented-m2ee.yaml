@@ -215,6 +215,24 @@ m2ee:
     "-Djava.io.tmpdir=/path/to/project/data/tmp",
  ]
 
+ # Using extend_classpath, a list of additional locations can be provided that
+ # will be added to the JVM classpath when starting the Mendix Runtime.
+ #
+ # Note: use this option with care. Realize that the JVM loads classes as soon
+ # as they're used for the first time. This means that changes at the locations
+ # you point at either won't be noticed, or oppose problems when the content of
+ # the classpath was changed while the application is running.
+ #
+ # Note 2: this option is immediately deprecated, and will not be available in
+ # Mendix 5. If you need to have external libraries in your production
+ # environment that you do not want to maintain in the project itself, you
+ # might consider using a post_unpack_hook to copy them into your userlib
+ # project location server side.
+ extend_classpath: [
+    "/usr/local/share/java/greatstuff.jar",
+    "/opt/dirty/*"
+ ]
+
  # Using runtime_version, a specific runtime version can be forced to be used
  # when starting the Mendix Runtime. By default, the version of the Mendix
  # software used when creating an application using the Mendix Business Modeler
