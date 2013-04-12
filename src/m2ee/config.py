@@ -134,6 +134,14 @@ class M2EEConfig:
             classpath = self._setup_classpath_runtime_binary()
             classpath.extend(self._setup_classpath_model())
 
+        # add custom classpath locations
+        if 'extend_classpath' in self._conf['m2ee']:
+            if isinstance(self._conf['m2ee']['extend_classpath'], list):
+                classpath.extend(self._conf['m2ee']['extend_classpath'])
+            else:
+                logger.warn("extend_classpath option in m2ee section in "
+                            "configuration is not a list")
+
         self._classpath = ":".join(classpath)
         if classpath:
             logger.debug("Using classpath: %s" % self._classpath)
