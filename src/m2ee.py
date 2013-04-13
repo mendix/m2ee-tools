@@ -160,9 +160,10 @@ class CLI(cmd.Cmd):
                     if answer == 'a':
                         abort = True
                 elif result == 4:
-                    answer = self._ask_user_to_fix_constants()
-                    if answer == 'a':
-                        abort = True
+                    logger.error("You'll have to add the constant definitions "
+                                 "to the configuration in the "
+                                 "MicroflowConstants section.")
+                    abort = True
                 elif result == 5:
                     answer = self._handle_admin_1(
                         startresponse.get_feedback()['users'])
@@ -224,16 +225,6 @@ class CLI(cmd.Cmd):
                     m2eeresponse = self.m2ee.client.execute_ddl_commands()
                     m2eeresponse.display_error()
             else:
-                print("Unknown option %s" % answer)
-        return answer
-
-    def _ask_user_to_fix_constants(self):
-        answer = None
-        logger.error("You'll have to add the constant definitions to the "
-                     "configuration in the MicroflowConstants section.")
-        while not answer in ('r', 'a'):
-            answer = raw_input("Do you want to (r)etry, or (a)bort: ")
-            if answer not in ('a', 'r'):
                 print("Unknown option %s" % answer)
         return answer
 
