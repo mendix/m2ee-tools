@@ -35,14 +35,20 @@ def unpack(config, mda_name):
 
         if proc.returncode != 0:
             logger.error("An error occured while testing archive "
-                         "consistency: ")
-            if stdout != '':
-                logger.error(stdout)
-            if stderr != '':
-                logger.error(stderr)
+                         "consistency:")
+            logger.error("stdout: %s" % stdout)
+            logger.error("stderr: %s" % stderr)
             return False
+        else:
+            logger.trace("stdout: %s" % stdout)
+            logger.trace("stderr: %s" % stderr)
     except OSError, ose:
-        logger.error("An error occured while executing unzip: %s" % ose)
+        import errno
+        if ose.errno == errno.ENOENT:
+            logger.error("The unzip program could not be found: %s" %
+                         ose.strerror)
+        else:
+            logger.error("An error occured while executing unzip: %s" % ose)
         return False
 
     logger.debug("Removing everything in model/ and web/ locations...")
@@ -61,12 +67,13 @@ def unpack(config, mda_name):
     (stdout, stderr) = proc.communicate()
 
     if proc.returncode != 0:
-        logger.error("An error occured while extracting archive: ")
-        if stdout != '':
-            print(logger.error(stdout))
-        if stderr != '':
-            print(logger.error(stderr))
+        logger.error("An error occured while extracting archive:")
+        logger.error("stdout: %s" % stdout)
+        logger.error("stderr: %s" % stderr)
         return False
+    else:
+        logger.trace("stdout: %s" % stdout)
+        logger.trace("stderr: %s" % stderr)
 
     # XXX: reset permissions on web/ model/ to be sure after executing this
     # function
@@ -102,7 +109,7 @@ def fix_mxclientsystem_symlink(config):
 def run_post_unpack_hook(post_unpack_hook):
     if os.path.isfile(post_unpack_hook):
         if os.access(post_unpack_hook, os.X_OK):
-            logger.info("Running post-unpack-hook...")
+            logger.info("Running post-unpack-hook: %s" % post_unpack_hook)
             retcode = subprocess.call((post_unpack_hook,))
             if retcode != 0:
                 logger.error("The post-unpack-hook returned a "
