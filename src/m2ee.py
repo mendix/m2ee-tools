@@ -579,29 +579,17 @@ class CLI(cmd.Cmd):
         if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
             return
-        pgutil.psql(
-            self.m2ee.config.get_pg_environment(),
-            self.m2ee.config.get_psql_binary(),
-        )
+        pgutil.psql(self.m2ee.config)
 
     def do_dumpdb(self, args):
         if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
             return
-        pgutil.dumpdb(
-            self.m2ee.config.get_pg_environment(),
-            self.m2ee.config.get_pg_dump_binary(),
-            self.m2ee.config.get_database_dump_path(),
-        )
+        pgutil.dumpdb(self.m2ee.config)
 
     def do_restoredb(self, args):
         if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
-            return
-        if not self.m2ee.config.allow_destroy_db():
-            logger.error("Refusing to do a destructive database operation "
-                         "because the allow_destroy_db configuration option "
-                         "is set to false.")
             return
         if not args:
             logger.error("restoredb needs the name of a dump file in %s as arg"
@@ -612,39 +600,40 @@ class CLI(cmd.Cmd):
             logger.warn("The application is still running, refusing to "
                         "restore the database right now.")
             return
-        pgutil.restoredb(
-            self.m2ee.config.get_pg_environment(),
-            self.m2ee.config.get_pg_restore_binary(),
-            self.m2ee.config.get_database_dump_path(),
-            args,
-        )
+        database_name = self.m2ee.config.get_pg_environment()['PGDATABASE']
+        answer = raw_input("This command will restore this dump into database "
+                           "%s. Continue? (y)es, (N)o? " % database_name)
+        if answer != 'y':
+            logger.info("Aborting!")
+            return
+        pgutil.restoredb(self.m2ee.config, args)
 
     def complete_restoredb(self, text, line, begidx, endidx):
         if not self.m2ee.config.is_using_postgresql():
             return []
-        return pgutil.complete_restoredb(
-            self.m2ee.config.get_database_dump_path(),
-            text,
-        )
+        database_dump_path = self.m2ee.config.get_database_dump_path()
+        return [f for f in os.listdir(database_dump_path)
+                if os.path.isfile(os.path.join(database_dump_path, f)) and
+                f.startswith(text) and
+                f.endswith(".backup")]
 
     def do_emptydb(self, args):
         if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
-            return
-        if not self.m2ee.config.allow_destroy_db():
-            logger.error("Refusing to do a destructive database operation "
-                         "because the allow_destroy_db configuration option "
-                         "is set to false.")
             return
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if pid_alive or m2ee_alive:
             logger.warn("The application process is still running, refusing "
                         "to empty the database right now.")
             return
-        pgutil.emptydb(
-            self.m2ee.config.get_pg_environment(),
-            self.m2ee.config.get_psql_binary(),
-        )
+        logger.info("This command will drop all tables and sequences in "
+                    "database %s." %
+                    self.m2ee.config.get_pg_environment()['PGDATABASE'])
+        answer = raw_input("Continue? (y)es, (N)o? ")
+        if answer != 'y':
+            print("Aborting!")
+            return
+        pgutil.emptydb(self.m2ee.config)
 
     def do_unpack(self, args):
         if not args:
