@@ -14,6 +14,7 @@ from runner import M2EERunner
 from log import logger
 
 import mdautil
+import client_errno
 
 
 class M2EE():
@@ -109,9 +110,49 @@ class M2EE():
 
         return True
 
-    def stop(self):
+    def start_runtime(self, params):
+        startresponse = self.client.start(params)
+        result = startresponse.get_result()
+        if result == client_errno.SUCCESS:
+            logger.info("The MxRuntime is fully started now.")
+        return startresponse
+
+    def stop(self, timeout=10):
         if self.runner.check_pid():
-            return self.runner.stop()
+            logger.info("Waiting for the application to shutdown...")
+            stopped = self.runner.stop(timeout)
+            if stopped:
+                logger.info("The application has been stopped successfully.")
+                return True
+            logger.warn("The application did not shutdown by itself...")
+            return False
+        else:
+            self.runner.cleanup_pid()
+        return True
+
+    def terminate(self, timeout=10):
+        if self.runner.check_pid():
+            logger.info("Waiting for the JVM process to disappear...")
+            stopped = self.runner.terminate(timeout)
+            if stopped:
+                logger.info("The JVM process has been stopped.")
+                return True
+            logger.warn("The application process seems not to respond to any "
+                        "command or signal.")
+            return False
+        else:
+            self.runner.cleanup_pid()
+        return True
+
+    def kill(self, timeout=10):
+        if self.runner.check_pid():
+            logger.info("Waiting for the JVM process to disappear...")
+            stopped = self.runner.kill(timeout)
+            if stopped:
+                logger.info("The JVM process has been destroyed.")
+                return True
+            logger.error("Stopping the application process failed thorougly.")
+            return False
         else:
             self.runner.cleanup_pid()
         return True
