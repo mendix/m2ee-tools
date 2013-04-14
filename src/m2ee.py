@@ -20,7 +20,7 @@ import pprint
 import yaml
 import datetime
 
-from m2ee import pgutil, M2EE, M2EEProfiler, mdautil
+from m2ee import pgutil, M2EE, M2EEProfiler
 from m2ee.log import logger
 from m2ee.config import find_yaml_files
 
@@ -110,10 +110,6 @@ class CLI(cmd.Cmd):
         """
         This function deals with the start-up sequence of the Mendix Runtime.
 
-        After a fixup of the mxclientsystem symlink, which needs to point to
-        the right version of the mxclientsystem code, and submitting runtime
-        configuration settings, the start action is called.
-
         Starting the Mendix Runtime can fail in both a temporary or permanent
         way.
 
@@ -133,8 +129,6 @@ class CLI(cmd.Cmd):
         Mendix Runtime is printed. Temporary failures need to be resolved,
         often interactively.
         """
-        self.m2ee.fix_mxclientsystem_symlink()
-
         if not self.m2ee.send_runtime_config():
             return
 
@@ -698,36 +692,26 @@ class CLI(cmd.Cmd):
             logger.error("The application process is still running, refusing "
                          "to unpack a new application model right now.")
             return
-        if mdautil.unpack(
-            self.m2ee.config.get_model_upload_path(),
-            args,
-            self.m2ee.config.get_app_base(),
-        ):
-            self.m2ee.reload_config()
-        post_unpack_hook = self.m2ee.config.get_post_unpack_hook()
-        if post_unpack_hook:
-            if os.path.isfile(post_unpack_hook):
-                if os.access(post_unpack_hook, os.X_OK):
-                    logger.info("Running post-unpack-hook...")
-                    retcode = subprocess.call((post_unpack_hook,))
-                    if retcode != 0:
-                        logger.error("The post-unpack-hook returned a "
-                                     "non-zero exit code: %d" % retcode)
-                else:
-                    logger.error("post-unpack-hook script %s is not "
-                                 "executable." % post_unpack_hook)
-            else:
-                logger.error("post-unpack-hook script %s does not exist." %
-                             post_unpack_hook)
+        logger.info("This command will replace the contents of the model/ and "
+                    "web/ locations, using the files extracted from the "
+                    "archive")
+        answer = raw_input("Continue? (y)es, (N)o? ")
+        if answer != 'y':
+            logger.info("Aborting!")
+            return
+        self.m2ee.unpack(args)
 
     def complete_unpack(self, text, line, begidx, endidx):
         # these complete functions seem to eat exceptions, which is very bad
         # behaviour if anything here throws an excaption, you just won't get
         # completion, without knowing why
-        return mdautil.complete_unpack(
-            self.m2ee.config.get_model_upload_path(),
-            text
-        )
+        model_upload_path = self.m2ee.config.get_model_upload_path()
+        logger.trace("complete_unpack: Looking for %s in %s" %
+                     (text, model_upload_path))
+        return [f for f in os.listdir(model_upload_path)
+                if os.path.isfile(os.path.join(model_upload_path, f))
+                and f.startswith(text)
+                and (f.endswith(".zip") or f.endswith(".mda"))]
 
     def do_log(self, args):
         if self._cleanup_logging():

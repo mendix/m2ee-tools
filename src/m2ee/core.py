@@ -13,6 +13,8 @@ from client import M2EEClient
 from runner import M2EERunner
 from log import logger
 
+import mdautil
+
 
 class M2EE():
 
@@ -113,33 +115,6 @@ class M2EE():
         else:
             self.runner.cleanup_pid()
         return True
-
-    def fix_mxclientsystem_symlink(self):
-        # check mxclientsystem symlink and refresh if necessary
-        if self.config.get_symlink_mxclientsystem():
-            mxclient_symlink = os.path.join(
-                self.config.get_public_webroot_path(), 'mxclientsystem')
-            real_mxclient_location = self.config.get_real_mxclientsystem_path()
-            if os.path.islink(mxclient_symlink):
-                current_real_mxclient_location = os.path.realpath(
-                    mxclient_symlink)
-                if current_real_mxclient_location != real_mxclient_location:
-                    logger.debug("mxclientsystem symlink exists, but points "
-                                 "to %s" % current_real_mxclient_location)
-                    logger.debug("redirecting symlink to %s" %
-                                 real_mxclient_location)
-                    os.unlink(mxclient_symlink)
-                    os.symlink(real_mxclient_location, mxclient_symlink)
-            elif not os.path.exists(mxclient_symlink):
-                logger.debug("creating mxclientsystem symlink pointing to %s" %
-                             real_mxclient_location)
-                try:
-                    os.symlink(real_mxclient_location, mxclient_symlink)
-                except OSError, e:
-                    logger.error("creating symlink failed: %s" % e)
-            else:
-                logger.warn("Not touching mxclientsystem symlink: file exists "
-                            "and is not a symlink")
 
     def _configure_logging(self):
         # try configure logging
@@ -245,3 +220,16 @@ class M2EE():
         fd = codecs.open(query_file_name, mode='w', encoding='utf-8')
         fd.write("%s" % '\n'.join(ddl_commands))
         fd.close()
+
+    def unpack(self, mda_name):
+        if mdautil.unpack(self.config, mda_name):
+            self.reload_config()
+        else:
+            return False
+
+        post_unpack_hook = self.config.get_post_unpack_hook()
+        if post_unpack_hook:
+            mdautil.run_post_unpack_hook(post_unpack_hook)
+
+        if self.config.get_symlink_mxclientsystem():
+            mdautil.fix_mxclientsystem_symlink(self.config)
