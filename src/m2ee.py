@@ -609,12 +609,6 @@ class CLI(cmd.Cmd):
     def do_w(self, args):
         self.do_who(args)
 
-    # deprecated
-    def do_get_logged_in_user_names(self, args):
-        logger.warn("get_logged_in_user_names is deprectated in favor of the "
-                    "shorter who command")
-        self.do_who(args)
-
     def do_reload(self, args):
         logger.debug("Reloading configuration...")
         self.m2ee.reload_config()
