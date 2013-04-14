@@ -546,7 +546,7 @@ class M2EEConfig:
         return self._conf['mxruntime']['DTAPMode'].upper()
 
     def allow_destroy_db(self):
-        return self._conf['m2ee'].get('allow_destroy_db', False)
+        return self._conf['m2ee'].get('allow_destroy_db', True)
 
     def is_using_postgresql(self):
         databasetype = self._conf['mxruntime'].get('DatabaseType', None)

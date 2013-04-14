@@ -640,7 +640,9 @@ class CLI(cmd.Cmd):
             logger.error("Only PostgreSQL databases are supported right now.")
             return
         if not self.m2ee.config.allow_destroy_db():
-            logger.error("Destructive database operations are turned off.")
+            logger.error("Refusing to do a destructive database operation "
+                         "because the allow_destroy_db configuration option "
+                         "is set to false.")
             return
         if not args:
             logger.error("restoredb needs the name of a dump file in %s as arg"
@@ -671,7 +673,9 @@ class CLI(cmd.Cmd):
             logger.error("Only PostgreSQL databases are supported right now.")
             return
         if not self.m2ee.config.allow_destroy_db():
-            logger.error("Destructive database operations are turned off.")
+            logger.error("Refusing to do a destructive database operation "
+                         "because the allow_destroy_db configuration option "
+                         "is set to false.")
             return
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if pid_alive or m2ee_alive:
