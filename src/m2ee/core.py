@@ -19,9 +19,13 @@ import client_errno
 
 class M2EE():
 
-    def __init__(self, yamlfiles=None, config=None):
-        self._yamlfiles = yamlfiles
-        self.reload_config(config)
+    def __init__(self, yamlfiles=None, config=None, load_default_files=True):
+        self._initial_config = {
+            'load_default_files': load_default_files,
+            'yamlfiles': yamlfiles,
+            'config': config,
+        }
+        self.reload_config()
         self._logproc = None
 
     def reload_config_if_changed(self):
@@ -29,8 +33,12 @@ class M2EE():
             logger.info("Configuration change detected, reloading.")
             self.reload_config()
 
-    def reload_config(self, config=None):
-        self.config = M2EEConfig(yaml_files=self._yamlfiles, config=config)
+    def reload_config(self):
+        self.config = M2EEConfig(
+            load_default_files=self._initial_config['load_default_files'],
+            yaml_files=self._initial_config['yamlfiles'],
+            config=self._initial_config['config'],
+        )
         self.client = M2EEClient(
             'http://127.0.0.1:%s/' % self.config.get_admin_port(),
             self.config.get_admin_pass())
