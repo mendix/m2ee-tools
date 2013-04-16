@@ -20,9 +20,10 @@ import pprint
 import yaml
 import datetime
 
-from m2ee import pgutil, M2EE, M2EEProfiler, mdautil
+from m2ee import pgutil, M2EE, M2EEProfiler
 from m2ee.log import logger
 from m2ee.config import find_yaml_files
+import m2ee.client_errno as client_errno
 
 
 class CLI(cmd.Cmd):
@@ -46,11 +47,6 @@ class CLI(cmd.Cmd):
     def do_start(self, args):
         self._start()
 
-    def _start(self):
-        if not self.m2ee.start_appcontainer():
-            return
-        self._start_runtime()
-
     def _stop(self):
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if not pid_alive and not m2ee_alive:
@@ -60,22 +56,17 @@ class CLI(cmd.Cmd):
         logger.debug("Trying to stop the application.")
         stopped = False
 
-        logger.info("Waiting for the application to shutdown...")
-        stopped = self.m2ee.runner.stop(timeout=10)
+        stopped = self.m2ee.stop()
         if stopped:
-            logger.info("The application has been stopped successfully.")
             return True
 
-        logger.warn("The application did not shutdown by itself yet...")
         answer = None
         while not answer in ('y', 'n'):
             answer = raw_input("Do you want to try to signal the JVM "
                                "process to stop immediately? (y)es, (n)o? ")
             if answer == 'y':
-                logger.info("Waiting for the JVM process to disappear...")
-                stopped = self.m2ee.runner.terminate(timeout=10)
+                stopped = self.m2ee.terminate()
                 if stopped:
-                    logger.info("The JVM process has been stopped.")
                     return True
             elif answer == 'n':
                 logger.info("Doing nothing, use stop again to check if the "
@@ -84,17 +75,13 @@ class CLI(cmd.Cmd):
             else:
                 print("Unknown option %s" % answer)
 
-        logger.warn("The application process seems not to respond to any "
-                    "command or signal.")
         answer = None
         while not answer in ('y', 'n'):
             answer = raw_input("Do you want to kill the JVM process? (y)es,"
                                "(n)o? ")
             if answer == 'y':
-                logger.info("Waiting for the JVM process to disappear...")
-                stopped = self.m2ee.runner.kill(timeout=10)
+                stopped = self.m2ee.kill()
                 if stopped:
-                    logger.info("The JVM process has been destroyed.")
                     return True
             elif answer == 'n':
                 logger.info("Doing nothing, use stop again to check if the "
@@ -103,37 +90,16 @@ class CLI(cmd.Cmd):
             else:
                 print("Unknown option %s" % answer)
 
-        logger.error("Stopping the application process failed thorougly.")
         return False
 
-    def _start_runtime(self):
+    def _start(self):
         """
         This function deals with the start-up sequence of the Mendix Runtime.
-
-        After a fixup of the mxclientsystem symlink, which needs to point to
-        the right version of the mxclientsystem code, and submitting runtime
-        configuration settings, the start action is called.
-
         Starting the Mendix Runtime can fail in both a temporary or permanent
-        way.
-
-        Known error codes are:
-          2: Database to be used does not exist
-          3: Database structure is out of sync with the application domain
-             model, DDL commands need to be run to synchronize the database.
-          4: Constant definitions used in the application model are missing
-             from the configuration.
-          5: In the application database, a user account was detected which
-             has the administrative role (as specified in the modeler) and
-             has password '1'.
-          6: The Mendix Runtime has reached an invalid state and cannot start.
-          7,8,9: Mandatory configuration items are missing.
-
-        By using startresponse.display_error() the error message sent by the
-        Mendix Runtime is printed. Temporary failures need to be resolved,
-        often interactively.
+        way. See the client_errno for possible error codes.
         """
-        self.m2ee.fix_mxclientsystem_symlink()
+        if not self.m2ee.start_appcontainer():
+            return
 
         if not self.m2ee.send_runtime_config():
             return
@@ -142,39 +108,32 @@ class CLI(cmd.Cmd):
         fully_started = False
         params = {}
         while not (fully_started or abort):
-            startresponse = self.m2ee.client.start(params)
+            startresponse = self.m2ee.start_runtime(params)
             result = startresponse.get_result()
-            if result == 0:
+            if result == client_errno.SUCCESS:
                 fully_started = True
-                logger.info("The MxRuntime is fully started now.")
             else:
                 startresponse.display_error()
-                if result == 2:
+                if result == client_errno.start_NO_EXISTING_DB:
                     answer = self._ask_user_whether_to_create_db()
                     if answer == 'a':
                         abort = True
                     elif self.m2ee.config._dirty_hack_is_25 and answer == 'c':
                         params["autocreatedb"] = True
-                elif result == 3:
+                elif result == client_errno.start_INVALID_DB_STRUCTURE:
                     answer = self._handle_ddl_commands()
                     if answer == 'a':
                         abort = True
-                elif result == 4:
+                elif result == client_errno.start_MISSING_MF_CONSTANT:
                     logger.error("You'll have to add the constant definitions "
                                  "to the configuration in the "
                                  "MicroflowConstants section.")
                     abort = True
-                elif result == 5:
+                elif result == client_errno.start_ADMIN_1:
                     answer = self._handle_admin_1(
                         startresponse.get_feedback()['users'])
                     if answer == 'a':
                         abort = True
-                elif result == 6:
-                    abort = True
-                elif result == 7 or result == 8 or result == 9:
-                    logger.error("You'll have to fix the configuration and "
-                                 "run start again... (or ask for help..)")
-                    abort = True
                 else:
                     abort = True
 
@@ -620,29 +579,17 @@ class CLI(cmd.Cmd):
         if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
             return
-        pgutil.psql(
-            self.m2ee.config.get_pg_environment(),
-            self.m2ee.config.get_psql_binary(),
-        )
+        pgutil.psql(self.m2ee.config)
 
     def do_dumpdb(self, args):
         if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
             return
-        pgutil.dumpdb(
-            self.m2ee.config.get_pg_environment(),
-            self.m2ee.config.get_pg_dump_binary(),
-            self.m2ee.config.get_database_dump_path(),
-        )
+        pgutil.dumpdb(self.m2ee.config)
 
     def do_restoredb(self, args):
         if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
-            return
-        if not self.m2ee.config.allow_destroy_db():
-            logger.error("Refusing to do a destructive database operation "
-                         "because the allow_destroy_db configuration option "
-                         "is set to false.")
             return
         if not args:
             logger.error("restoredb needs the name of a dump file in %s as arg"
@@ -653,39 +600,40 @@ class CLI(cmd.Cmd):
             logger.warn("The application is still running, refusing to "
                         "restore the database right now.")
             return
-        pgutil.restoredb(
-            self.m2ee.config.get_pg_environment(),
-            self.m2ee.config.get_pg_restore_binary(),
-            self.m2ee.config.get_database_dump_path(),
-            args,
-        )
+        database_name = self.m2ee.config.get_pg_environment()['PGDATABASE']
+        answer = raw_input("This command will restore this dump into database "
+                           "%s. Continue? (y)es, (N)o? " % database_name)
+        if answer != 'y':
+            logger.info("Aborting!")
+            return
+        pgutil.restoredb(self.m2ee.config, args)
 
     def complete_restoredb(self, text, line, begidx, endidx):
         if not self.m2ee.config.is_using_postgresql():
             return []
-        return pgutil.complete_restoredb(
-            self.m2ee.config.get_database_dump_path(),
-            text,
-        )
+        database_dump_path = self.m2ee.config.get_database_dump_path()
+        return [f for f in os.listdir(database_dump_path)
+                if os.path.isfile(os.path.join(database_dump_path, f)) and
+                f.startswith(text) and
+                f.endswith(".backup")]
 
     def do_emptydb(self, args):
         if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
-            return
-        if not self.m2ee.config.allow_destroy_db():
-            logger.error("Refusing to do a destructive database operation "
-                         "because the allow_destroy_db configuration option "
-                         "is set to false.")
             return
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if pid_alive or m2ee_alive:
             logger.warn("The application process is still running, refusing "
                         "to empty the database right now.")
             return
-        pgutil.emptydb(
-            self.m2ee.config.get_pg_environment(),
-            self.m2ee.config.get_psql_binary(),
-        )
+        logger.info("This command will drop all tables and sequences in "
+                    "database %s." %
+                    self.m2ee.config.get_pg_environment()['PGDATABASE'])
+        answer = raw_input("Continue? (y)es, (N)o? ")
+        if answer != 'y':
+            print("Aborting!")
+            return
+        pgutil.emptydb(self.m2ee.config)
 
     def do_unpack(self, args):
         if not args:
@@ -698,36 +646,26 @@ class CLI(cmd.Cmd):
             logger.error("The application process is still running, refusing "
                          "to unpack a new application model right now.")
             return
-        if mdautil.unpack(
-            self.m2ee.config.get_model_upload_path(),
-            args,
-            self.m2ee.config.get_app_base(),
-        ):
-            self.m2ee.reload_config()
-        post_unpack_hook = self.m2ee.config.get_post_unpack_hook()
-        if post_unpack_hook:
-            if os.path.isfile(post_unpack_hook):
-                if os.access(post_unpack_hook, os.X_OK):
-                    logger.info("Running post-unpack-hook...")
-                    retcode = subprocess.call((post_unpack_hook,))
-                    if retcode != 0:
-                        logger.error("The post-unpack-hook returned a "
-                                     "non-zero exit code: %d" % retcode)
-                else:
-                    logger.error("post-unpack-hook script %s is not "
-                                 "executable." % post_unpack_hook)
-            else:
-                logger.error("post-unpack-hook script %s does not exist." %
-                             post_unpack_hook)
+        logger.info("This command will replace the contents of the model/ and "
+                    "web/ locations, using the files extracted from the "
+                    "archive")
+        answer = raw_input("Continue? (y)es, (N)o? ")
+        if answer != 'y':
+            logger.info("Aborting!")
+            return
+        self.m2ee.unpack(args)
 
     def complete_unpack(self, text, line, begidx, endidx):
         # these complete functions seem to eat exceptions, which is very bad
         # behaviour if anything here throws an excaption, you just won't get
         # completion, without knowing why
-        return mdautil.complete_unpack(
-            self.m2ee.config.get_model_upload_path(),
-            text
-        )
+        model_upload_path = self.m2ee.config.get_model_upload_path()
+        logger.trace("complete_unpack: Looking for %s in %s" %
+                     (text, model_upload_path))
+        return [f for f in os.listdir(model_upload_path)
+                if os.path.isfile(os.path.join(model_upload_path, f))
+                and f.startswith(text)
+                and (f.endswith(".zip") or f.endswith(".mda"))]
 
     def do_log(self, args):
         if self._cleanup_logging():

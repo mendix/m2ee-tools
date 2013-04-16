@@ -13,6 +13,9 @@ from client import M2EEClient
 from runner import M2EERunner
 from log import logger
 
+import mdautil
+import client_errno
+
 
 class M2EE():
 
@@ -107,39 +110,52 @@ class M2EE():
 
         return True
 
-    def stop(self):
+    def start_runtime(self, params):
+        startresponse = self.client.start(params)
+        result = startresponse.get_result()
+        if result == client_errno.SUCCESS:
+            logger.info("The MxRuntime is fully started now.")
+        return startresponse
+
+    def stop(self, timeout=10):
         if self.runner.check_pid():
-            return self.runner.stop()
+            logger.info("Waiting for the application to shutdown...")
+            stopped = self.runner.stop(timeout)
+            if stopped:
+                logger.info("The application has been stopped successfully.")
+                return True
+            logger.warn("The application did not shutdown by itself...")
+            return False
         else:
             self.runner.cleanup_pid()
         return True
 
-    def fix_mxclientsystem_symlink(self):
-        # check mxclientsystem symlink and refresh if necessary
-        if self.config.get_symlink_mxclientsystem():
-            mxclient_symlink = os.path.join(
-                self.config.get_public_webroot_path(), 'mxclientsystem')
-            real_mxclient_location = self.config.get_real_mxclientsystem_path()
-            if os.path.islink(mxclient_symlink):
-                current_real_mxclient_location = os.path.realpath(
-                    mxclient_symlink)
-                if current_real_mxclient_location != real_mxclient_location:
-                    logger.debug("mxclientsystem symlink exists, but points "
-                                 "to %s" % current_real_mxclient_location)
-                    logger.debug("redirecting symlink to %s" %
-                                 real_mxclient_location)
-                    os.unlink(mxclient_symlink)
-                    os.symlink(real_mxclient_location, mxclient_symlink)
-            elif not os.path.exists(mxclient_symlink):
-                logger.debug("creating mxclientsystem symlink pointing to %s" %
-                             real_mxclient_location)
-                try:
-                    os.symlink(real_mxclient_location, mxclient_symlink)
-                except OSError, e:
-                    logger.error("creating symlink failed: %s" % e)
-            else:
-                logger.warn("Not touching mxclientsystem symlink: file exists "
-                            "and is not a symlink")
+    def terminate(self, timeout=10):
+        if self.runner.check_pid():
+            logger.info("Waiting for the JVM process to disappear...")
+            stopped = self.runner.terminate(timeout)
+            if stopped:
+                logger.info("The JVM process has been stopped.")
+                return True
+            logger.warn("The application process seems not to respond to any "
+                        "command or signal.")
+            return False
+        else:
+            self.runner.cleanup_pid()
+        return True
+
+    def kill(self, timeout=10):
+        if self.runner.check_pid():
+            logger.info("Waiting for the JVM process to disappear...")
+            stopped = self.runner.kill(timeout)
+            if stopped:
+                logger.info("The JVM process has been destroyed.")
+                return True
+            logger.error("Stopping the application process failed thorougly.")
+            return False
+        else:
+            self.runner.cleanup_pid()
+        return True
 
     def _configure_logging(self):
         # try configure logging
@@ -245,3 +261,16 @@ class M2EE():
         fd = codecs.open(query_file_name, mode='w', encoding='utf-8')
         fd.write("%s" % '\n'.join(ddl_commands))
         fd.close()
+
+    def unpack(self, mda_name):
+        if mdautil.unpack(self.config, mda_name):
+            self.reload_config()
+        else:
+            return False
+
+        post_unpack_hook = self.config.get_post_unpack_hook()
+        if post_unpack_hook:
+            mdautil.run_post_unpack_hook(post_unpack_hook)
+
+        if self.config.get_symlink_mxclientsystem():
+            mdautil.fix_mxclientsystem_symlink(self.config)
