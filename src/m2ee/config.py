@@ -14,6 +14,7 @@ import copy
 
 from log import logger
 from collections import defaultdict
+from version import MXVersion
 
 # Use json if available. If not (python 2.5) we need to import the simplejson
 # module instead, which has to be available.
@@ -31,13 +32,14 @@ except ImportError:
 
 class M2EEConfig:
 
-    def __init__(self, yaml_files=None, config=None):
-        self._conf = defaultdict(dict)
+    def __init__(self, load_default_files=True, yaml_files=None, config=None):
+        _yaml_files = []
+        if load_default_files:
+            _yaml_files.extend(find_yaml_files())
         if yaml_files:
-            (self._mtimes, yaml_config) = read_yaml_files(yaml_files)
-            self._conf = merge_config(self._conf, yaml_config)
-        else:
-            self._mtimes = {}
+            _yaml_files.extend(yaml_files)
+
+        self._mtimes, self._conf = read_yaml_files(_yaml_files)
 
         if config:
             self._conf = merge_config(self._conf, config)
@@ -82,14 +84,18 @@ class M2EEConfig:
         self._conf['mxruntime'] = self._merge_runtime_configuration()
 
         # look up MxRuntime version
-        self._runtime_version = self._lookup_runtime_version()
+        _runtime_version = self._lookup_runtime_version()
+        if _runtime_version is None:
+            self.runtime_version = None
+        else:
+            self.runtime_version = MXVersion(_runtime_version)
 
         # if running from binary distribution, try to find where m2ee/runtime
         # jars live
         self._runtime_path = None
         if (not self._run_from_source or
                 self._run_from_source == 'appcontainer'):
-            if self._runtime_version is None:
+            if self.runtime_version is None:
                 # this probably means reading version information from the
                 # modeler file failed
                 logger.critical("Unable to look up mendix runtime files "
@@ -97,7 +103,7 @@ class M2EEConfig:
                 self._all_systems_are_go = False
             else:
                 self._runtime_path = self._lookup_in_mxjar_repo(
-                    self._runtime_version)
+                    str(self.runtime_version))
                 if self._runtime_path is None:
                     logger.critical("Mendix Runtime not found for version %s" %
                                     self._runtime_version)
@@ -605,7 +611,7 @@ class M2EEConfig:
         return self._appcontainer_version
 
     def get_runtime_version(self):
-        return self._runtime_version
+        return self.runtime_version
 
     def get_classpath(self):
         return self._classpath
@@ -791,11 +797,9 @@ def find_yaml_files():
     return yaml_files
 
 
-def read_yaml_files(yaml_files=None):
-    config = {}
+def read_yaml_files(yaml_files):
+    config = defaultdict(dict)
     yaml_mtimes = {}
-    if not yaml_files:
-        yaml_files = find_yaml_files()
 
     for yaml_file in yaml_files:
         additional_config = load_config(yaml_file)

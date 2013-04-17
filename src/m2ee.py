@@ -22,15 +22,17 @@ import datetime
 
 from m2ee import pgutil, M2EE, M2EEProfiler
 from m2ee.log import logger
-from m2ee.config import find_yaml_files
 import m2ee.client_errno as client_errno
 
 
 class CLI(cmd.Cmd):
 
-    def __init__(self, yamlfiles=None):
+    def __init__(self, yaml_files=None):
         cmd.Cmd.__init__(self)
-        self.m2ee = M2EE(yamlfiles)
+        if yaml_files:
+            self.m2ee = M2EE(yamlfiles=yaml_files, load_default_files=False)
+        else:
+            self.m2ee = M2EE()
         self.do_status(None)
         username = pwd.getpwuid(os.getuid())[0]
         self._default_prompt = "m2ee(%s): " % username
@@ -915,7 +917,7 @@ if __name__ == '__main__':
         "-c",
         action="append",
         type="string",
-        dest="yamlfiles"
+        dest="yaml_files"
     )
     parser.add_option(
         "-v",
@@ -947,13 +949,7 @@ if __name__ == '__main__':
         verbosity = 5
     logger.setLevel(verbosity)
 
-    yaml_files = []
-    if options.yamlfiles:
-        yaml_files = options.yamlfiles
-    else:
-        yaml_files = find_yaml_files()
-
-    m2ee = CLI(yaml_files)
+    m2ee = CLI(yaml_files=options.yaml_files)
     atexit.register(m2ee._cleanup_logging)
     if args:
         m2ee.onecmd(' '.join(args))
