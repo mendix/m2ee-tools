@@ -106,7 +106,7 @@ class M2EEConfig:
                     str(self.runtime_version))
                 if self._runtime_path is None:
                     logger.critical("Mendix Runtime not found for version %s" %
-                                    self._runtime_version)
+                                    str(self.runtime_version))
                     self._all_systems_are_go = False
 
         if not self._appcontainer_version:
