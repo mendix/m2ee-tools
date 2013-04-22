@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 import unittest2 as unittest
 from m2ee import M2EE
@@ -112,7 +113,11 @@ class M2EEApiTest(unittest.TestCase):
 if __name__ == '__main__':
 
     logger.setLevel(50)
-    for version in sorted(os.listdir('projects')):
+    if len(sys.argv) > 1:
+        versions = sys.argv[1:]
+    else:
+        versions = sorted(os.listdir('projects'))
+    for version in versions:
         if version == 'm2ee.yaml.tmpl' or version == '.gitignore':
             continue
         print("\nSTARTING TESTS FOR MENDIX %s" % version)
