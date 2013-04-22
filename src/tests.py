@@ -53,6 +53,9 @@ class M2EEApiTest(unittest.TestCase):
             "Unable to start runtime: %s" % response.get_message()
         )
         self.assert_http_code(self.m2ee.runtime_url)
+        response = self.m2ee.client.runtime_status()
+        status = response.get_feedback()['status']
+        self.assertEqual(status, 'running', response.get_message())
 
     def test_debugger(self):
         response = self.m2ee.client.enable_debugger({'password': 'password'})
