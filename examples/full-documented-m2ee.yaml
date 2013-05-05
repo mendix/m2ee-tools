@@ -403,8 +403,6 @@ logging:
 # The last section of this file contains the 'mxruntime' section, which contains
 # configuration which will be sent to the Mendix Runtime when it's started.
 #
-# TODO: document proper use of SSL Client Certificates for web service calls
-#
 mxruntime:
  # Application root URL will be used when generating wsdl documentation on the
  # fly at /ws-doc/
@@ -433,6 +431,64 @@ mxruntime:
  DatabaseName: database
  DatabaseUserName: username
  DatabasePassword: password
+
+ # Custom x509 CA Certificates: additional (private/custom) SSL Certificate
+ # Authorities for x509 chain validation.
+ #
+ # A list of files can be specified that contain a single PEM formatted
+ # certificate per file (additional certificates in a single file seem to be
+ # ignored). These CA certificates will be added to the trusted CA list of the
+ # JVM after loading the default truststore.
+ #
+ # Do not use a comma in any of the file names, as the list has to be sent to
+ # the mendix runtime as single comma separated string...
+ CACertificates:
+  - "/path/to/project/data/ssl/custom-ca.crt"
+  - "/path/to/project/data/ssl/foobar-ca.crt"
+
+ # Webservice Client Key/Certificates: secret keys and certificates for SSL
+ # client authentication can be used by creating a separate pfx (PKCS #12) file
+ # for each set of key/certificate and optional intermediate CAs to complete the
+ # validation chain at the remote web server.
+ #
+ # If a pfx contains a CA, the CA will not be automagically added to the trusted
+ # CA list. You can use the CACertificates option to add a CA.
+ #
+ # A pfx container requires a password, so besides the ClientCertificates
+ # option, a ClientCertificatePasswords option is used to specify the passwords
+ # used for reading the pfx files... The order of the pfx list has to match the
+ # order of the password list here...
+ #
+ # Do not use a comma in any of the file names or passwords, as the lists have
+ # to be sent to the mendix runtime as single simple comma separated string...
+ #
+ # Are you still with us? Have fun! Don't hesitate to file a support ticket at
+ # Mendix if you run into issues using these options. JVM exceptions and
+ # stacktraces related to certificates can be a real pain to debug and solve.
+ ClientCertificates:
+  - "/path/to/project/data/ssl/custom-client.pfx"
+  - "/path/to/project/data/ssl/foobar-client.pfx"
+ ClientCertificatePasswords:
+  - "1"
+  - "1"
+
+ # No, we're not done with the SSL business yet. By default, the JVM is not
+ # quite intelligent about choosing a client certificate to present to a remote
+ # web server. This means that, if you have two different client certificates
+ # which are signed by the same CA, and are using two different web service
+ # calls, requiring a certificate signed by this CA, you never know which
+ # certificate will be presented to the web server.
+ #
+ # In order to pin the use of key/certificate pairs to a specific web service,
+ # the WebServiceClientCertificates option is available, which allows to specify
+ # a mapping between web service names (as defined in the modeler) as key and
+ # one of the above listed pfx files as value. When this mapping is specified,
+ # Mendix will make sure the JVM will use the key/certificate pair from that
+ # specific pfx bundle.
+ #
+ WebServiceClientCertificates:
+  Module.Webservice: "/path/to/project/data/ssl/custom-client.pfx"
+  Module.FooBarWebservice: "/path/to/project/data/ssl/foobar-client.pfx"
 
  # Advanced Database options...
  #
