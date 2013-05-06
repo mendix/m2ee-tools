@@ -2,10 +2,11 @@ import os
 import sys
 import shutil
 import unittest2 as unittest
+import requests
+sys.path.insert(0, '../src/')
 from m2ee import M2EE
 import m2ee.client_errno as client_error_codes
 import m2ee.nagios as nagios
-import requests
 from m2ee.log import logger
 
 current_version = None
