@@ -96,16 +96,20 @@ class M2EE():
 
         # go do startup sequence
         self._configure_logging()
-        self._send_jetty_config()
         self._send_mime_types()
 
         xmpp_credentials = self.config.get_xmpp_credentials()
         if xmpp_credentials:
             self.client.connect_xmpp(xmpp_credentials)
 
-        # when running hybrid appcontainer, we need to create the runtime
-        # ourselves
-        if self.config.get_appcontainer_version():
+        version = self.config.get_runtime_version()
+        hybrid = self.config.use_hybrid_appcontainer()
+
+        if version < 5 and not hybrid:
+            self._send_jetty_config()
+            return True
+        elif version < 5 and hybrid:
+            self._send_jetty_config()
             response = self.client.create_runtime({
                 "runtime_path":
                 os.path.join(self.config.get_runtime_path(), 'runtime'),
@@ -114,9 +118,24 @@ class M2EE():
                 "use_blocking_connector":
                 self.config.get_runtime_blocking_connector(),
             })
+            response.display_error()
+            return not response.has_error()
+        elif version >= 5:
+            response = self.client.update_appcontainer_configuration({
+                "runtime_path":
+                os.path.join(self.config.get_runtime_path(), 'runtime'),
+                "runtime_port": self.config.get_runtime_port(),
+                "runtime_listen_addresses":
+                self.config.get_runtime_listen_addresses(),
+                "application_base_path": self.config.get_app_base(),
+                "use_blocking_connector":
+                self.config.get_runtime_blocking_connector(),
+                "jetty_options": self.config.get_jetty_options(),
+            })
+            response.display_error()
             return not response.has_error()
 
-        return True
+        return False
 
     def start_runtime(self, params):
         startresponse = self.client.start(params)
