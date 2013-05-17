@@ -98,10 +98,6 @@ class M2EE():
         self._configure_logging()
         self._send_mime_types()
 
-        xmpp_credentials = self.config.get_xmpp_credentials()
-        if xmpp_credentials:
-            self.client.connect_xmpp(xmpp_credentials)
-
         version = self.config.get_runtime_version()
         hybrid = self.config.use_hybrid_appcontainer()
 
@@ -118,6 +114,7 @@ class M2EE():
                 "use_blocking_connector":
                 self.config.get_runtime_blocking_connector(),
             })
+            self._connect_xmpp()
             response.display_error()
             return not response.has_error()
         elif version >= 5:
@@ -133,6 +130,7 @@ class M2EE():
                 "jetty_options": self.config.get_jetty_options(),
             })
             response.display_error()
+            self._connect_xmpp()
             return not response.has_error()
 
         return False
@@ -301,3 +299,9 @@ class M2EE():
 
         if self.config.get_symlink_mxclientsystem():
             mdautil.fix_mxclientsystem_symlink(self.config)
+
+
+    def _connect_xmpp(self):
+        xmpp_credentials = self.config.get_xmpp_credentials()
+        if xmpp_credentials:
+            self.client.connect_xmpp(xmpp_credentials)
