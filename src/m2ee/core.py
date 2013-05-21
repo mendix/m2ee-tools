@@ -106,6 +106,7 @@ class M2EE():
             return True
         elif version < 5 and hybrid:
             self._send_jetty_config()
+            self._connect_xmpp()
             response = self.client.create_runtime({
                 "runtime_path":
                 os.path.join(self.config.get_runtime_path(), 'runtime'),
@@ -114,7 +115,6 @@ class M2EE():
                 "use_blocking_connector":
                 self.config.get_runtime_blocking_connector(),
             })
-            self._connect_xmpp()
             response.display_error()
             return not response.has_error()
         elif version >= 5:
