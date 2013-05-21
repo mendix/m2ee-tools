@@ -603,7 +603,13 @@ class M2EEConfig:
         return self._conf['logging']
 
     def get_jetty_options(self):
-        return self._conf['m2ee'].get('jetty', None)
+        result = copy.deepcopy(self._conf['m2ee'].get('jetty', {}))
+        already_specified = 'use_blocking_connector' in result
+        if self.get_runtime_version() >= 5 and not already_specified:
+            result['use_blocking_connector'] = \
+            self.get_runtime_blocking_connector()
+
+        return result
 
     def get_munin_options(self):
         return self._conf['m2ee'].get('munin', None)

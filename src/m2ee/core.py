@@ -122,9 +122,7 @@ class M2EE():
                 "runtime_port": self.config.get_runtime_port(),
                 "runtime_listen_addresses":
                 self.config.get_runtime_listen_addresses(),
-                "use_blocking_connector":
-                self.config.get_runtime_blocking_connector(),
-                "jetty_options": self.config.get_jetty_options(),
+                "runtime_jetty_options": self.config.get_jetty_options()
             })
             response.display_error()
             self._connect_xmpp()
