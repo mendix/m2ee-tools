@@ -119,12 +119,9 @@ class M2EE():
             return not response.has_error()
         elif version >= 5:
             response = self.client.update_appcontainer_configuration({
-                "runtime_path":
-                os.path.join(self.config.get_runtime_path(), 'runtime'),
                 "runtime_port": self.config.get_runtime_port(),
                 "runtime_listen_addresses":
                 self.config.get_runtime_listen_addresses(),
-                "application_base_path": self.config.get_app_base(),
                 "use_blocking_connector":
                 self.config.get_runtime_blocking_connector(),
                 "jetty_options": self.config.get_jetty_options(),
