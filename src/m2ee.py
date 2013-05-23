@@ -944,7 +944,7 @@ if __name__ == '__main__':
         verbosity = verbosity - options.verbose
     verbosity = verbosity * 10 + 20
     if verbosity > 50:
-        verbosity = 50
+        verbosity = 100
     if verbosity < 5:
         verbosity = 5
     logger.setLevel(verbosity)
