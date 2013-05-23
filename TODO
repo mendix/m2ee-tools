@@ -1,21 +1,22 @@
 m2ee-tools 0.5
+[/] Mendix 5.0 compatibility
 [x] extend_classpath
-[/] full apification
+[x] apification
 [x] remove all left-overs of user interaction from lib files (raw_input etc)
 [/] runtime/'environment'-version-compare
-[ ] Mendix 5.0 compatibility
-[ ] implement munin/nagios plugins by importing m2ee instead of abusing the CLI tool
-[ ] refactor nagios plugin to combine check results instead of stopping at the first failure
-[/] document in full-documented-m2ee.yaml: options for web service client certificates
+[x] document in full-documented-m2ee.yaml: options for web service client certificates
 [ ] document in full-documented-m2ee.yaml: EnableKeepAlive, PersistentSessions, SessionTimeout
-[ ] split debian packaging into m2ee-tools and python-m2ee
 
 backlog
+[ ] split debian packaging into m2ee-tools and python-m2ee
+[ ] implement munin/nagios plugins by importing m2ee instead of abusing the CLI tool
+[ ] refactor nagios plugin to combine check results instead of stopping at the first failure
 [ ] API stabilize m2ee-tools so we can release 1.0
 [ ] nagios: alert when license limits are (almost) reached
 [ ] add command to set logMinDurationQuery (ms) via update_configuration m2ee api
 [ ] possibility to use units (ms,s,h,d,w,y) for time length values
 [ ] add command to display cache_statistics
+[ ] munin: show cache statistics (amount of transient objects in cache)
 [ ] man m2ee.yaml instead of lots of documentation in the example file itself
 [ ] somehow remember the name of the last unpacked .mda file (see mendix support #14621)
 [ ] munin: graph max license user limits (named/concurrent)
