@@ -66,6 +66,7 @@ class M2EEConfig:
                          'model',
                          'metadata.json'
                          ))
+        self.runtime_version = self._lookup_runtime_version()
 
         # Dirty hack to tell if we're on 2.5 or not
         self._dirty_hack_is_25 = len(self._model_metadata) == 0
@@ -82,13 +83,6 @@ class M2EEConfig:
         # part of runtime config will be sent using the old
         # update_custom_configuration m2ee api call.
         self._conf['mxruntime'] = self._merge_runtime_configuration()
-
-        # look up MxRuntime version
-        _runtime_version = self._lookup_runtime_version()
-        if _runtime_version is None:
-            self.runtime_version = None
-        else:
-            self.runtime_version = MXVersion(_runtime_version)
 
         # if running from binary distribution, try to find where m2ee/runtime
         # jars live
@@ -765,13 +759,13 @@ class M2EEConfig:
         if self._conf['m2ee'].get('runtime_version', None):
             logger.debug("Runtime version forced to %s in configuration" %
                          self._conf['m2ee']['runtime_version'])
-            return self._conf['m2ee']['runtime_version']
+            return MXVersion(self._conf['m2ee']['runtime_version'])
 
         # 3.0 has runtime version in metadata.json
         if 'RuntimeVersion' in self._model_metadata:
             logger.debug("MxRuntime version listed in model metadata: %s" %
                          self._model_metadata['RuntimeVersion'])
-            return self._model_metadata['RuntimeVersion']
+            return MXVersion(self._model_metadata['RuntimeVersion'])
 
         # else, 2.5: try to read from model.mdp using sqlite
         import sqlite3
@@ -813,7 +807,7 @@ class M2EEConfig:
         logger.debug("MxRuntime version listed in application model file: %s" %
                      version)
 
-        return version
+        return MXVersion(version)
 
     def _lookup_in_mxjar_repo(self, dirname):
         logger.debug("Searching for %s in mxjar repo locations..." % dirname)
