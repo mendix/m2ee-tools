@@ -59,7 +59,7 @@ class M2EEConfig:
         self._appcontainer_version = self._conf['m2ee'].get(
             'appcontainer_version', None)
 
-        # 3.0: application information (e.g. runtime version)
+        # >= 3.0: application information (e.g. runtime version)
         # if this file does not exist (i.e. < 3.0) try_load_json returns {}
         self._model_metadata = self._try_load_json(
             os.path.join(self._conf['m2ee']['app_base'],
@@ -68,18 +68,7 @@ class M2EEConfig:
                          ))
         self.runtime_version = self._lookup_runtime_version()
 
-        # 3.0: config.json "contains the configuration settings of the active
-        # configuration (in the Modeler) at the time of deployment." It also
-        # contains default values for microflow constants. D/T configuration is
-        # not stored in the mdp anymore, so for D/T we need to insert it into
-        # the configuration we read from yaml (yay!)
-        # { "Configuration": { "key": "value", ... }, "Constants": {
-        # "Module.Constant": "value", ... } } also... move the custom section
-        # into the MicroflowConstants runtime config option where 3.0 now
-        # expects them to be! yay... (when running 2.5, the MicroflowConstants
-        # part of runtime config will be sent using the old
-        # update_custom_configuration m2ee api call.
-        self._conf['mxruntime'] = self._merge_runtime_configuration()
+        self._conf['mxruntime'] = self._merge_microflow_constants()
 
         # if running from binary distribution, try to find where m2ee/runtime
         # jars live
@@ -157,8 +146,22 @@ class M2EEConfig:
         if self.runtime_version >= 5:
             self._write_felix_config()
 
-    def _merge_runtime_configuration(self):
-        logger.debug("Merging runtime configuration...")
+    def _merge_microflow_constants(self):
+        """
+        3.0: config.json "contains the configuration settings of the active
+        configuration (in the Modeler) at the time of deployment." It also
+        contains default values for microflow constants. D/T configuration is
+        not stored in the mdp anymore, so for D/T we need to insert it into
+        the configuration we read from yaml (yay!)
+        { "Configuration": { "key": "value", ... }, "Constants": {
+        "Module.Constant": "value", ... } } also... move the custom section
+        into the MicroflowConstants runtime config option where 3.0 now
+        expects them to be! yay... (when running 2.5, the MicroflowConstants
+        part of runtime config will be sent using the old
+        update_custom_configuration m2ee api call. Fun!
+        """
+
+        logger.debug("Merging microflow constants configuration...")
 
         config_json = {}
         if not self.get_dtap_mode()[0] in ('A', 'P'):
