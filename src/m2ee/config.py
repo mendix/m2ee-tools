@@ -68,9 +68,6 @@ class M2EEConfig:
                          ))
         self.runtime_version = self._lookup_runtime_version()
 
-        # Dirty hack to tell if we're on 2.5 or not
-        self._dirty_hack_is_25 = len(self._model_metadata) == 0
-
         # 3.0: config.json "contains the configuration settings of the active
         # configuration (in the Modeler) at the time of deployment." It also
         # contains default values for microflow constants. D/T configuration is
@@ -838,10 +835,6 @@ class M2EEConfig:
 
         # else, nothing
         return {}
-
-    def dirty_hack_is_25(self):
-        return self._dirty_hack_is_25
-
 
 def find_yaml_files():
     yaml_files = []
