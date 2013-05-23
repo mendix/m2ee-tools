@@ -228,6 +228,15 @@ class M2EE():
                          "comma separated string...")
             config['MyScheduledEvents'] = ','.join(config['MyScheduledEvents'])
 
+        # convert certificate options from list to dumb comma separated string
+        # if needed:
+        for option in ('CACertificates', 'ClientCertificates',
+                       'ClientCertificatePasswords'):
+            if isinstance(config.get(option, None), list):
+                logger.trace("Converting mxruntime %s from list to comma "
+                             "separated string..." % option)
+                config[option] = ','.join(config[option])
+
         logger.debug("Sending MxRuntime configuration...")
         m2eeresponse = self.client.update_configuration(config)
         result = m2eeresponse.get_result()
