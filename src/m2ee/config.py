@@ -772,7 +772,8 @@ class M2EEConfig:
             'model.mdp'
         )
         if not os.path.isfile(model_mdp):
-            logger.warn("%s is not a file!" % model_mdp)
+            logger.debug("Mendix 2.5? No, %s is not a file! Giving up now..." %
+                         model_mdp)
             return None
         version = None
         try:
