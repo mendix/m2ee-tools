@@ -89,14 +89,6 @@ class M2EEConfig:
                                     str(self.runtime_version))
                     self._all_systems_are_go = False
 
-        if not self._appcontainer_version:
-            # 3.0: appcontainer information (e.g. M2EE main class name)
-            self._appcontainer_environment = (
-                self._load_appcontainer_environment())
-        else:
-            # b0rk
-            self._appcontainer_environment = {}
-
         logger.debug("Determining classpath to be used...")
 
         classpath = []
@@ -825,20 +817,6 @@ class M2EEConfig:
     def get_runtime_path(self):
         return self._runtime_path
 
-    def _load_appcontainer_environment(self):
-        # if running from source, search in workspace folder
-        if self._conf['mxnode'].get('run_from_source', False):
-            return self._try_load_json(
-                os.path.join(self._conf['mxnode']['source_workspace'],
-                             'environment.json'))
-
-        # else if version is known, search in runtime_path
-        if self._runtime_path:
-            return self._try_load_json(
-                os.path.join(self._runtime_path, 'environment.json'))
-
-        # else, nothing
-        return {}
 
 def find_yaml_files():
     yaml_files = []
