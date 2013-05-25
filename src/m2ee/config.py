@@ -436,11 +436,8 @@ class M2EEConfig:
         if 'MxClientSystemPath' in self._conf['mxruntime']:
             return self._conf['mxruntime'].get('MxClientSystemPath')
         else:
-            runtime_path = self.get_runtime_path()
-            if runtime_path is None:
-                return None
             return os.path.join(
-                runtime_path,
+                self._runtime_path,
                 'runtime',
                 'mxclientsystem')
 

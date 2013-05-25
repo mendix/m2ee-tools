@@ -84,10 +84,7 @@ def fix_mxclientsystem_symlink(config):
     mxclient_symlink = os.path.join(
         config.get_public_webroot_path(), 'mxclientsystem')
     real_mxclient_location = config.get_real_mxclientsystem_path()
-    if real_mxclient_location is None:
-        logger.error("MxClient location not found, can not set symlink. "
-                     "Please make sure that the runtime is installed.")
-    elif os.path.islink(mxclient_symlink):
+    if os.path.islink(mxclient_symlink):
         current_real_mxclient_location = os.path.realpath(
             mxclient_symlink)
         if current_real_mxclient_location != real_mxclient_location:
