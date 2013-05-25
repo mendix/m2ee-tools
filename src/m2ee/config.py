@@ -606,8 +606,8 @@ class M2EEConfig:
         result = copy.deepcopy(self._conf['m2ee'].get('jetty', {}))
         already_specified = 'use_blocking_connector' in result
         if self.get_runtime_version() >= 5 and not already_specified:
-            result['use_blocking_connector'] = \
-            self.get_runtime_blocking_connector()
+            result['use_blocking_connector'] = (
+                self.get_runtime_blocking_connector())
 
         return result
 

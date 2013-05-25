@@ -295,7 +295,6 @@ class M2EE():
         if self.config.get_symlink_mxclientsystem():
             mdautil.fix_mxclientsystem_symlink(self.config)
 
-
     def _connect_xmpp(self):
         xmpp_credentials = self.config.get_xmpp_credentials()
         if xmpp_credentials:
