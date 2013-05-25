@@ -120,7 +120,8 @@ class CLI(cmd.Cmd):
                     answer = self._ask_user_whether_to_create_db()
                     if answer == 'a':
                         abort = True
-                    elif self.m2ee.config._dirty_hack_is_25 and answer == 'c':
+                    elif (self.m2ee.config.get_runtime_version() // '2.5' and
+                          answer == 'c'):
                         params["autocreatedb"] = True
                 elif result == client_errno.start_INVALID_DB_STRUCTURE:
                     answer = self._handle_ddl_commands()
@@ -157,7 +158,7 @@ class CLI(cmd.Cmd):
                     logger.error("Automatic Database creation is disabled in "
                                  "Acceptance and Production mode!")
                     answer = None
-                elif not self.m2ee.config.dirty_hack_is_25():
+                elif self.m2ee.config.get_runtime_version() >= 3:
                     # If in Development/Test, call execute_ddl_commands,
                     # because since 3.0, this tries to create a database and
                     # immediately executes initial ddl commands

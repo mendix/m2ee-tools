@@ -230,7 +230,7 @@ class M2EE():
 
         config = copy.deepcopy(self.config.get_runtime_config())
         custom_config_25 = None
-        if self.config.dirty_hack_is_25():
+        if self.config.get_runtime_version() // '2.5':
             custom_config_25 = config.pop('MicroflowConstants', None)
 
         # convert MyScheduledEvents from list to dumb comma separated string if

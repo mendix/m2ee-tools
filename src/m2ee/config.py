@@ -59,36 +59,16 @@ class M2EEConfig:
         self._appcontainer_version = self._conf['m2ee'].get(
             'appcontainer_version', None)
 
-        # 3.0: application information (e.g. runtime version)
+        # >= 3.0: application information (e.g. runtime version)
         # if this file does not exist (i.e. < 3.0) try_load_json returns {}
         self._model_metadata = self._try_load_json(
             os.path.join(self._conf['m2ee']['app_base'],
                          'model',
                          'metadata.json'
                          ))
+        self.runtime_version = self._lookup_runtime_version()
 
-        # Dirty hack to tell if we're on 2.5 or not
-        self._dirty_hack_is_25 = len(self._model_metadata) == 0
-
-        # 3.0: config.json "contains the configuration settings of the active
-        # configuration (in the Modeler) at the time of deployment." It also
-        # contains default values for microflow constants. D/T configuration is
-        # not stored in the mdp anymore, so for D/T we need to insert it into
-        # the configuration we read from yaml (yay!)
-        # { "Configuration": { "key": "value", ... }, "Constants": {
-        # "Module.Constant": "value", ... } } also... move the custom section
-        # into the MicroflowConstants runtime config option where 3.0 now
-        # expects them to be! yay... (when running 2.5, the MicroflowConstants
-        # part of runtime config will be sent using the old
-        # update_custom_configuration m2ee api call.
-        self._conf['mxruntime'] = self._merge_runtime_configuration()
-
-        # look up MxRuntime version
-        _runtime_version = self._lookup_runtime_version()
-        if _runtime_version is None:
-            self.runtime_version = None
-        else:
-            self.runtime_version = MXVersion(_runtime_version)
+        self._conf['mxruntime'] = self._merge_microflow_constants()
 
         # if running from binary distribution, try to find where m2ee/runtime
         # jars live
@@ -108,14 +88,6 @@ class M2EEConfig:
                     logger.critical("Mendix Runtime not found for version %s" %
                                     str(self.runtime_version))
                     self._all_systems_are_go = False
-
-        if not self._appcontainer_version:
-            # 3.0: appcontainer information (e.g. M2EE main class name)
-            self._appcontainer_environment = (
-                self._load_appcontainer_environment())
-        else:
-            # b0rk
-            self._appcontainer_environment = {}
 
         logger.debug("Determining classpath to be used...")
 
@@ -166,8 +138,22 @@ class M2EEConfig:
         if self.runtime_version >= 5:
             self._write_felix_config()
 
-    def _merge_runtime_configuration(self):
-        logger.debug("Merging runtime configuration...")
+    def _merge_microflow_constants(self):
+        """
+        3.0: config.json "contains the configuration settings of the active
+        configuration (in the Modeler) at the time of deployment." It also
+        contains default values for microflow constants. D/T configuration is
+        not stored in the mdp anymore, so for D/T we need to insert it into
+        the configuration we read from yaml (yay!)
+        { "Configuration": { "key": "value", ... }, "Constants": {
+        "Module.Constant": "value", ... } } also... move the custom section
+        into the MicroflowConstants runtime config option where 3.0 now
+        expects them to be! yay... (when running 2.5, the MicroflowConstants
+        part of runtime config will be sent using the old
+        update_custom_configuration m2ee api call. Fun!
+        """
+
+        logger.debug("Merging microflow constants configuration...")
 
         config_json = {}
         if not self.get_dtap_mode()[0] in ('A', 'P'):
@@ -686,15 +672,15 @@ class M2EEConfig:
         return self._classpath
 
     def _get_appcontainer_mainclass(self):
-        # XXX: if-hell...
-        if self._appcontainer_version:
-            # using new 3.0+ appcontainer
-            return "com.mendix.m2ee.AppContainer"
-        # 2.5?
-        if not 'version' in self._appcontainer_environment:
+        if self.runtime_version // 2.5:
             return "com.mendix.m2ee.server.M2EE"
-        # 3.0, using default appcontainer?
-        return "com.mendix.m2ee.server.HttpAdminAppContainer"
+        if self.runtime_version // 3 or self.runtime_version // 4:
+            if self._appcontainer_version:
+                return "com.mendix.m2ee.AppContainer"
+            return "com.mendix.m2ee.server.HttpAdminAppContainer"
+        raise Exception("Trying to determine appcontainer main class for "
+                        "runtime version %s. Please report this as a bug." %
+                        self.runtime_version)
 
     def _setup_classpath_from_source(self):
         # when running from source, grab eclipse projects:
@@ -765,13 +751,13 @@ class M2EEConfig:
         if self._conf['m2ee'].get('runtime_version', None):
             logger.debug("Runtime version forced to %s in configuration" %
                          self._conf['m2ee']['runtime_version'])
-            return self._conf['m2ee']['runtime_version']
+            return MXVersion(self._conf['m2ee']['runtime_version'])
 
         # 3.0 has runtime version in metadata.json
         if 'RuntimeVersion' in self._model_metadata:
             logger.debug("MxRuntime version listed in model metadata: %s" %
                          self._model_metadata['RuntimeVersion'])
-            return self._model_metadata['RuntimeVersion']
+            return MXVersion(self._model_metadata['RuntimeVersion'])
 
         # else, 2.5: try to read from model.mdp using sqlite
         import sqlite3
@@ -781,7 +767,8 @@ class M2EEConfig:
             'model.mdp'
         )
         if not os.path.isfile(model_mdp):
-            logger.warn("%s is not a file!" % model_mdp)
+            logger.debug("Mendix 2.5? No, %s is not a file! Giving up now..." %
+                         model_mdp)
             return None
         version = None
         try:
@@ -813,7 +800,7 @@ class M2EEConfig:
         logger.debug("MxRuntime version listed in application model file: %s" %
                      version)
 
-        return version
+        return MXVersion(version)
 
     def _lookup_in_mxjar_repo(self, dirname):
         logger.debug("Searching for %s in mxjar repo locations..." % dirname)
@@ -829,24 +816,6 @@ class M2EEConfig:
 
     def get_runtime_path(self):
         return self._runtime_path
-
-    def _load_appcontainer_environment(self):
-        # if running from source, search in workspace folder
-        if self._conf['mxnode'].get('run_from_source', False):
-            return self._try_load_json(
-                os.path.join(self._conf['mxnode']['source_workspace'],
-                             'environment.json'))
-
-        # else if version is known, search in runtime_path
-        if self._runtime_path:
-            return self._try_load_json(
-                os.path.join(self._runtime_path, 'environment.json'))
-
-        # else, nothing
-        return {}
-
-    def dirty_hack_is_25(self):
-        return self._dirty_hack_is_25
 
 
 def find_yaml_files():
