@@ -638,6 +638,9 @@ class M2EEConfig:
     def get_pg_restore_binary(self):
         return self._conf['mxnode'].get('pg_restore', 'pg_restore')
 
+    def get_runtime_download_location(self):
+        return self._conf['mxnode'].get('runtime_download_location', None)
+
     def get_database_dump_path(self):
         return self._conf['m2ee']['database_dump_path']
 
@@ -809,6 +812,16 @@ class M2EEConfig:
                 break
 
         return path
+
+    def get_first_writable_mxjar_repo(self):
+        logger.debug("Searching for writeable mxjar repos")
+        repos = self._conf['mxnode']['mxjar_repo']
+        repos = filter(lambda repo: os.access(repo, os.W_OK), repos)
+        logger.trace("Found: %s" % repos)
+        if len(repos) > 0:
+            return repos[0]
+        else:
+            return None
 
     def get_runtime_path(self):
         return self._runtime_path

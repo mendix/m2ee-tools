@@ -809,6 +809,22 @@ class CLI(cmd.Cmd):
         if answer == 'y':
             M2EEProfiler(self.m2ee.client).cmdloop()
 
+    def do_download_runtime(self, args):
+        if self.m2ee.config.get_runtime_path() :
+            logger.info("Runtime is already installed, nothing to do")
+            return
+        if not self.m2ee.can_propose_runtime_download():
+            logger.error(
+                "You can not download a runtime. Requirements: \n"
+                " - a configured mxnode: mx_jar_repo option "
+                " - a configured mxnode: download_runtime_location option "
+                "in m2ee.yaml\n"
+                " - write access to at least one mxjar_repo\n"
+                " - an unpacked model, so we can see which version you need\n"
+            )
+            return
+        self.m2ee.download_and_unpack_runtime()
+
     def _cleanup_logging(self):
         # atexit
         if self.m2ee._logproc:

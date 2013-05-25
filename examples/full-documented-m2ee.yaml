@@ -67,6 +67,18 @@ mxnode:
  # for existence: /usr/local/share/mendix/4.2.2/ when the configuration above is
  # used.
 
+ # download_runtime_location can be used to download runtimes on demand
+ # If the new version of your application runs mendix 4.5.0 and the 4.5.0
+ # runtime is not present on the system AND at least one mxjar_repo can is
+ # writeable by this user, the m2ee console will offer the download_runtime
+ # option.
+ download_runtime_location: "https://download.mendix.com/runtimes"
+ # The https://download.mendix.com/runtimes is available in beta, without any
+ # guarantees.
+ # It is probably a good idea to create a user-specific runtimes folder, under
+ # i.e. /srv/mxinstances/USER/data/runtimes and add this to the mxjar_repo list
+ # above.
+
  # When using PostgreSQL as database, the m2ee program contains functionality to
  # quickly dump or restore a database snapshot to the data/database directory of
  # the project, or empty the complete database (e.g. before restoring an old
