@@ -163,6 +163,9 @@ class M2EEConfig:
                          runtimePath)
             self._conf['mxruntime']['RuntimePath'] = runtimePath
 
+        if self.runtime_version >= 5:
+            self._write_felix_config()
+
     def _merge_runtime_configuration(self):
         logger.debug("Merging runtime configuration...")
 
@@ -356,6 +359,53 @@ class M2EEConfig:
             # TODO: detect permissions and tell user if changing is needed
             os.chmod(fullpath, mode)
 
+    def get_felix_config_file(self):
+        return self._conf['m2ee'].get(
+            'felix_config_file',
+            os.path.join(
+                self._conf['m2ee']['app_base'],
+                'model',
+                'felixconfig.properties'
+            )
+        )
+
+    def _write_felix_config(self):
+        felix_config_file = self.get_felix_config_file()
+        felix_config_path = os.path.dirname(felix_config_file)
+        if not os.access(felix_config_path, os.W_OK):
+            self._all_systems_are_go = False
+            logger.critical("felix_config_file is not in a writable "
+                            "location: %s" % felix_config_path)
+            return
+
+        project_bundles_path = os.path.join(
+            self._conf['m2ee']['app_base'], 'model', 'bundles'
+        )
+        osgi_storage_path = os.path.join(
+            self._conf['m2ee']['app_base'], 'data', 'tmp', 'felixcache'
+        )
+        felix_template_file = os.path.join(
+            self._runtime_path,
+            'runtime',
+            'felixconfig.properties.template'
+        )
+        if os.path.exists(felix_template_file):
+            logger.debug("writing felix configuration template from %s "
+                         "to %s" % (felix_template_file, felix_config_file))
+            with open(felix_template_file) as input_file:
+                template = input_file.read()
+                with open(felix_config_file, 'w') as output_file:
+                    render = template.format(
+                        ProjectBundlesDir=project_bundles_path,
+                        InstallDir=self._runtime_path,
+                        FrameworkStorage=osgi_storage_path
+                    )
+                    output_file.write(render)
+        else:
+            self._all_systems_are_go = False
+            logger.error("felix configuration template is not a readable "
+                         "file: %s" % felix_template_file)
+
     def get_app_name(self):
         return self._conf['m2ee']['app_name']
 
@@ -451,7 +501,7 @@ class M2EEConfig:
 
         # only add RUNTIME environment variables when using default
         # appcontainer from runtime distro
-        if not self._appcontainer_version:
+        if not self._appcontainer_version and self.runtime_version < 5:
             env['M2EE_RUNTIME_PORT'] = str(self._conf['m2ee']['runtime_port'])
             if 'runtime_blocking_connector' in self._conf['m2ee']:
                 env['M2EE_RUNTIME_BLOCKING_CONNECTOR'] = str(
@@ -475,11 +525,18 @@ class M2EEConfig:
             else:
                 logger.warn("javaopts option in m2ee section in configuration "
                             "is not a list")
-        if self._classpath:
+        if self._classpath and self.runtime_version < 5:
             cmd.extend([
                 '-cp',
                 self._classpath,
                 self._get_appcontainer_mainclass()
+            ])
+        elif self.runtime_version >= 5:
+            cmd.extend([
+                '-Dfelix.config.properties=file:%s'
+                % self.get_felix_config_file(),
+                '-jar', os.path.join(self._runtime_path, 'runtime',
+                                     'felix', 'bin', 'felix.jar')
             ])
         elif self._appcontainer_version:
             cmd.extend(['-jar', self._appcontainer_jar])
@@ -527,6 +584,9 @@ class M2EEConfig:
     def get_runtime_port(self):
         return self._conf['m2ee']['runtime_port']
 
+    def get_runtime_listen_addresses(self):
+        return self._conf['m2ee'].get('runtime_listen_addresses', '')
+
     def get_pidfile(self):
         return self._conf['m2ee'].get('pidfile',
                                       os.path.join(
@@ -543,7 +603,13 @@ class M2EEConfig:
         return self._conf['logging']
 
     def get_jetty_options(self):
-        return self._conf['m2ee'].get('jetty', None)
+        result = copy.deepcopy(self._conf['m2ee'].get('jetty', {}))
+        already_specified = 'use_blocking_connector' in result
+        if self.get_runtime_version() >= 5 and not already_specified:
+            result['use_blocking_connector'] = (
+                self.get_runtime_blocking_connector())
+
+        return result
 
     def get_munin_options(self):
         return self._conf['m2ee'].get('munin', None)
@@ -609,6 +675,9 @@ class M2EEConfig:
 
     def get_appcontainer_version(self):
         return self._appcontainer_version
+
+    def use_hybrid_appcontainer(self):
+        return self._appcontainer_version is not None
 
     def get_runtime_version(self):
         return self.runtime_version

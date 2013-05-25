@@ -96,16 +96,17 @@ class M2EE():
 
         # go do startup sequence
         self._configure_logging()
-        self._send_jetty_config()
         self._send_mime_types()
 
-        xmpp_credentials = self.config.get_xmpp_credentials()
-        if xmpp_credentials:
-            self.client.connect_xmpp(xmpp_credentials)
+        version = self.config.get_runtime_version()
+        hybrid = self.config.use_hybrid_appcontainer()
 
-        # when running hybrid appcontainer, we need to create the runtime
-        # ourselves
-        if self.config.get_appcontainer_version():
+        if version < 5 and not hybrid:
+            self._send_jetty_config()
+            return True
+        elif version < 5 and hybrid:
+            self._send_jetty_config()
+            self._connect_xmpp()
             response = self.client.create_runtime({
                 "runtime_path":
                 os.path.join(self.config.get_runtime_path(), 'runtime'),
@@ -114,9 +115,20 @@ class M2EE():
                 "use_blocking_connector":
                 self.config.get_runtime_blocking_connector(),
             })
+            response.display_error()
+            return not response.has_error()
+        elif version >= 5:
+            response = self.client.update_appcontainer_configuration({
+                "runtime_port": self.config.get_runtime_port(),
+                "runtime_listen_addresses":
+                self.config.get_runtime_listen_addresses(),
+                "runtime_jetty_options": self.config.get_jetty_options()
+            })
+            response.display_error()
+            self._connect_xmpp()
             return not response.has_error()
 
-        return True
+        return False
 
     def start_runtime(self, params):
         startresponse = self.client.start(params)
@@ -291,3 +303,8 @@ class M2EE():
 
         if self.config.get_symlink_mxclientsystem():
             mdautil.fix_mxclientsystem_symlink(self.config)
+
+    def _connect_xmpp(self):
+        xmpp_credentials = self.config.get_xmpp_credentials()
+        if xmpp_credentials:
+            self.client.connect_xmpp(xmpp_credentials)
