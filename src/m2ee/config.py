@@ -680,15 +680,15 @@ class M2EEConfig:
         return self._classpath
 
     def _get_appcontainer_mainclass(self):
-        # XXX: if-hell...
-        if self._appcontainer_version:
-            # using new 3.0+ appcontainer
-            return "com.mendix.m2ee.AppContainer"
-        # 2.5?
-        if not 'version' in self._appcontainer_environment:
+        if self.runtime_version // 2.5:
             return "com.mendix.m2ee.server.M2EE"
-        # 3.0, using default appcontainer?
-        return "com.mendix.m2ee.server.HttpAdminAppContainer"
+        if self.runtime_version // 3 or self.runtime_version // 4:
+            if self._appcontainer_version:
+                return "com.mendix.m2ee.AppContainer"
+            return "com.mendix.m2ee.server.HttpAdminAppContainer"
+        raise Exception("Trying to determine appcontainer main class for "
+                        "runtime version %s. Please report this as a bug." %
+                        self.runtime_version)
 
     def _setup_classpath_from_source(self):
         # when running from source, grab eclipse projects:
