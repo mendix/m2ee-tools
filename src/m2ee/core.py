@@ -307,4 +307,4 @@ class M2EE():
     def _connect_xmpp(self):
         xmpp_credentials = self.config.get_xmpp_credentials()
         if xmpp_credentials:
-            self.client.connect_xmpp(xmpp_credentials)
+            self.client.connect_xmpp(xmpp_credentials).display_error()
