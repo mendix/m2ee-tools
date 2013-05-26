@@ -948,9 +948,9 @@ if __name__ == '__main__':
         verbosity = 5
     logger.setLevel(verbosity)
 
-    m2ee = CLI(yaml_files=options.yaml_files)
-    atexit.register(m2ee._cleanup_logging)
+    cli = CLI(yaml_files=options.yaml_files)
+    atexit.register(cli._cleanup_logging)
     if args:
-        m2ee.onecmd(' '.join(args))
+        cli.onecmd(' '.join(args))
     else:
-        m2ee.cmdloop()
+        cli.cmdloop()
