@@ -81,24 +81,27 @@ def unpack(config, mda_name):
 
 
 def fix_mxclientsystem_symlink(config):
+    logger.debug("Running fix_mxclientsystem_symlink...")
     mxclient_symlink = os.path.join(
         config.get_public_webroot_path(), 'mxclientsystem')
-    real_mxclient_location = config.get_real_mxclientsystem_path()
+    logger.trace("mxclient_symlink: %s" % mxclient_symlink)
+    real_mxclientsystem_path = config.get_real_mxclientsystem_path()
+    logger.trace("real_mxclientsystem_path: %s" % real_mxclientsystem_path)
     if os.path.islink(mxclient_symlink):
-        current_real_mxclient_location = os.path.realpath(
+        current_real_mxclientsystem_path = os.path.realpath(
             mxclient_symlink)
-        if current_real_mxclient_location != real_mxclient_location:
+        if current_real_mxclientsystem_path != real_mxclientsystem_path:
             logger.debug("mxclientsystem symlink exists, but points "
-                         "to %s" % current_real_mxclient_location)
+                         "to %s" % current_real_mxclientsystem_path)
             logger.debug("redirecting symlink to %s" %
-                         real_mxclient_location)
+                         real_mxclientsystem_path)
             os.unlink(mxclient_symlink)
-            os.symlink(real_mxclient_location, mxclient_symlink)
+            os.symlink(real_mxclientsystem_path, mxclient_symlink)
     elif not os.path.exists(mxclient_symlink):
         logger.debug("creating mxclientsystem symlink pointing to %s" %
-                     real_mxclient_location)
+                     real_mxclientsystem_path)
         try:
-            os.symlink(real_mxclient_location, mxclient_symlink)
+            os.symlink(real_mxclientsystem_path, mxclient_symlink)
         except OSError, e:
             logger.error("creating symlink failed: %s" % e)
     else:
