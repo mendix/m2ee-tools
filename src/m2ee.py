@@ -104,6 +104,7 @@ class CLI(cmd.Cmd):
             return
 
         if not self.m2ee.send_runtime_config():
+            self._stop()
             return
 
         abort = False
