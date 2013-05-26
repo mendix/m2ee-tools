@@ -70,6 +70,9 @@ class M2EE():
                          "errors.")
             return False
 
+        if self.config.get_symlink_mxclientsystem():
+            mdautil.fix_mxclientsystem_symlink(self.config)
+
         logger.debug("Checking if the runtime is already alive...")
         (pid_alive, m2ee_alive) = self.check_alive()
         if not pid_alive and not m2ee_alive:
@@ -300,9 +303,6 @@ class M2EE():
         post_unpack_hook = self.config.get_post_unpack_hook()
         if post_unpack_hook:
             mdautil.run_post_unpack_hook(post_unpack_hook)
-
-        if self.config.get_symlink_mxclientsystem():
-            mdautil.fix_mxclientsystem_symlink(self.config)
 
     def _connect_xmpp(self):
         xmpp_credentials = self.config.get_xmpp_credentials()
