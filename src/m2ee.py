@@ -21,11 +21,13 @@ import yaml
 import datetime
 
 from m2ee import pgutil, M2EE, M2EEProfiler, logger, client_errno
+import m2ee
 
 
 class CLI(cmd.Cmd):
 
     def __init__(self, yaml_files=None):
+        logger.debug('Using m2ee-tools version %s' % m2ee.__version__)
         cmd.Cmd.__init__(self)
         if yaml_files:
             self.m2ee = M2EE(yamlfiles=yaml_files, load_default_files=False)
@@ -356,6 +358,7 @@ class CLI(cmd.Cmd):
         sys.exit(m2ee.nagios.check(self.m2ee.runner, self.m2ee.client))
 
     def do_about(self, args):
+        print('Using m2ee-tools version %s' % m2ee.__version__)
         if self._report_not_running():
             return
         feedback = self.m2ee.client.about().get_feedback()
