@@ -20,9 +20,7 @@ import pprint
 import yaml
 import datetime
 
-from m2ee import pgutil, M2EE, M2EEProfiler
-from m2ee.log import logger
-import m2ee.client_errno as client_errno
+from m2ee import pgutil, M2EE, M2EEProfiler, logger, client_errno
 
 
 class CLI(cmd.Cmd):
