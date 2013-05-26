@@ -333,7 +333,6 @@ class CLI(cmd.Cmd):
         pprint.pprint(stats)
 
     def do_munin_config(self, args):
-        import m2ee.munin
         m2ee.munin.print_all(
             self.m2ee.client,
             self.m2ee.config,
@@ -343,7 +342,6 @@ class CLI(cmd.Cmd):
         )
 
     def do_munin_values(self, args):
-        import m2ee.munin
         m2ee.munin.print_all(
             self.m2ee.client,
             self.m2ee.config,
@@ -352,7 +350,6 @@ class CLI(cmd.Cmd):
         )
 
     def do_nagios(self, args):
-        import m2ee.nagios
         logger.info("The nagios plugin will exit m2ee after running, this is "
                     "by design, don't report it as bug.")
         # TODO: implement as separate program after libraryfying m2ee
