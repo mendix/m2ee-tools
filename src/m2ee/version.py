@@ -12,7 +12,6 @@ def __to_mx_version__(version):
 class MXVersion:
 
     def __init__(self, version):
-        self.versionstring = version
         if isinstance(version, (int, long, float)):
             version = str(version)
         parsed = re.match(
