@@ -6,7 +6,7 @@ m2ee-tools 0.5
 [x] runtime/'environment'-version-compare
 [x] document in full-documented-m2ee.yaml: options for web service client certificates
 [x] moar leveraging the version comparison for cli command availability signaling
-[ ] document in full-documented-m2ee.yaml: EnableKeepAlive, PersistentSessions, SessionTimeout
+[x] document in full-documented-m2ee.yaml: EnableKeepAlive, PersistentSessions, SessionTimeout
 [ ] document in full-documented-m2ee.yaml: jetty options
 [ ] move felix config template writing from config to start
 

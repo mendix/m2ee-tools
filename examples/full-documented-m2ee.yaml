@@ -598,6 +598,59 @@ mxruntime:
  # default: True
  EnableSessionFingerprinting: False
 
+ # The Mendix Client (running in your browser) sends keepalive messages to the
+ # Mendix Runtime to let it know the user still has the browser window opened.
+ # In case someone closes his browser without logging out, the session will
+ # expire at the Mendix Runtime after no keepalives have been seen for longer
+ # than the SessionTimeout value.
+ #
+ # When disabling keepalive, the Mendix Runtime will update the server side
+ # timeout at every interaction with the client. If the client is inactive for a
+ # period longer than the SessionTimeout, the client session will be terminated.
+ #
+ # By default, the keepalive option is enabled. It can be disabled if you want
+ # to have user sessions being terminated if they do not create activity
+ # manually, regardless of still having the application opened in the browser.
+ #
+ # This option was introduced in Mendix version 4.1.0
+ #
+ # default: True
+ EnableKeepAlive: True
+
+ # The session timeout defines the maximum time a browser session can be
+ # inactive until the session is killed at the Mendix Runtime. With the
+ # EnableKeepAlive option enabled (which it is by default), the client will send
+ # keepalives to the Runtime at an interval of half the SessionTimeout. If
+ # EnableKeepAlive is disabled, user sessions will be terminated after no
+ # explicit user generated traffic has been seen for this amount of time.
+ #
+ # The SessionTimeout is specified in milliseconds, and defaults to 10 minutes.
+ SessionTimeout: 600000
+
+ # When enabling persistent sessions, information about logged in users will be
+ # stored in the database of your Mendix application, instead of only in the
+ # volatile application memory.
+ #
+ # Only login sessions will be stored in the database. The object cache
+ # (choosing edit in the client... editing... save...) and intermediate state of
+ # running microflows are not persistanly committed to the database, as doing so
+ # would instantly open the gates of performance hell.
+ #
+ # Enabling persistent sessions is not desirable in any use case. It might be
+ # fun that users are not logged out if you do a quick restart of the
+ # application, but all unsaved edit forms will generate errors or corrupt data
+ # when you do so.
+ #
+ # After all, it may only be desirable in a testing environment where integrity
+ # of data is not a big issue, when application restarts are done frequently and
+ # logging in again is more inconvenient than working through some red error
+ # popups. My advice... never enable persistent sessions.
+ #
+ # Do not enable persistent sessions together with disabling keepalive, because
+ # this will cause an extra database update to happen on the session store for
+ # every request the browser client issues (and that's a lot of times).
+ PersistentSessions: False
+
  # License key file (2.5.x only, for 3.x+ use the activate_license m2ee command)
  #KeyFile: /path/to/some/place/key.mx
 
