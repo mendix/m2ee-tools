@@ -121,7 +121,7 @@ class CLI(cmd.Cmd):
                     answer = self._ask_user_whether_to_create_db()
                     if answer == 'a':
                         abort = True
-                    elif (self.m2ee.config.get_runtime_version() // '2.5' and
+                    elif (self.m2ee.config.get_runtime_version() // 2.5 and
                           answer == 'c'):
                         params["autocreatedb"] = True
                 elif result == client_errno.start_INVALID_DB_STRUCTURE:
@@ -292,7 +292,7 @@ class CLI(cmd.Cmd):
         print("\n".join(critlist))
 
     def do_check_health(self, args):
-        if self._report_not_running():
+        if self._report_not_implemented('2.5.4') or self._report_not_running():
             return
         health_response = self.m2ee.client.check_health()
         if not health_response.has_error():
@@ -310,18 +310,14 @@ class CLI(cmd.Cmd):
                 logger.error("Unexpected health check status: %s" %
                              feedback['health'])
         else:
-            if (health_response.get_result() == 3 and
-                    health_response.get_cause() == "java.lang.IllegalArgument"
-                    "Exception: Action should not be null"):
+            runtime_version = self.m2ee.config.get_runtime_version()
+            if (health_response.get_result() == 3
+                    and runtime_version // ('2.5.4', '2.5.5')):
                 # Because of an incomplete implementation, in Mendix 2.5.4 or
                 # 2.5.5 this means that the runtime is health-check
                 # capable, but no health check microflow is defined.
                 logger.info("Health check microflow is probably not "
                             "configured, no health information available.")
-            elif (health_response.get_result() ==
-                  health_response.ERR_ACTION_NOT_FOUND):
-                logger.info("The Mendix version you are running does not yet "
-                            "support health check functionality.")
             else:
                 health_response.display_error()
 
@@ -362,23 +358,19 @@ class CLI(cmd.Cmd):
         feedback = self.m2ee.client.about().get_feedback()
         print("Using %s version %s" % (feedback['name'], feedback['version']))
         print(feedback['copyright'])
-        # 2.5: license info in feedback of about call
-        if 'company' in feedback:
-            print('Project company name is %s' % feedback['company'])
-        if 'partner' in feedback:
-            print('Project partner name is %s' % feedback['partner'])
-        if 'model_version' in feedback:  # since 4.4.0
-            print('Model version: %s' % feedback['model_version'])
+        if self.m2ee.config.get_runtime_version() // 2.5:
+            if 'company' in feedback:
+                print('Project company name is %s' % feedback['company'])
+            if 'partner' in feedback:
+                print('Project partner name is %s' % feedback['partner'])
+        if self.m2ee.config.get_runtime_version() >= 4.4:
+            if 'model_version' in feedback:
+                print('Model version: %s' % feedback['model_version'])
 
     def do_show_license_information(self, args):
-        if self._report_not_running():
+        if self._report_not_implemented(3) or self._report_not_running():
             return
         m2eeresp = self.m2ee.client.get_license_information()
-        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
-            logger.error("This action is not available in the Mendix Runtime "
-                         "version you are currently using.")
-            logger.error("It was implemented in Mendix 3.0.0")
-            return
         m2eeresp.display_error()
         if not m2eeresp.has_error():
             feedback = m2eeresp.get_feedback()
@@ -447,38 +439,38 @@ class CLI(cmd.Cmd):
                       else '')))
 
     def do_activate_license(self, args):
-        if self._report_not_running():
+        if self._report_not_implemented(3) or self._report_not_running():
             return
         print("The command activate_license will set the license key used in "
-              "this application. As far as currently known, recent Mendix "
-              "Runtime versions do not check the submitted license key for "
-              "validity, so incorrect input will unconditionally un-license "
-              "your Mendix application! After setting the license, there will "
-              "be no feedback about validity of the license. You can use show_"
-              "license_information to check the active license. Also... after "
-              "setting the license you will need to restart the application "
-              "again to be sure it is fully activated.")
-        answer = raw_input("Do you want to continue anyway? (type YES if you "
-                           "want to): ")
-        if answer != 'YES':
-            print("Aborting.")
-            return
+              "this application.")
+        if self.m2ee.get_runtime_version() < 4.1:
+            print("Mendix Runtime versions before 4.1 do not check the "
+                  "submitted license key for validity, so incorrect input "
+                  "will un-license your Mendix application without warning! "
+                  "After setting the license, use show_license_information "
+                  "to check the active license. Also... after setting the "
+                  "license in versions before Mendix 4.1 you will need to "
+                  "restart the application again to be sure it is fully "
+                  "activated.")
+            answer = raw_input("Do you want to continue anyway? (type YES if "
+                               "you want to): ")
+            if answer != 'YES':
+                print("Aborting.")
+                return
         if not args:
             license_key = raw_input("Paste your license key (a long text "
-                                    "string without newlines line): ")
+                                    "string without newlines) or empty input "
+                                    "to abort: ")
         else:
             license_key = args
-        m2eeresp = self.m2ee.client.set_license({'license_key': license_key})
-        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
-            logger.error("This action is not available in the Mendix Runtime "
-                         "version you are currently using.")
-            logger.error("It was implemented in Mendix 3.0.0")
+        if not license_key:
+            print("Aborting.")
             return
+        m2eeresp = self.m2ee.client.set_license({'license_key': license_key})
         m2eeresp.display_error()
-        # no usable feedback, anyway, not as of 4.1.0
 
     def do_enable_debugger(self, args):
-        if self._report_not_running():
+        if self._report_not_implemented(4.3) or self._report_not_running():
             return
 
         if not args:
@@ -494,11 +486,6 @@ class CLI(cmd.Cmd):
             debugger_password = args
         m2eeresp = self.m2ee.client.enable_debugger(
             {'password': debugger_password})
-        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
-            logger.error("This action is not available in the Mendix Runtime "
-                         "version you are currently using.")
-            logger.error("It was implemented in Mendix 4.3.0")
-            return
         m2eeresp.display_error()
         if not m2eeresp.has_error():
             logger.info("The remote debugger is now enabled, the password to "
@@ -509,30 +496,20 @@ class CLI(cmd.Cmd):
                         "https://app.example.com/debugger/). ")
 
     def do_disable_debugger(self, args):
-        if self._report_not_running():
+        if self._report_not_implemented(4.3) or self._report_not_running():
             return
 
         m2eeresp = self.m2ee.client.disable_debugger()
-        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
-            logger.error("This action is not available in the Mendix Runtime "
-                         "version you are currently using.")
-            logger.error("It was implemented in Mendix 4.3.0")
-            return
         if not m2eeresp.has_error():
             logger.info("The remote debugger is now disabled.")
         else:
             m2eeresp.display_error()
 
     def do_show_debugger_status(self, args):
-        if self._report_not_running():
+        if self._report_not_implemented(4.3) or self._report_not_running():
             return
 
         m2eeresp = self.m2ee.client.get_debugger_status()
-        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
-            logger.error("This action is not available in the Mendix Runtime "
-                         "version you are currently using.")
-            logger.error("It was implemented in Mendix 4.3.0")
-            return
         if not m2eeresp.has_error():
             enabled = m2eeresp.get_feedback()['enabled']
             connected = m2eeresp.get_feedback()['client_connected']
@@ -768,14 +745,10 @@ class CLI(cmd.Cmd):
         return False
 
     def do_show_current_runtime_requests(self, args):
-        if self._report_not_running():
+        if (self._report_not_implemented(('2.5.8', 3.1))
+                or self._report_not_running()):
             return
         m2eeresp = self.m2ee.client.get_current_runtime_requests()
-        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
-            logger.error("This action is not available in the Mendix Runtime "
-                         "version you are currently using.")
-            logger.error("It was implemented in Mendix 2.5.8 and 3.1.0")
-            return
         m2eeresp.display_error()
         if not m2eeresp.has_error():
             feedback = m2eeresp.get_feedback()
@@ -786,14 +759,9 @@ class CLI(cmd.Cmd):
                 print(yaml.safe_dump(feedback))
 
     def do_show_all_thread_stack_traces(self, args):
-        if self._report_not_running():
+        if self._report_not_implemented(3.2) or self._report_not_running():
             return
         m2eeresp = self.m2ee.client.get_all_thread_stack_traces()
-        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
-            logger.error("This action is not available in the Mendix Runtime "
-                         "version you are currently using.")
-            logger.error("It was implemented in Mendix 3.2.0")
-            return
         m2eeresp.display_error()
         if not m2eeresp.has_error():
             feedback = m2eeresp.get_feedback()
@@ -801,7 +769,8 @@ class CLI(cmd.Cmd):
             print(pprint.pprint(feedback))
 
     def do_interrupt_request(self, args):
-        if self._report_not_running():
+        if (self._report_not_implemented(('2.5.8', 3.1))
+                or self._report_not_running()):
             return
         if args == "":
             logger.error("This function needs a request id as parameter")
@@ -809,11 +778,6 @@ class CLI(cmd.Cmd):
                          "running requests")
             return
         m2eeresp = self.m2ee.client.interrupt_request({"request_id": args})
-        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
-            logger.error("This action is not available in the Mendix Runtime "
-                         "version you are currently using.")
-            logger.error("It was implemented in Mendix 2.5.8 and 3.1.0")
-            return
         m2eeresp.display_error()
         if not m2eeresp.has_error():
             feedback = m2eeresp.get_feedback()

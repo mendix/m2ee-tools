@@ -5,12 +5,12 @@ m2ee-tools 0.5
 [x] remove all left-overs of user interaction from lib files (raw_input etc)
 [x] runtime/'environment'-version-compare
 [x] document in full-documented-m2ee.yaml: options for web service client certificates
+[x] moar leveraging the version comparison for cli command availability signaling
 [ ] document in full-documented-m2ee.yaml: EnableKeepAlive, PersistentSessions, SessionTimeout
 [ ] document in full-documented-m2ee.yaml: jetty options
 [ ] move felix config template writing from config to start
 
 m2ee-tools 0.5.1
-[ ] moar leveraging the version comparison for cli command availability signaling
 [ ] add command to display cache_statistics
 [ ] munin: show cache statistics (amount of transient objects in cache)
 [ ] implement munin/nagios plugins by importing m2ee instead of abusing the CLI tool
