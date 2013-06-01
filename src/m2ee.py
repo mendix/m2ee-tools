@@ -725,6 +725,27 @@ class CLI(cmd.Cmd):
         else:
             logger.info("Loglevel for %s set to %s" % (node, level))
 
+    def _report_not_implemented(self, avail_since):
+        runtime_version = self.m2ee.config.get_runtime_version()
+        if runtime_version is None:
+            return False  # DUNNO
+        if not runtime_version >= avail_since:
+            logger.error("This action is not available in the Mendix Runtime "
+                         "version you are currently using.")
+            if isinstance(avail_since, tuple):
+                if len(avail_since) > 2:
+                    implemented_in = (
+                        '%s, %s and %s' %
+                        (', '.join(map(str, avail_since[:-2])),
+                        avail_since[-2], avail_since[-1]))
+                else:
+                    implemented_in = '%s and %s' % avail_since
+            else:
+                implemented_in = avail_since
+            logger.error("It was implemented in Mendix %s" % implemented_in)
+            return True
+        return False
+
     def _report_not_running(self):
         """
         To be used by actions to see whether m2ee is available for executing
