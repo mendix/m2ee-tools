@@ -334,6 +334,50 @@ m2ee:
   # default: true
   graph_total_named_users: true
 
+ # The jetty sub section defines some configuration tweaks that can be done to
+ # the webserver which is listening on the Runtime port that serves the
+ # application itself. Under the hood, Jetty is used as HTTP server
+ # implementation.
+ jetty:
+  # runtime_min_threads defines the minimum amount of JVM threads that will be
+  # available at the runtime web server to handle requests
+  #
+  # default: 8
+  runtime_min_threads: 8
+  #
+  # runtime_max_threads effectively sets a cap on the maximum number of active
+  # requests that can be handled simultaneously at the same time.
+  #
+  # If you ever run into a situation where the active webserver threadpool size
+  # hits this maximum, you likely need to fix the behaviour of your application,
+  # to get requests to be completed in time instead of adjusting this value.
+  #
+  # Increasing the maximum amount of threads may only help an application to get
+  # overloaded with work more easily.
+  #
+  # default: 254
+  runtime_max_threads: 254
+  #
+  # request_header_size sets the buffer size that is allocated per request to
+  # store HTTP headers. By default, this is a 4kB buffer. If a request is
+  # received that has a header part which is bigger, you might see errors like
+  # this one: WARNING - Jetty: HttpException(413,FULL head,null) - null - null
+  #
+  # This issue was reported to happen in combination with using kerberos
+  # authentication which inserts long token headers into the request headers.
+  #
+  # This option was introduced in Mendix version 3.3.7 and 4.4.4
+  #
+  # default: 4096 (4kB)
+  request_header_size: 4096
+  #
+  # response_header_size sets the buffer size that is allocated per response to
+  # store HTTP headers, very much alike the request_header_size option above
+  #
+  # This option was introduced in Mendix version 3.3.7 and 4.4.4
+  # default: 4096 (4kB)
+  response_header_size: 4096
+
 # The mimetypes section can be used to specify custom mime types to be used for
 # file downloads.
 #
