@@ -8,7 +8,7 @@ m2ee-tools 0.5
 [x] moar leveraging the version comparison for cli command availability signaling
 [x] document in full-documented-m2ee.yaml: EnableKeepAlive, PersistentSessions, SessionTimeout
 [x] document in full-documented-m2ee.yaml: jetty options
-[ ] move felix config template writing from config to start
+[x] move felix config template writing from config to start
 
 m2ee-tools 0.5.1
 [ ] add command to display cache_statistics

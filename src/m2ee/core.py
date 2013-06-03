@@ -70,6 +70,12 @@ class M2EE():
                          "errors.")
             return False
 
+        version = self.config.get_runtime_version()
+
+        if version >= 5:
+            if not self.config.write_felix_config():
+                return False
+
         if self.config.get_symlink_mxclientsystem():
             mdautil.fix_mxclientsystem_symlink(self.config)
 
@@ -101,7 +107,6 @@ class M2EE():
         self._configure_logging()
         self._send_mime_types()
 
-        version = self.config.get_runtime_version()
         hybrid = self.config.use_hybrid_appcontainer()
 
         if version < 5 and not hybrid:

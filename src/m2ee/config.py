@@ -135,9 +135,6 @@ class M2EEConfig:
                          runtimePath)
             self._conf['mxruntime']['RuntimePath'] = runtimePath
 
-        if self.runtime_version >= 5:
-            self._write_felix_config()
-
     def _merge_microflow_constants(self):
         """
         3.0: config.json "contains the configuration settings of the active
@@ -355,14 +352,13 @@ class M2EEConfig:
             )
         )
 
-    def _write_felix_config(self):
+    def write_felix_config(self):
         felix_config_file = self.get_felix_config_file()
         felix_config_path = os.path.dirname(felix_config_file)
         if not os.access(felix_config_path, os.W_OK):
-            self._all_systems_are_go = False
             logger.critical("felix_config_file is not in a writable "
                             "location: %s" % felix_config_path)
-            return
+            return False
 
         project_bundles_path = os.path.join(
             self._conf['m2ee']['app_base'], 'model', 'bundles'
@@ -378,19 +374,25 @@ class M2EEConfig:
         if os.path.exists(felix_template_file):
             logger.debug("writing felix configuration template from %s "
                          "to %s" % (felix_template_file, felix_config_file))
-            with open(felix_template_file) as input_file:
-                template = input_file.read()
-                with open(felix_config_file, 'w') as output_file:
-                    render = template.format(
-                        ProjectBundlesDir=project_bundles_path,
-                        InstallDir=self._runtime_path,
-                        FrameworkStorage=osgi_storage_path
-                    )
-                    output_file.write(render)
+            try:
+                with open(felix_template_file) as input_file:
+                    template = input_file.read()
+                    with open(felix_config_file, 'w') as output_file:
+                        render = template.format(
+                            ProjectBundlesDir=project_bundles_path,
+                            InstallDir=self._runtime_path,
+                            FrameworkStorage=osgi_storage_path
+                        )
+                        output_file.write(render)
+            except IOError, e:
+                logger.error("felix configuration template could not be"
+                             "written: %s", e)
+                return False
         else:
-            self._all_systems_are_go = False
             logger.error("felix configuration template is not a readable "
                          "file: %s" % felix_template_file)
+            return False
+        return True
 
     def get_app_name(self):
         return self._conf['m2ee']['app_name']
