@@ -375,6 +375,7 @@ m2ee:
   # store HTTP headers, very much alike the request_header_size option above
   #
   # This option was introduced in Mendix version 3.3.7 and 4.4.4
+  #
   # default: 4096 (4kB)
   response_header_size: 4096
 
