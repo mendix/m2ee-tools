@@ -72,17 +72,16 @@ mxnode:
  # the project, or empty the complete database (e.g. before restoring an old
  # dump). The following configuration options can override the specific programs
  # that are used when executing these commands. During a transition when moving
- # from e.g. PostgreSQL 8.3 to 8.4 we used these to always dump databases using
- # 8.3 and restore them using 8.4 client tools, so it didn't matter what version
- # (either 8.3 or 8.4) a developer was using on his/her local workstation.
+ # from e.g. PostgreSQL 8.4 to 9.2 this can be used to always dump databases
+ # using 8.4 and restore them using 9.2 client tools.
  #
  # Note: not all operating system distributions support running different
  # PostgreSQL versions at the same time on a server, so YMMV.
  #
  # default: just search for the default programs on the current OS search path
- pg_dump: /usr/lib/postgresql/8.3/bin/pg_dump
- pg_restore: /usr/lib/postgresql/8.4/bin/pg_restore
- psql: /usr/lib/postgresql/8.4/bin/psql
+ pg_dump: /usr/lib/postgresql/8.4/bin/pg_dump
+ pg_restore: /usr/lib/postgresql/9.2/bin/pg_restore
+ psql: /usr/lib/postgresql/9.2/bin/psql
 
 # The m2ee section defines configuration about a single application we're going
 # to run.
