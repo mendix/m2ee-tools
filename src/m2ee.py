@@ -939,4 +939,8 @@ if __name__ == '__main__':
     if args:
         cli.onecmd(' '.join(args))
     else:
-        cli.cmdloop()
+        try:
+            cli.cmdloop()
+        except KeyboardInterrupt:
+            print("^C")
+            sys.exit(130)  # 128 + SIGINT
