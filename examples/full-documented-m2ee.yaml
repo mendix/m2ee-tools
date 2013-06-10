@@ -226,7 +226,7 @@ m2ee:
  # you point at either won't be noticed, or oppose problems when the content of
  # the classpath was changed while the application is running.
  #
- # Note 2: this option is immediately deprecated, and will not be available in
+ # Note 2: this option is immediately deprecated, and is not available in
  # Mendix 5. If you need to have external libraries in your production
  # environment that you do not want to maintain in the project itself, you
  # might consider using a post_unpack_hook to copy them into your userlib
