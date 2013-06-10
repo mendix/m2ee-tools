@@ -1,3 +1,19 @@
+m2ee-tools 0.5, 10 Jun 2013
+  * Now API compatible with 2.5.0 <= Mendix <= 5.0.0-beta1
+  * Prettify output of show_license
+  * Print application model revision in about output (Mendix >= 4.4)
+  * Add extend_classpath option to extend the JVM class path used at application
+    startup. This option is immediately deprecated and not supported any more in
+    combination with Mendix 5.
+  * Add documentation about CACertificates, ClientCertificates,
+    ClientCertificatePasswords, WebServiceClientCertificates, EnableKeepAlive,
+    SessionTimeout, PersistentSessions runtime options and jetty
+    runtime_min_threads, runtime_max_threads, request_header_size and
+    response_header_size configuration options to full-documented-m2ee.yaml
+  * Code refactoring, creating a clean separation between the command line
+    interface and m2ee module.
+  * Add internal Mendix version number comparison helper class.
+
 m2ee-tools 0.4.4, 12 Dec 2012
   * Increase start timeout to 60 seconds
   * Implement admin/runtime_listen_addresses settings (new in Mendix 4.3.0)
