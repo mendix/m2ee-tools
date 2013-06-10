@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2012, Mendix bv
+# Copyright (c) 2009-2013, Mendix bv
 # All Rights Reserved.
 # http://www.mendix.com/
 #
@@ -13,12 +13,19 @@ from client import M2EEClient
 from runner import M2EERunner
 from log import logger
 
+import mdautil
+import client_errno
+
 
 class M2EE():
 
-    def __init__(self, yamlfiles=None, config=None):
-        self._yamlfiles = yamlfiles
-        self.reload_config(config)
+    def __init__(self, yamlfiles=None, config=None, load_default_files=True):
+        self._initial_config = {
+            'load_default_files': load_default_files,
+            'yamlfiles': yamlfiles,
+            'config': config,
+        }
+        self.reload_config()
         self._logproc = None
 
     def reload_config_if_changed(self):
@@ -26,8 +33,12 @@ class M2EE():
             logger.info("Configuration change detected, reloading.")
             self.reload_config()
 
-    def reload_config(self, config=None):
-        self.config = M2EEConfig(yaml_files=self._yamlfiles, config=config)
+    def reload_config(self):
+        self.config = M2EEConfig(
+            load_default_files=self._initial_config['load_default_files'],
+            yaml_files=self._initial_config['yamlfiles'],
+            config=self._initial_config['config'],
+        )
         self.client = M2EEClient(
             'http://127.0.0.1:%s/' % self.config.get_admin_port(),
             self.config.get_admin_pass())
@@ -59,6 +70,15 @@ class M2EE():
                          "errors.")
             return False
 
+        version = self.config.get_runtime_version()
+
+        if version >= 5:
+            if not self.config.write_felix_config():
+                return False
+
+        if self.config.get_symlink_mxclientsystem():
+            mdautil.fix_mxclientsystem_symlink(self.config)
+
         logger.debug("Checking if the runtime is already alive...")
         (pid_alive, m2ee_alive) = self.check_alive()
         if not pid_alive and not m2ee_alive:
@@ -85,16 +105,16 @@ class M2EE():
 
         # go do startup sequence
         self._configure_logging()
-        self._send_jetty_config()
         self._send_mime_types()
 
-        xmpp_credentials = self.config.get_xmpp_credentials()
-        if xmpp_credentials:
-            self.client.connect_xmpp(xmpp_credentials)
+        hybrid = self.config.use_hybrid_appcontainer()
 
-        # when running hybrid appcontainer, we need to create the runtime
-        # ourselves
-        if self.config.get_appcontainer_version():
+        if version < 5 and not hybrid:
+            self._send_jetty_config()
+            return True
+        elif version < 5 and hybrid:
+            self._send_jetty_config()
+            self._connect_xmpp()
             response = self.client.create_runtime({
                 "runtime_path":
                 os.path.join(self.config.get_runtime_path(), 'runtime'),
@@ -103,43 +123,67 @@ class M2EE():
                 "use_blocking_connector":
                 self.config.get_runtime_blocking_connector(),
             })
+            response.display_error()
+            return not response.has_error()
+        elif version >= 5:
+            response = self.client.update_appcontainer_configuration({
+                "runtime_port": self.config.get_runtime_port(),
+                "runtime_listen_addresses":
+                self.config.get_runtime_listen_addresses(),
+                "runtime_jetty_options": self.config.get_jetty_options()
+            })
+            response.display_error()
+            self._connect_xmpp()
             return not response.has_error()
 
-        return True
+        return False
 
-    def stop(self):
+    def start_runtime(self, params):
+        startresponse = self.client.start(params)
+        result = startresponse.get_result()
+        if result == client_errno.SUCCESS:
+            logger.info("The MxRuntime is fully started now.")
+        return startresponse
+
+    def stop(self, timeout=10):
         if self.runner.check_pid():
-            return self.runner.stop()
+            logger.info("Waiting for the application to shutdown...")
+            stopped = self.runner.stop(timeout)
+            if stopped:
+                logger.info("The application has been stopped successfully.")
+                return True
+            logger.warn("The application did not shutdown by itself...")
+            return False
         else:
             self.runner.cleanup_pid()
         return True
 
-    def fix_mxclientsystem_symlink(self):
-        # check mxclientsystem symlink and refresh if necessary
-        if self.config.get_symlink_mxclientsystem():
-            mxclient_symlink = os.path.join(
-                self.config.get_public_webroot_path(), 'mxclientsystem')
-            real_mxclient_location = self.config.get_real_mxclientsystem_path()
-            if os.path.islink(mxclient_symlink):
-                current_real_mxclient_location = os.path.realpath(
-                    mxclient_symlink)
-                if current_real_mxclient_location != real_mxclient_location:
-                    logger.debug("mxclientsystem symlink exists, but points "
-                                 "to %s" % current_real_mxclient_location)
-                    logger.debug("redirecting symlink to %s" %
-                                 real_mxclient_location)
-                    os.unlink(mxclient_symlink)
-                    os.symlink(real_mxclient_location, mxclient_symlink)
-            elif not os.path.exists(mxclient_symlink):
-                logger.debug("creating mxclientsystem symlink pointing to %s" %
-                             real_mxclient_location)
-                try:
-                    os.symlink(real_mxclient_location, mxclient_symlink)
-                except OSError, e:
-                    logger.error("creating symlink failed: %s" % e)
-            else:
-                logger.warn("Not touching mxclientsystem symlink: file exists "
-                            "and is not a symlink")
+    def terminate(self, timeout=10):
+        if self.runner.check_pid():
+            logger.info("Waiting for the JVM process to disappear...")
+            stopped = self.runner.terminate(timeout)
+            if stopped:
+                logger.info("The JVM process has been stopped.")
+                return True
+            logger.warn("The application process seems not to respond to any "
+                        "command or signal.")
+            return False
+        else:
+            self.runner.cleanup_pid()
+        return True
+
+    def kill(self, timeout=10):
+        if self.runner.check_pid():
+            logger.info("Waiting for the JVM process to disappear...")
+            stopped = self.runner.kill(timeout)
+            if stopped:
+                logger.info("The JVM process has been destroyed.")
+                return True
+            logger.error("Stopping the application process failed thorougly.")
+            return False
+        else:
+            self.runner.cleanup_pid()
+        return True
 
     def _configure_logging(self):
         # try configure logging
@@ -194,7 +238,7 @@ class M2EE():
 
         config = copy.deepcopy(self.config.get_runtime_config())
         custom_config_25 = None
-        if self.config.dirty_hack_is_25():
+        if self.config.get_runtime_version() // '2.5':
             custom_config_25 = config.pop('MicroflowConstants', None)
 
         # convert MyScheduledEvents from list to dumb comma separated string if
@@ -203,6 +247,15 @@ class M2EE():
             logger.trace("Converting mxruntime MyScheduledEvents from list to "
                          "comma separated string...")
             config['MyScheduledEvents'] = ','.join(config['MyScheduledEvents'])
+
+        # convert certificate options from list to dumb comma separated string
+        # if needed:
+        for option in ('CACertificates', 'ClientCertificates',
+                       'ClientCertificatePasswords'):
+            if isinstance(config.get(option, None), list):
+                logger.trace("Converting mxruntime %s from list to comma "
+                             "separated string..." % option)
+                config[option] = ','.join(config[option])
 
         logger.debug("Sending MxRuntime configuration...")
         m2eeresponse = self.client.update_configuration(config)
@@ -245,3 +298,18 @@ class M2EE():
         fd = codecs.open(query_file_name, mode='w', encoding='utf-8')
         fd.write("%s" % '\n'.join(ddl_commands))
         fd.close()
+
+    def unpack(self, mda_name):
+        if mdautil.unpack(self.config, mda_name):
+            self.reload_config()
+        else:
+            return False
+
+        post_unpack_hook = self.config.get_post_unpack_hook()
+        if post_unpack_hook:
+            mdautil.run_post_unpack_hook(post_unpack_hook)
+
+    def _connect_xmpp(self):
+        xmpp_credentials = self.config.get_xmpp_credentials()
+        if xmpp_credentials:
+            self.client.connect_xmpp(xmpp_credentials).display_error()

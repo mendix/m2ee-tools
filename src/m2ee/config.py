@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009-2012, Mendix bv
+# Copyright (c) 2009-2013, Mendix bv
 # All Rights Reserved.
 #
 # http://www.mendix.com/
@@ -11,10 +11,10 @@ import sys
 import pwd
 import re
 import copy
-import sqlite3
 
 from log import logger
 from collections import defaultdict
+from version import MXVersion
 
 # Use json if available. If not (python 2.5) we need to import the simplejson
 # module instead, which has to be available.
@@ -32,13 +32,14 @@ except ImportError:
 
 class M2EEConfig:
 
-    def __init__(self, yaml_files=None, config=None):
-        self._conf = defaultdict(dict)
+    def __init__(self, load_default_files=True, yaml_files=None, config=None):
+        _yaml_files = []
+        if load_default_files:
+            _yaml_files.extend(find_yaml_files())
         if yaml_files:
-            (self._mtimes, yaml_config) = read_yaml_files(yaml_files)
-            self._conf = merge_config(self._conf, yaml_config)
-        else:
-            self._mtimes = {}
+            _yaml_files.extend(yaml_files)
+
+        self._mtimes, self._conf = read_yaml_files(_yaml_files)
 
         if config:
             self._conf = merge_config(self._conf, config)
@@ -58,39 +59,23 @@ class M2EEConfig:
         self._appcontainer_version = self._conf['m2ee'].get(
             'appcontainer_version', None)
 
-        # 3.0: application information (e.g. runtime version)
+        # >= 3.0: application information (e.g. runtime version)
         # if this file does not exist (i.e. < 3.0) try_load_json returns {}
         self._model_metadata = self._try_load_json(
             os.path.join(self._conf['m2ee']['app_base'],
                          'model',
                          'metadata.json'
                          ))
+        self.runtime_version = self._lookup_runtime_version()
 
-        # Dirty hack to tell if we're on 2.5 or not
-        self._dirty_hack_is_25 = len(self._model_metadata) == 0
-
-        # 3.0: config.json "contains the configuration settings of the active
-        # configuration (in the Modeler) at the time of deployment." It also
-        # contains default values for microflow constants. D/T configuration is
-        # not stored in the mdp anymore, so for D/T we need to insert it into
-        # the configuration we read from yaml (yay!)
-        # { "Configuration": { "key": "value", ... }, "Constants": {
-        # "Module.Constant": "value", ... } } also... move the custom section
-        # into the MicroflowConstants runtime config option where 3.0 now
-        # expects them to be! yay... (when running 2.5, the MicroflowConstants
-        # part of runtime config will be sent using the old
-        # update_custom_configuration m2ee api call.
-        self._conf['mxruntime'] = self._merge_runtime_configuration()
-
-        # look up MxRuntime version
-        self._runtime_version = self._lookup_runtime_version()
+        self._conf['mxruntime'] = self._merge_microflow_constants()
 
         # if running from binary distribution, try to find where m2ee/runtime
         # jars live
         self._runtime_path = None
         if (not self._run_from_source or
                 self._run_from_source == 'appcontainer'):
-            if self._runtime_version is None:
+            if self.runtime_version is None:
                 # this probably means reading version information from the
                 # modeler file failed
                 logger.critical("Unable to look up mendix runtime files "
@@ -98,19 +83,11 @@ class M2EEConfig:
                 self._all_systems_are_go = False
             else:
                 self._runtime_path = self._lookup_in_mxjar_repo(
-                    self._runtime_version)
+                    str(self.runtime_version))
                 if self._runtime_path is None:
                     logger.critical("Mendix Runtime not found for version %s" %
-                                    self._runtime_version)
+                                    str(self.runtime_version))
                     self._all_systems_are_go = False
-
-        if not self._appcontainer_version:
-            # 3.0: appcontainer information (e.g. M2EE main class name)
-            self._appcontainer_environment = (
-                self._load_appcontainer_environment())
-        else:
-            # b0rk
-            self._appcontainer_environment = {}
 
         logger.debug("Determining classpath to be used...")
 
@@ -135,6 +112,14 @@ class M2EEConfig:
             classpath = self._setup_classpath_runtime_binary()
             classpath.extend(self._setup_classpath_model())
 
+        # add custom classpath locations
+        if 'extend_classpath' in self._conf['m2ee']:
+            if isinstance(self._conf['m2ee']['extend_classpath'], list):
+                classpath.extend(self._conf['m2ee']['extend_classpath'])
+            else:
+                logger.warn("extend_classpath option in m2ee section in "
+                            "configuration is not a list")
+
         self._classpath = ":".join(classpath)
         if classpath:
             logger.debug("Using classpath: %s" % self._classpath)
@@ -150,8 +135,22 @@ class M2EEConfig:
                          runtimePath)
             self._conf['mxruntime']['RuntimePath'] = runtimePath
 
-    def _merge_runtime_configuration(self):
-        logger.debug("Merging runtime configuration...")
+    def _merge_microflow_constants(self):
+        """
+        3.0: config.json "contains the configuration settings of the active
+        configuration (in the Modeler) at the time of deployment." It also
+        contains default values for microflow constants. D/T configuration is
+        not stored in the mdp anymore, so for D/T we need to insert it into
+        the configuration we read from yaml (yay!)
+        { "Configuration": { "key": "value", ... }, "Constants": {
+        "Module.Constant": "value", ... } } also... move the custom section
+        into the MicroflowConstants runtime config option where 3.0 now
+        expects them to be! yay... (when running 2.5, the MicroflowConstants
+        part of runtime config will be sent using the old
+        update_custom_configuration m2ee api call. Fun!
+        """
+
+        logger.debug("Merging microflow constants configuration...")
 
         config_json = {}
         if not self.get_dtap_mode()[0] in ('A', 'P'):
@@ -343,6 +342,58 @@ class M2EEConfig:
             # TODO: detect permissions and tell user if changing is needed
             os.chmod(fullpath, mode)
 
+    def get_felix_config_file(self):
+        return self._conf['m2ee'].get(
+            'felix_config_file',
+            os.path.join(
+                self._conf['m2ee']['app_base'],
+                'model',
+                'felixconfig.properties'
+            )
+        )
+
+    def write_felix_config(self):
+        felix_config_file = self.get_felix_config_file()
+        felix_config_path = os.path.dirname(felix_config_file)
+        if not os.access(felix_config_path, os.W_OK):
+            logger.critical("felix_config_file is not in a writable "
+                            "location: %s" % felix_config_path)
+            return False
+
+        project_bundles_path = os.path.join(
+            self._conf['m2ee']['app_base'], 'model', 'bundles'
+        )
+        osgi_storage_path = os.path.join(
+            self._conf['m2ee']['app_base'], 'data', 'tmp', 'felixcache'
+        )
+        felix_template_file = os.path.join(
+            self._runtime_path,
+            'runtime',
+            'felixconfig.properties.template'
+        )
+        if os.path.exists(felix_template_file):
+            logger.debug("writing felix configuration template from %s "
+                         "to %s" % (felix_template_file, felix_config_file))
+            try:
+                with open(felix_template_file) as input_file:
+                    template = input_file.read()
+                    with open(felix_config_file, 'w') as output_file:
+                        render = template.format(
+                            ProjectBundlesDir=project_bundles_path,
+                            InstallDir=self._runtime_path,
+                            FrameworkStorage=osgi_storage_path
+                        )
+                        output_file.write(render)
+            except IOError, e:
+                logger.error("felix configuration template could not be"
+                             "written: %s", e)
+                return False
+        else:
+            logger.error("felix configuration template is not a readable "
+                         "file: %s" % felix_template_file)
+            return False
+        return True
+
     def get_app_name(self):
         return self._conf['m2ee']['app_name']
 
@@ -438,7 +489,7 @@ class M2EEConfig:
 
         # only add RUNTIME environment variables when using default
         # appcontainer from runtime distro
-        if not self._appcontainer_version:
+        if not self._appcontainer_version and self.runtime_version < 5:
             env['M2EE_RUNTIME_PORT'] = str(self._conf['m2ee']['runtime_port'])
             if 'runtime_blocking_connector' in self._conf['m2ee']:
                 env['M2EE_RUNTIME_BLOCKING_CONNECTOR'] = str(
@@ -462,11 +513,18 @@ class M2EEConfig:
             else:
                 logger.warn("javaopts option in m2ee section in configuration "
                             "is not a list")
-        if self._classpath:
+        if self._classpath and self.runtime_version < 5:
             cmd.extend([
                 '-cp',
                 self._classpath,
                 self._get_appcontainer_mainclass()
+            ])
+        elif self.runtime_version >= 5:
+            cmd.extend([
+                '-Dfelix.config.properties=file:%s'
+                % self.get_felix_config_file(),
+                '-jar', os.path.join(self._runtime_path, 'runtime',
+                                     'felix', 'bin', 'felix.jar')
             ])
         elif self._appcontainer_version:
             cmd.extend(['-jar', self._appcontainer_jar])
@@ -514,6 +572,9 @@ class M2EEConfig:
     def get_runtime_port(self):
         return self._conf['m2ee']['runtime_port']
 
+    def get_runtime_listen_addresses(self):
+        return self._conf['m2ee'].get('runtime_listen_addresses', '')
+
     def get_pidfile(self):
         return self._conf['m2ee'].get('pidfile',
                                       os.path.join(
@@ -530,7 +591,13 @@ class M2EEConfig:
         return self._conf['logging']
 
     def get_jetty_options(self):
-        return self._conf['m2ee'].get('jetty', None)
+        result = copy.deepcopy(self._conf['m2ee'].get('jetty', {}))
+        already_specified = 'use_blocking_connector' in result
+        if self.get_runtime_version() >= 5 and not already_specified:
+            result['use_blocking_connector'] = (
+                self.get_runtime_blocking_connector())
+
+        return result
 
     def get_munin_options(self):
         return self._conf['m2ee'].get('munin', None)
@@ -539,7 +606,7 @@ class M2EEConfig:
         return self._conf['mxruntime']['DTAPMode'].upper()
 
     def allow_destroy_db(self):
-        return self._conf['m2ee'].get('allow_destroy_db', False)
+        return self._conf['m2ee'].get('allow_destroy_db', True)
 
     def is_using_postgresql(self):
         databasetype = self._conf['mxruntime'].get('DatabaseType', None)
@@ -597,22 +664,25 @@ class M2EEConfig:
     def get_appcontainer_version(self):
         return self._appcontainer_version
 
+    def use_hybrid_appcontainer(self):
+        return self._appcontainer_version is not None
+
     def get_runtime_version(self):
-        return self._runtime_version
+        return self.runtime_version
 
     def get_classpath(self):
         return self._classpath
 
     def _get_appcontainer_mainclass(self):
-        # XXX: if-hell...
-        if self._appcontainer_version:
-            # using new 3.0+ appcontainer
-            return "com.mendix.m2ee.AppContainer"
-        # 2.5?
-        if not 'version' in self._appcontainer_environment:
+        if self.runtime_version // 2.5:
             return "com.mendix.m2ee.server.M2EE"
-        # 3.0, using default appcontainer?
-        return "com.mendix.m2ee.server.HttpAdminAppContainer"
+        if self.runtime_version // 3 or self.runtime_version // 4:
+            if self._appcontainer_version:
+                return "com.mendix.m2ee.AppContainer"
+            return "com.mendix.m2ee.server.HttpAdminAppContainer"
+        raise Exception("Trying to determine appcontainer main class for "
+                        "runtime version %s. Please report this as a bug." %
+                        self.runtime_version)
 
     def _setup_classpath_from_source(self):
         # when running from source, grab eclipse projects:
@@ -677,22 +747,30 @@ class M2EEConfig:
         return classpath
 
     def _lookup_runtime_version(self):
+        logger.debug("Determining runtime version to be used...")
+
         # force to a specific version
         if self._conf['m2ee'].get('runtime_version', None):
-            return self._conf['m2ee']['runtime_version']
+            logger.debug("Runtime version forced to %s in configuration" %
+                         self._conf['m2ee']['runtime_version'])
+            return MXVersion(self._conf['m2ee']['runtime_version'])
 
         # 3.0 has runtime version in metadata.json
         if 'RuntimeVersion' in self._model_metadata:
-            return self._model_metadata['RuntimeVersion']
+            logger.debug("MxRuntime version listed in model metadata: %s" %
+                         self._model_metadata['RuntimeVersion'])
+            return MXVersion(self._model_metadata['RuntimeVersion'])
 
         # else, 2.5: try to read from model.mdp using sqlite
+        import sqlite3
         model_mdp = os.path.join(
             self._conf['m2ee']['app_base'],
             'model',
             'model.mdp'
         )
         if not os.path.isfile(model_mdp):
-            logger.warn("%s is not a file!" % model_mdp)
+            logger.debug("Mendix 2.5? No, %s is not a file! Giving up now..." %
+                         model_mdp)
             return None
         version = None
         try:
@@ -724,7 +802,7 @@ class M2EEConfig:
         logger.debug("MxRuntime version listed in application model file: %s" %
                      version)
 
-        return version
+        return MXVersion(version)
 
     def _lookup_in_mxjar_repo(self, dirname):
         logger.debug("Searching for %s in mxjar repo locations..." % dirname)
@@ -740,24 +818,6 @@ class M2EEConfig:
 
     def get_runtime_path(self):
         return self._runtime_path
-
-    def _load_appcontainer_environment(self):
-        # if running from source, search in workspace folder
-        if self._conf['mxnode'].get('run_from_source', False):
-            return self._try_load_json(
-                os.path.join(self._conf['mxnode']['source_workspace'],
-                             'environment.json'))
-
-        # else if version is known, search in runtime_path
-        if self._runtime_path:
-            return self._try_load_json(
-                os.path.join(self._runtime_path, 'environment.json'))
-
-        # else, nothing
-        return {}
-
-    def dirty_hack_is_25(self):
-        return self._dirty_hack_is_25
 
 
 def find_yaml_files():
@@ -777,11 +837,9 @@ def find_yaml_files():
     return yaml_files
 
 
-def read_yaml_files(yaml_files=None):
-    config = {}
+def read_yaml_files(yaml_files):
+    config = defaultdict(dict)
     yaml_mtimes = {}
-    if not yaml_files:
-        yaml_files = find_yaml_files()
 
     for yaml_file in yaml_files:
         additional_config = load_config(yaml_file)

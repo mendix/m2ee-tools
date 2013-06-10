@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009-2012, Mendix bv
+# Copyright (c) 2009-2013, Mendix bv
 # All Rights Reserved.
 #
 # http://www.mendix.com/
@@ -140,6 +140,9 @@ class M2EEClient:
 
     def update_custom_configuration(self, params):
         return self.request("update_custom_configuration", params)
+
+    def update_appcontainer_configuration(self, params):
+        return self.request("update_appcontainer_configuration", params)
 
     def start(self, params=None):
         return self.request("start", params)

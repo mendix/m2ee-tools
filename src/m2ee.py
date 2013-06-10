@@ -1,4 +1,10 @@
 #!/usr/bin/python
+#
+# Copyright (c) 2009-2013, Mendix bv
+# All Rights Reserved.
+#
+# http://www.mendix.com/
+#
 
 import cmd
 import subprocess
@@ -12,17 +18,21 @@ import string
 import random
 import pprint
 import yaml
+import datetime
 
-from m2ee import pgutil, M2EE, M2EEProfiler, mdautil
-from m2ee.log import logger
-from m2ee.config import find_yaml_files
+from m2ee import pgutil, M2EE, M2EEProfiler, logger, client_errno
+import m2ee
 
 
 class CLI(cmd.Cmd):
 
-    def __init__(self, yamlfiles=None):
+    def __init__(self, yaml_files=None):
+        logger.debug('Using m2ee-tools version %s' % m2ee.__version__)
         cmd.Cmd.__init__(self)
-        self.m2ee = M2EE(yamlfiles)
+        if yaml_files:
+            self.m2ee = M2EE(yamlfiles=yaml_files, load_default_files=False)
+        else:
+            self.m2ee = M2EE()
         self.do_status(None)
         username = pwd.getpwuid(os.getuid())[0]
         self._default_prompt = "m2ee(%s): " % username
@@ -39,11 +49,6 @@ class CLI(cmd.Cmd):
     def do_start(self, args):
         self._start()
 
-    def _start(self):
-        if not self.m2ee.start_appcontainer():
-            return
-        self._start_runtime()
-
     def _stop(self):
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if not pid_alive and not m2ee_alive:
@@ -53,22 +58,17 @@ class CLI(cmd.Cmd):
         logger.debug("Trying to stop the application.")
         stopped = False
 
-        logger.info("Waiting for the application to shutdown...")
-        stopped = self.m2ee.runner.stop(timeout=10)
+        stopped = self.m2ee.stop()
         if stopped:
-            logger.info("The application has been stopped successfully.")
             return True
 
-        logger.warn("The application did not shutdown by itself yet...")
         answer = None
         while not answer in ('y', 'n'):
             answer = raw_input("Do you want to try to signal the JVM "
                                "process to stop immediately? (y)es, (n)o? ")
             if answer == 'y':
-                logger.info("Waiting for the JVM process to disappear...")
-                stopped = self.m2ee.runner.terminate(timeout=10)
+                stopped = self.m2ee.terminate()
                 if stopped:
-                    logger.info("The JVM process has been stopped.")
                     return True
             elif answer == 'n':
                 logger.info("Doing nothing, use stop again to check if the "
@@ -77,17 +77,13 @@ class CLI(cmd.Cmd):
             else:
                 print("Unknown option %s" % answer)
 
-        logger.warn("The application process seems not to respond to any "
-                    "command or signal.")
         answer = None
         while not answer in ('y', 'n'):
             answer = raw_input("Do you want to kill the JVM process? (y)es,"
                                "(n)o? ")
             if answer == 'y':
-                logger.info("Waiting for the JVM process to disappear...")
-                stopped = self.m2ee.runner.kill(timeout=10)
+                stopped = self.m2ee.kill()
                 if stopped:
-                    logger.info("The JVM process has been destroyed.")
                     return True
             elif answer == 'n':
                 logger.info("Doing nothing, use stop again to check if the "
@@ -96,77 +92,52 @@ class CLI(cmd.Cmd):
             else:
                 print("Unknown option %s" % answer)
 
-        logger.error("Stopping the application process failed thorougly.")
         return False
 
-    def _start_runtime(self):
+    def _start(self):
         """
         This function deals with the start-up sequence of the Mendix Runtime.
-
-        After a fixup of the mxclientsystem symlink, which needs to point to
-        the right version of the mxclientsystem code, and submitting runtime
-        configuration settings, the start action is called.
-
         Starting the Mendix Runtime can fail in both a temporary or permanent
-        way.
-
-        Known error codes are:
-          2: Database to be used does not exist
-          3: Database structure is out of sync with the application domain
-             model, DDL commands need to be run to synchronize the database.
-          4: Constant definitions used in the application model are missing
-             from the configuration.
-          5: In the application database, a user account was detected which
-             has the administrative role (as specified in the modeler) and
-             has password '1'.
-          6: The Mendix Runtime has reached an invalid state and cannot start.
-          7,8,9: Mandatory configuration items are missing.
-
-        By using startresponse.display_error() the error message sent by the
-        Mendix Runtime is printed. Temporary failures need to be resolved,
-        often interactively.
+        way. See the client_errno for possible error codes.
         """
-        self.m2ee.fix_mxclientsystem_symlink()
+        if not self.m2ee.start_appcontainer():
+            return
 
         if not self.m2ee.send_runtime_config():
+            self._stop()
             return
 
         abort = False
         fully_started = False
         params = {}
         while not (fully_started or abort):
-            startresponse = self.m2ee.client.start(params)
+            startresponse = self.m2ee.start_runtime(params)
             result = startresponse.get_result()
-            if result == 0:
+            if result == client_errno.SUCCESS:
                 fully_started = True
-                logger.info("The MxRuntime is fully started now.")
             else:
                 startresponse.display_error()
-                if result == 2:
+                if result == client_errno.start_NO_EXISTING_DB:
                     answer = self._ask_user_whether_to_create_db()
                     if answer == 'a':
                         abort = True
-                    elif self.m2ee.config._dirty_hack_is_25 and answer == 'c':
+                    elif (self.m2ee.config.get_runtime_version() // 2.5 and
+                          answer == 'c'):
                         params["autocreatedb"] = True
-                elif result == 3:
+                elif result == client_errno.start_INVALID_DB_STRUCTURE:
                     answer = self._handle_ddl_commands()
                     if answer == 'a':
                         abort = True
-                elif result == 4:
-                    answer = self._ask_user_to_fix_constants()
-                    if answer == 'a':
-                        abort = True
-                elif result == 5:
+                elif result == client_errno.start_MISSING_MF_CONSTANT:
+                    logger.error("You'll have to add the constant definitions "
+                                 "to the configuration in the "
+                                 "MicroflowConstants section.")
+                    abort = True
+                elif result == client_errno.start_ADMIN_1:
                     answer = self._handle_admin_1(
                         startresponse.get_feedback()['users'])
                     if answer == 'a':
                         abort = True
-                elif result == 6:
-                    abort = True
-                elif result == 7 or result == 8 or result == 9:
-                    logger.error("You'll have to fix the configuration and "
-                                 "run start again... (or ask for help..)")
-                    abort = True
                 else:
                     abort = True
 
@@ -188,7 +159,7 @@ class CLI(cmd.Cmd):
                     logger.error("Automatic Database creation is disabled in "
                                  "Acceptance and Production mode!")
                     answer = None
-                elif not self.m2ee.config.dirty_hack_is_25():
+                elif self.m2ee.config.get_runtime_version() >= 3:
                     # If in Development/Test, call execute_ddl_commands,
                     # because since 3.0, this tries to create a database and
                     # immediately executes initial ddl commands
@@ -217,16 +188,6 @@ class CLI(cmd.Cmd):
                     m2eeresponse = self.m2ee.client.execute_ddl_commands()
                     m2eeresponse.display_error()
             else:
-                print("Unknown option %s" % answer)
-        return answer
-
-    def _ask_user_to_fix_constants(self):
-        answer = None
-        logger.error("You'll have to add the constant definitions to the "
-                     "configuration in the MicroflowConstants section.")
-        while not answer in ('r', 'a'):
-            answer = raw_input("Do you want to (r)etry, or (a)bort: ")
-            if answer not in ('a', 'r'):
                 print("Unknown option %s" % answer)
         return answer
 
@@ -331,7 +292,7 @@ class CLI(cmd.Cmd):
         print("\n".join(critlist))
 
     def do_check_health(self, args):
-        if self._report_not_running():
+        if self._report_not_implemented('2.5.4') or self._report_not_running():
             return
         health_response = self.m2ee.client.check_health()
         if not health_response.has_error():
@@ -349,18 +310,14 @@ class CLI(cmd.Cmd):
                 logger.error("Unexpected health check status: %s" %
                              feedback['health'])
         else:
-            if (health_response.get_result() == 3 and
-                    health_response.get_cause() == "java.lang.IllegalArgument"
-                    "Exception: Action should not be null"):
+            runtime_version = self.m2ee.config.get_runtime_version()
+            if (health_response.get_result() == 3
+                    and runtime_version // ('2.5.4', '2.5.5')):
                 # Because of an incomplete implementation, in Mendix 2.5.4 or
                 # 2.5.5 this means that the runtime is health-check
                 # capable, but no health check microflow is defined.
                 logger.info("Health check microflow is probably not "
                             "configured, no health information available.")
-            elif (health_response.get_result() ==
-                  health_response.ERR_ACTION_NOT_FOUND):
-                logger.info("The Mendix version you are running does not yet "
-                            "support health check functionality.")
             else:
                 health_response.display_error()
 
@@ -372,7 +329,6 @@ class CLI(cmd.Cmd):
         pprint.pprint(stats)
 
     def do_munin_config(self, args):
-        import m2ee.munin
         m2ee.munin.print_all(
             self.m2ee.client,
             self.m2ee.config,
@@ -382,7 +338,6 @@ class CLI(cmd.Cmd):
         )
 
     def do_munin_values(self, args):
-        import m2ee.munin
         m2ee.munin.print_all(
             self.m2ee.client,
             self.m2ee.config,
@@ -391,77 +346,131 @@ class CLI(cmd.Cmd):
         )
 
     def do_nagios(self, args):
-        import m2ee.nagios
         logger.info("The nagios plugin will exit m2ee after running, this is "
                     "by design, don't report it as bug.")
         # TODO: implement as separate program after libraryfying m2ee
         sys.exit(m2ee.nagios.check(self.m2ee.runner, self.m2ee.client))
 
     def do_about(self, args):
+        print('Using m2ee-tools version %s' % m2ee.__version__)
         if self._report_not_running():
             return
         feedback = self.m2ee.client.about().get_feedback()
         print("Using %s version %s" % (feedback['name'], feedback['version']))
         print(feedback['copyright'])
-        # 2.5: license info in feedback of about call
-        if 'company' in feedback:
-            print('Project company name is %s' % feedback['company'])
-        if 'partner' in feedback:
-            print('Project partner name is %s' % feedback['partner'])
+        if self.m2ee.config.get_runtime_version() // 2.5:
+            if 'company' in feedback:
+                print('Project company name is %s' % feedback['company'])
+            if 'partner' in feedback:
+                print('Project partner name is %s' % feedback['partner'])
+        if self.m2ee.config.get_runtime_version() >= 4.4:
+            if 'model_version' in feedback:
+                print('Model version: %s' % feedback['model_version'])
 
     def do_show_license_information(self, args):
-        if self._report_not_running():
+        if self._report_not_implemented(3) or self._report_not_running():
             return
         m2eeresp = self.m2ee.client.get_license_information()
-        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
-            logger.error("This action is not available in the Mendix Runtime "
-                         "version you are currently using.")
-            logger.error("It was implemented in Mendix 3.0.0")
-            return
         m2eeresp.display_error()
         if not m2eeresp.has_error():
             feedback = m2eeresp.get_feedback()
             if 'license' in feedback:
-                print(yaml.safe_dump(feedback['license'], allow_unicode=True))
+                logger.debug(yaml.safe_dump(feedback['license'],
+                             allow_unicode=True))
+                import copy
+                licensecopy = copy.deepcopy(feedback['license'])
+                self._print_license(licensecopy)
             elif 'license_id' in feedback:
                 print("Unlicensed environment.")
                 print("Server ID: %s" % feedback['license_id'])
             else:
                 print("Unlicensed environment.")
 
+    def _print_license(self, licensecopy):
+        print("Server ID: %s" % licensecopy.pop('LicenseID', 'Unknown'))
+        print("License Type: %s" % licensecopy.pop('LicenseType', 'Unknown'))
+        if 'ExpirationDate' in licensecopy:
+            print("Expiration Date: %s" %
+                  datetime.datetime.fromtimestamp(
+                  licensecopy.pop('ExpirationDate') / 1000)
+                  .strftime("%a, %d %b %Y %H:%M:%S %z")
+                  .rstrip())
+        print("Runtime Mode: %s" % licensecopy.pop('RuntimeMode', 'Unknown'))
+        print("Company: %s" % licensecopy.pop('Company', 'Unknown'))
+
+        limitations = licensecopy.pop('UserLimitations', None)
+        separate_anonymous = licensecopy.pop('SeparateAnonymousUsers')
+        if limitations is not None:
+            print("License Limitations:")
+            for limitation in limitations:
+                self._print_license_limitation(limitation, separate_anonymous)
+
+        if len(licensecopy) > 1:
+            print(yaml.safe_dump(licensecopy, allow_unicode=True))
+
+    def _print_license_limitation(self, limitation, separate_anonymous):
+        if limitation['LimitationType'] == 'Named':
+            if limitation['AmountType'] == 'Unlimited':
+                print("- Unlimited named %suser accounts allowed." %
+                      ('' if separate_anonymous else "and anonymous "))
+            else:
+                print(" - %s named user account%s allowed" %
+                      (limitation['NumberOfAllowedUsers'],
+                       's' if limitation['NumberOfAllowedUsers'] != 1 else ''))
+        elif limitation['LimitationType'] == 'Concurrent':
+            if limitation['AmountType'] == 'Unlimited':
+                print("- Unlimited concurrent named %suser sessions allowed."
+                      % ("" if separate_anonymous else "and anonymous "))
+            else:
+                print("- %s concurrent named %suser session%s allowed." %
+                      (limitation['NumberOfAllowedUsers'],
+                      '' if separate_anonymous else "and anonymous ",
+                      ('s' if limitation['NumberOfAllowedUsers'] != 1
+                      else '')))
+        elif (limitation['LimitationType'] == 'ConcurrentAnonymous' and
+              separate_anonymous):
+            if limitation['AmountType'] == 'Unlimited':
+                print("- Unlimited concurrent anonymous user sessions "
+                      "allowed.")
+            else:
+                print("- %s concurrent anonymous session%s allowed." %
+                      (limitation['NumberOfAllowedUsers'],
+                      ('s' if limitation['NumberOfAllowedUsers'] != 1
+                      else '')))
+
     def do_activate_license(self, args):
-        if self._report_not_running():
+        if self._report_not_implemented(3) or self._report_not_running():
             return
         print("The command activate_license will set the license key used in "
-              "this application. As far as currently known, recent Mendix "
-              "Runtime versions do not check the submitted license key for "
-              "validity, so incorrect input will unconditionally un-license "
-              "your Mendix application! After setting the license, there will "
-              "be no feedback about validity of the license. You can use show_"
-              "license_information to check the active license. Also... after "
-              "setting the license you will need to restart the application "
-              "again to be sure it is fully activated.")
-        answer = raw_input("Do you want to continue anyway? (type YES if you "
-                           "want to): ")
-        if answer != 'YES':
-            print("Aborting.")
-            return
+              "this application.")
+        if self.m2ee.get_runtime_version() < 4.1:
+            print("Mendix Runtime versions before 4.1 do not check the "
+                  "submitted license key for validity, so incorrect input "
+                  "will un-license your Mendix application without warning! "
+                  "After setting the license, use show_license_information "
+                  "to check the active license. Also... after setting the "
+                  "license in versions before Mendix 4.1 you will need to "
+                  "restart the application again to be sure it is fully "
+                  "activated.")
+            answer = raw_input("Do you want to continue anyway? (type YES if "
+                               "you want to): ")
+            if answer != 'YES':
+                print("Aborting.")
+                return
         if not args:
             license_key = raw_input("Paste your license key (a long text "
-                                    "string without newlines line): ")
+                                    "string without newlines) or empty input "
+                                    "to abort: ")
         else:
             license_key = args
-        m2eeresp = self.m2ee.client.set_license({'license_key': license_key})
-        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
-            logger.error("This action is not available in the Mendix Runtime "
-                         "version you are currently using.")
-            logger.error("It was implemented in Mendix 3.0.0")
+        if not license_key:
+            print("Aborting.")
             return
+        m2eeresp = self.m2ee.client.set_license({'license_key': license_key})
         m2eeresp.display_error()
-        # no usable feedback, anyway, not as of 4.1.0
 
     def do_enable_debugger(self, args):
-        if self._report_not_running():
+        if self._report_not_implemented(4.3) or self._report_not_running():
             return
 
         if not args:
@@ -477,11 +486,6 @@ class CLI(cmd.Cmd):
             debugger_password = args
         m2eeresp = self.m2ee.client.enable_debugger(
             {'password': debugger_password})
-        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
-            logger.error("This action is not available in the Mendix Runtime "
-                         "version you are currently using.")
-            logger.error("It was implemented in Mendix 4.3.0")
-            return
         m2eeresp.display_error()
         if not m2eeresp.has_error():
             logger.info("The remote debugger is now enabled, the password to "
@@ -492,30 +496,20 @@ class CLI(cmd.Cmd):
                         "https://app.example.com/debugger/). ")
 
     def do_disable_debugger(self, args):
-        if self._report_not_running():
+        if self._report_not_implemented(4.3) or self._report_not_running():
             return
 
         m2eeresp = self.m2ee.client.disable_debugger()
-        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
-            logger.error("This action is not available in the Mendix Runtime "
-                         "version you are currently using.")
-            logger.error("It was implemented in Mendix 4.3.0")
-            return
         if not m2eeresp.has_error():
             logger.info("The remote debugger is now disabled.")
         else:
             m2eeresp.display_error()
 
     def do_show_debugger_status(self, args):
-        if self._report_not_running():
+        if self._report_not_implemented(4.3) or self._report_not_running():
             return
 
         m2eeresp = self.m2ee.client.get_debugger_status()
-        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
-            logger.error("This action is not available in the Mendix Runtime "
-                         "version you are currently using.")
-            logger.error("It was implemented in Mendix 4.3.0")
-            return
         if not m2eeresp.has_error():
             enabled = m2eeresp.get_feedback()['enabled']
             connected = m2eeresp.get_feedback()['client_connected']
@@ -553,12 +547,6 @@ class CLI(cmd.Cmd):
     def do_w(self, args):
         self.do_who(args)
 
-    # deprecated
-    def do_get_logged_in_user_names(self, args):
-        logger.warn("get_logged_in_user_names is deprectated in favor of the "
-                    "shorter who command")
-        self.do_who(args)
-
     def do_reload(self, args):
         logger.debug("Reloading configuration...")
         self.m2ee.reload_config()
@@ -570,27 +558,17 @@ class CLI(cmd.Cmd):
         if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
             return
-        pgutil.psql(
-            self.m2ee.config.get_pg_environment(),
-            self.m2ee.config.get_psql_binary(),
-        )
+        pgutil.psql(self.m2ee.config)
 
     def do_dumpdb(self, args):
         if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
             return
-        pgutil.dumpdb(
-            self.m2ee.config.get_pg_environment(),
-            self.m2ee.config.get_pg_dump_binary(),
-            self.m2ee.config.get_database_dump_path(),
-        )
+        pgutil.dumpdb(self.m2ee.config)
 
     def do_restoredb(self, args):
         if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
-            return
-        if not self.m2ee.config.allow_destroy_db():
-            logger.error("Destructive database operations are turned off.")
             return
         if not args:
             logger.error("restoredb needs the name of a dump file in %s as arg"
@@ -601,37 +579,40 @@ class CLI(cmd.Cmd):
             logger.warn("The application is still running, refusing to "
                         "restore the database right now.")
             return
-        pgutil.restoredb(
-            self.m2ee.config.get_pg_environment(),
-            self.m2ee.config.get_pg_restore_binary(),
-            self.m2ee.config.get_database_dump_path(),
-            args,
-        )
+        database_name = self.m2ee.config.get_pg_environment()['PGDATABASE']
+        answer = raw_input("This command will restore this dump into database "
+                           "%s. Continue? (y)es, (N)o? " % database_name)
+        if answer != 'y':
+            logger.info("Aborting!")
+            return
+        pgutil.restoredb(self.m2ee.config, args)
 
     def complete_restoredb(self, text, line, begidx, endidx):
         if not self.m2ee.config.is_using_postgresql():
             return []
-        return pgutil.complete_restoredb(
-            self.m2ee.config.get_database_dump_path(),
-            text,
-        )
+        database_dump_path = self.m2ee.config.get_database_dump_path()
+        return [f for f in os.listdir(database_dump_path)
+                if os.path.isfile(os.path.join(database_dump_path, f)) and
+                f.startswith(text) and
+                f.endswith(".backup")]
 
     def do_emptydb(self, args):
         if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
-            return
-        if not self.m2ee.config.allow_destroy_db():
-            logger.error("Destructive database operations are turned off.")
             return
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if pid_alive or m2ee_alive:
             logger.warn("The application process is still running, refusing "
                         "to empty the database right now.")
             return
-        pgutil.emptydb(
-            self.m2ee.config.get_pg_environment(),
-            self.m2ee.config.get_psql_binary(),
-        )
+        logger.info("This command will drop all tables and sequences in "
+                    "database %s." %
+                    self.m2ee.config.get_pg_environment()['PGDATABASE'])
+        answer = raw_input("Continue? (y)es, (N)o? ")
+        if answer != 'y':
+            print("Aborting!")
+            return
+        pgutil.emptydb(self.m2ee.config)
 
     def do_unpack(self, args):
         if not args:
@@ -644,36 +625,26 @@ class CLI(cmd.Cmd):
             logger.error("The application process is still running, refusing "
                          "to unpack a new application model right now.")
             return
-        if mdautil.unpack(
-            self.m2ee.config.get_model_upload_path(),
-            args,
-            self.m2ee.config.get_app_base(),
-        ):
-            self.m2ee.reload_config()
-        post_unpack_hook = self.m2ee.config.get_post_unpack_hook()
-        if post_unpack_hook:
-            if os.path.isfile(post_unpack_hook):
-                if os.access(post_unpack_hook, os.X_OK):
-                    logger.info("Running post-unpack-hook...")
-                    retcode = subprocess.call((post_unpack_hook,))
-                    if retcode != 0:
-                        logger.error("The post-unpack-hook returned a "
-                                     "non-zero exit code: %d" % retcode)
-                else:
-                    logger.error("post-unpack-hook script %s is not "
-                                 "executable." % post_unpack_hook)
-            else:
-                logger.error("post-unpack-hook script %s does not exist." %
-                             post_unpack_hook)
+        logger.info("This command will replace the contents of the model/ and "
+                    "web/ locations, using the files extracted from the "
+                    "archive")
+        answer = raw_input("Continue? (y)es, (N)o? ")
+        if answer != 'y':
+            logger.info("Aborting!")
+            return
+        self.m2ee.unpack(args)
 
     def complete_unpack(self, text, line, begidx, endidx):
         # these complete functions seem to eat exceptions, which is very bad
         # behaviour if anything here throws an excaption, you just won't get
         # completion, without knowing why
-        return mdautil.complete_unpack(
-            self.m2ee.config.get_model_upload_path(),
-            text
-        )
+        model_upload_path = self.m2ee.config.get_model_upload_path()
+        logger.trace("complete_unpack: Looking for %s in %s" %
+                     (text, model_upload_path))
+        return [f for f in os.listdir(model_upload_path)
+                if os.path.isfile(os.path.join(model_upload_path, f))
+                and f.startswith(text)
+                and (f.endswith(".zip") or f.endswith(".mda"))]
 
     def do_log(self, args):
         if self._cleanup_logging():
@@ -731,6 +702,27 @@ class CLI(cmd.Cmd):
         else:
             logger.info("Loglevel for %s set to %s" % (node, level))
 
+    def _report_not_implemented(self, avail_since):
+        runtime_version = self.m2ee.config.get_runtime_version()
+        if runtime_version is None:
+            return False  # DUNNO
+        if not runtime_version >= avail_since:
+            logger.error("This action is not available in the Mendix Runtime "
+                         "version you are currently using.")
+            if isinstance(avail_since, tuple):
+                if len(avail_since) > 2:
+                    implemented_in = (
+                        '%s, %s and %s' %
+                        (', '.join(map(str, avail_since[:-2])),
+                        avail_since[-2], avail_since[-1]))
+                else:
+                    implemented_in = '%s and %s' % avail_since
+            else:
+                implemented_in = avail_since
+            logger.error("It was implemented in Mendix %s" % implemented_in)
+            return True
+        return False
+
     def _report_not_running(self):
         """
         To be used by actions to see whether m2ee is available for executing
@@ -753,14 +745,10 @@ class CLI(cmd.Cmd):
         return False
 
     def do_show_current_runtime_requests(self, args):
-        if self._report_not_running():
+        if (self._report_not_implemented(('2.5.8', 3.1))
+                or self._report_not_running()):
             return
         m2eeresp = self.m2ee.client.get_current_runtime_requests()
-        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
-            logger.error("This action is not available in the Mendix Runtime "
-                         "version you are currently using.")
-            logger.error("It was implemented in Mendix 2.5.8 and 3.1.0")
-            return
         m2eeresp.display_error()
         if not m2eeresp.has_error():
             feedback = m2eeresp.get_feedback()
@@ -771,14 +759,9 @@ class CLI(cmd.Cmd):
                 print(yaml.safe_dump(feedback))
 
     def do_show_all_thread_stack_traces(self, args):
-        if self._report_not_running():
+        if self._report_not_implemented(3.2) or self._report_not_running():
             return
         m2eeresp = self.m2ee.client.get_all_thread_stack_traces()
-        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
-            logger.error("This action is not available in the Mendix Runtime "
-                         "version you are currently using.")
-            logger.error("It was implemented in Mendix 3.2.0")
-            return
         m2eeresp.display_error()
         if not m2eeresp.has_error():
             feedback = m2eeresp.get_feedback()
@@ -786,7 +769,8 @@ class CLI(cmd.Cmd):
             print(pprint.pprint(feedback))
 
     def do_interrupt_request(self, args):
-        if self._report_not_running():
+        if (self._report_not_implemented(('2.5.8', 3.1))
+                or self._report_not_running()):
             return
         if args == "":
             logger.error("This function needs a request id as parameter")
@@ -794,11 +778,6 @@ class CLI(cmd.Cmd):
                          "running requests")
             return
         m2eeresp = self.m2ee.client.interrupt_request({"request_id": args})
-        if m2eeresp.get_result() == m2eeresp.ERR_ACTION_NOT_FOUND:
-            logger.error("This action is not available in the Mendix Runtime "
-                         "version you are currently using.")
-            logger.error("It was implemented in Mendix 2.5.8 and 3.1.0")
-            return
         m2eeresp.display_error()
         if not m2eeresp.has_error():
             feedback = m2eeresp.get_feedback()
@@ -923,7 +902,7 @@ if __name__ == '__main__':
         "-c",
         action="append",
         type="string",
-        dest="yamlfiles"
+        dest="yaml_files"
     )
     parser.add_option(
         "-v",
@@ -950,20 +929,18 @@ if __name__ == '__main__':
         verbosity = verbosity - options.verbose
     verbosity = verbosity * 10 + 20
     if verbosity > 50:
-        verbosity = 50
+        verbosity = 100
     if verbosity < 5:
         verbosity = 5
     logger.setLevel(verbosity)
 
-    yaml_files = []
-    if options.yamlfiles:
-        yaml_files = options.yamlfiles
-    else:
-        yaml_files = find_yaml_files()
-
-    m2ee = CLI(yaml_files)
-    atexit.register(m2ee._cleanup_logging)
+    cli = CLI(yaml_files=options.yaml_files)
+    atexit.register(cli._cleanup_logging)
     if args:
-        m2ee.onecmd(' '.join(args))
+        cli.onecmd(' '.join(args))
     else:
-        m2ee.cmdloop()
+        try:
+            cli.cmdloop()
+        except KeyboardInterrupt:
+            print("^C")
+            sys.exit(130)  # 128 + SIGINT

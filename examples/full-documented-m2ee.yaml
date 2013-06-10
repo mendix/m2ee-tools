@@ -51,6 +51,10 @@
 # perfectly possible). Examples are the file system location where you put
 # Mendix Runtime distributions (the unpacked mendix-x.y.z.tar.gz files)
 #
+# In configuration options explained below, the uncommented shown values are in
+# most cases not default values, but just an example value. When an option has
+# a default value, this is explained in the text.
+#
 
 mxnode:
  # mxjar_repo can be a single location, or a list of locations which need to be
@@ -68,17 +72,16 @@ mxnode:
  # the project, or empty the complete database (e.g. before restoring an old
  # dump). The following configuration options can override the specific programs
  # that are used when executing these commands. During a transition when moving
- # from e.g. PostgreSQL 8.3 to 8.4 we used these to always dump databases using
- # 8.3 and restore them using 8.4 client tools, so it didn't matter what version
- # (either 8.3 or 8.4) a developer was using on his/her local workstation.
+ # from e.g. PostgreSQL 8.4 to 9.2 this can be used to always dump databases
+ # using 8.4 and restore them using 9.2 client tools.
  #
  # Note: not all operating system distributions support running different
  # PostgreSQL versions at the same time on a server, so YMMV.
  #
  # default: just search for the default programs on the current OS search path
- #pg_dump: /usr/lib/postgresql/8.3/bin/pg_dump
- #pg_restore: /usr/lib/postgresql/8.4/bin/pg_restore
- #psql: /usr/lib/postgresql/8.4/bin/psql
+ pg_dump: /usr/lib/postgresql/8.4/bin/pg_dump
+ pg_restore: /usr/lib/postgresql/9.2/bin/pg_restore
+ psql: /usr/lib/postgresql/9.2/bin/psql
 
 # The m2ee section defines configuration about a single application we're going
 # to run.
@@ -121,7 +124,7 @@ m2ee:
  # It is highly recommended to use the default value "127.0.0.1,::1" for the
  # admin interface, since the m2ee program always has to be run on the server
  # itself.
- #admin_listen_addresses: "127.0.0.1,::1"
+ admin_listen_addresses: "127.0.0.1,::1"
 
  # A password which protects the administrative interface, running on the admin
  # TCP port. set this password to e.g. a long random string, it's not used
@@ -150,7 +153,7 @@ m2ee:
  # which the http traffic arrives.
  #
  # default: "127.0.0.1,::1"
- #runtime_listen_addresses: "127.0.0.1,::1"
+ runtime_listen_addresses: "127.0.0.1,::1"
 
  # By default, a pid file containing the process id of the running Mendix
  # Runtime JVM is stored into the m2ee.pid file into the .m2ee directory of the
@@ -158,7 +161,7 @@ m2ee:
  # possible to override the location.
  #
  # default: .m2ee/m2ee.pid under the current users home directory
- #pidfile: /somwhere/else/m2ee.pid
+ pidfile: /somwhere/else/m2ee.pid
 
  # The runtime_blocking_connector option specifies whether the Mendix Runtime
  # will use a Jetty BlockingChannelConnector for the runtime port http
@@ -199,8 +202,8 @@ m2ee:
  # starting the JVM process.
  #
  # default: empty
- #custom_environment:
-  #PATH: "/bin:/usr/bin/:/opt/some/weird/jre/version/bin/"
+ custom_environment:
+  PATH: "/bin:/usr/bin/:/opt/some/weird/jre/version/bin/"
 
  # javaopts are custom command line options that will be inserted when starting
  # the Mendix Runtime JVM process. Any command line option that is accepted by
@@ -215,6 +218,24 @@ m2ee:
     "-Djava.io.tmpdir=/path/to/project/data/tmp",
  ]
 
+ # Using extend_classpath, a list of additional locations can be provided that
+ # will be added to the JVM classpath when starting the Mendix Runtime.
+ #
+ # Note: use this option with care. Realize that the JVM loads classes as soon
+ # as they're used for the first time. This means that changes at the locations
+ # you point at either won't be noticed, or oppose problems when the content of
+ # the classpath was changed while the application is running.
+ #
+ # Note 2: this option is immediately deprecated, and is not available in
+ # Mendix 5. If you need to have external libraries in your production
+ # environment that you do not want to maintain in the project itself, you
+ # might consider using a post_unpack_hook to copy them into your userlib
+ # project location server side.
+ extend_classpath: [
+    "/usr/local/share/java/greatstuff.jar",
+    "/opt/dirty/*"
+ ]
+
  # Using runtime_version, a specific runtime version can be forced to be used
  # when starting the Mendix Runtime. By default, the version of the Mendix
  # software used when creating an application using the Mendix Business Modeler
@@ -225,7 +246,7 @@ m2ee:
  # updates should be coordinated with the project team using the Modeler.
  #
  # default: autodetected version from deployment files
- #runtime_version: x.y.z
+ runtime_version: x.y.z
 
  # If symlink_mxclientsystem is set to true, try to symlink web/mxclientsystem
  # to the mxclientsystem directory of the runtime distribution currently in use.
@@ -247,7 +268,7 @@ m2ee:
  # project directory.
  #
  # default: undefined
- #post_unpack_hook: '/path/to/project/data/hooks/post-unpack.sh'
+ post_unpack_hook: '/path/to/project/data/hooks/post-unpack.sh'
 
  # When set to false, the allow_destroy_db option makes m2ee refuse to execute
  # the restoredb and emptydb commands. This option is particularly useful for
@@ -264,12 +285,20 @@ m2ee:
  # validation query logs.
  #
  # defaults to data/database under app_base path
- #database_dump_path:
+ database_dump_path: '/path/to/project/data/database'
 
  # This location is used for reading deployment archive uploads (.mda)
  #
  # defaults to data/model-upload under app_base path
- #model_upload_path:
+ model_upload_path: '/path/to/project/data/model-upload'
+
+ # Configuration file for Apache Felix / OSGi (Mendix >= 5 only)
+ #
+ # The configuration file will be generated when application configuration is
+ # being loaded.
+ #
+ # defaults to the file felixconfig.properties in model under app_base path
+ felix_config_file: '/path/to/project/model/felixconfig.properties'
 
  # When using the log command in the m2ee shell, m2ee-tools will execute a tail
  # -F on the log file of your Mendix Runtime. Unfortunately, it does not
@@ -280,7 +309,7 @@ m2ee:
  #
  # default: no default
  #logfile: /path/to/project/data/log/logfile.txt
- #logfile: /var/log/mendix/myproject.log
+ logfile: /var/log/mendix/myproject.log
 
  # The munin sub-section of m2ee defines some behaviour of the munin_config and
  # munin_values commands that are provided to be used as munin plugin for
@@ -305,13 +334,58 @@ m2ee:
   # default: true
   graph_total_named_users: true
 
+ # The jetty sub section defines some configuration tweaks that can be done to
+ # the webserver which is listening on the Runtime port that serves the
+ # application itself. Under the hood, Jetty is used as HTTP server
+ # implementation.
+ jetty:
+  # runtime_min_threads defines the minimum amount of JVM threads that will be
+  # available at the runtime web server to handle requests
+  #
+  # default: 8
+  runtime_min_threads: 8
+  #
+  # runtime_max_threads effectively sets a cap on the maximum number of active
+  # requests that can be handled simultaneously at the same time.
+  #
+  # If you ever run into a situation where the active webserver threadpool size
+  # hits this maximum, you likely need to fix the behaviour of your application,
+  # to get requests to be completed in time instead of adjusting this value.
+  #
+  # Increasing the maximum amount of threads may only help an application to get
+  # overloaded with work more easily.
+  #
+  # default: 254
+  runtime_max_threads: 254
+  #
+  # request_header_size sets the buffer size that is allocated per request to
+  # store HTTP headers. By default, this is a 4kB buffer. If a request is
+  # received that has a header part which is bigger, you might see errors like
+  # this one: WARNING - Jetty: HttpException(413,FULL head,null) - null - null
+  #
+  # This issue was reported to happen in combination with using kerberos
+  # authentication which inserts long token headers into the request headers.
+  #
+  # This option was introduced in Mendix version 3.3.7 and 4.4.4
+  #
+  # default: 4096 (4kB)
+  request_header_size: 4096
+  #
+  # response_header_size sets the buffer size that is allocated per response to
+  # store HTTP headers, very much alike the request_header_size option above
+  #
+  # This option was introduced in Mendix version 3.3.7 and 4.4.4
+  #
+  # default: 4096 (4kB)
+  response_header_size: 4096
+
 # The mimetypes section can be used to specify custom mime types to be used for
 # file downloads.
 #
 # default: empty
 mimetypes:
- #ext: mime/type
- #foo: mime/bar
+ ext: mime/type
+ foo: mime/bar
 
 # The logging section defines what sort of logging will be configured when
 # starting the Mendix Runtime. Logging in the Mendix Runtime is done using a
@@ -381,8 +455,6 @@ logging:
 # The last section of this file contains the 'mxruntime' section, which contains
 # configuration which will be sent to the Mendix Runtime when it's started.
 #
-# TODO: document proper use of SSL Client Certificates for web service calls
-#
 mxruntime:
  # Application root URL will be used when generating wsdl documentation on the
  # fly at /ws-doc/
@@ -412,15 +484,73 @@ mxruntime:
  DatabaseUserName: username
  DatabasePassword: password
 
+ # Custom x509 CA Certificates: additional (private/custom) SSL Certificate
+ # Authorities for x509 chain validation.
+ #
+ # A list of files can be specified that contain a single PEM formatted
+ # certificate per file (additional certificates in a single file seem to be
+ # ignored). These CA certificates will be added to the trusted CA list of the
+ # JVM after loading the default truststore.
+ #
+ # Do not use a comma in any of the file names, as the list has to be sent to
+ # the mendix runtime as single comma separated string...
+ CACertificates:
+  - "/path/to/project/data/ssl/custom-ca.crt"
+  - "/path/to/project/data/ssl/foobar-ca.crt"
+
+ # Webservice Client Key/Certificates: secret keys and certificates for SSL
+ # client authentication can be used by creating a separate pfx (PKCS #12) file
+ # for each set of key/certificate and optional intermediate CAs to complete the
+ # validation chain at the remote web server.
+ #
+ # If a pfx contains a CA, the CA will not be automagically added to the trusted
+ # CA list. You can use the CACertificates option to add a CA.
+ #
+ # A pfx container requires a password, so besides the ClientCertificates
+ # option, a ClientCertificatePasswords option is used to specify the passwords
+ # used for reading the pfx files... The order of the pfx list has to match the
+ # order of the password list here...
+ #
+ # Do not use a comma in any of the file names or passwords, as the lists have
+ # to be sent to the mendix runtime as single simple comma separated string...
+ #
+ # Are you still with us? Have fun! Don't hesitate to file a support ticket at
+ # Mendix if you run into issues using these options. JVM exceptions and
+ # stacktraces related to certificates can be a real pain to debug and solve.
+ ClientCertificates:
+  - "/path/to/project/data/ssl/custom-client.pfx"
+  - "/path/to/project/data/ssl/foobar-client.pfx"
+ ClientCertificatePasswords:
+  - "1"
+  - "1"
+
+ # No, we're not done with the SSL business yet. By default, the JVM is not
+ # quite intelligent about choosing a client certificate to present to a remote
+ # web server. This means that, if you have two different client certificates
+ # which are signed by the same CA, and are using two different web service
+ # calls, requiring a certificate signed by this CA, you never know which
+ # certificate will be presented to the web server.
+ #
+ # In order to pin the use of key/certificate pairs to a specific web service,
+ # the WebServiceClientCertificates option is available, which allows to specify
+ # a mapping between web service names (as defined in the modeler) as key and
+ # one of the above listed pfx files as value. When this mapping is specified,
+ # Mendix will make sure the JVM will use the key/certificate pair from that
+ # specific pfx bundle.
+ #
+ WebServiceClientCertificates:
+  Module.Webservice: "/path/to/project/data/ssl/custom-client.pfx"
+  Module.FooBarWebservice: "/path/to/project/data/ssl/foobar-client.pfx"
+
  # Advanced Database options...
  #
  # Enable DatabaseUseSsl to enable using SSL with PostgreSQL connections. Be
  # sure to test this extensively in your setup before enabling this in
  # production, to be sure you know the quircks about long living transactions,
  # data transfer volumes and SSL renegotiation.
- #DatabaseUseSsl: False
+ DatabaseUseSsl: False
  # Defines the SERVICE_NAME when you have a connection with an Oracle DBMS.
- #OracleServiceName:
+ OracleServiceName: MyServiceName
 
  # Advanced Database connection pooling configuration
  #
@@ -486,7 +616,7 @@ mxruntime:
  # The value is specified in milliseconds.
  #
  # default: not set, no logging
- #LogMinDurationQuery: 10000
+ LogMinDurationQuery: 10000
 
  # TrackWebServiceUserLastLogin defines whether to update the web service users
  # 'LastLogin' field on each login. When this happens a database update query
@@ -497,7 +627,7 @@ mxruntime:
  # This option was introduced in Mendix version 4.3.0
  #
  # default: True
- #TrackWebServiceUserLastLogin: True
+ TrackWebServiceUserLastLogin: True
 
  # 'Session Fingerprinting' is a feature that was introduced in Mendix 3.2.0
  # On login, a fingerprint of browser information is taken, which is compared to
@@ -511,6 +641,59 @@ mxruntime:
  #
  # default: True
  EnableSessionFingerprinting: False
+
+ # The Mendix Client (running in your browser) sends keepalive messages to the
+ # Mendix Runtime to let it know the user still has the browser window opened.
+ # In case someone closes his browser without logging out, the session will
+ # expire at the Mendix Runtime after no keepalives have been seen for longer
+ # than the SessionTimeout value.
+ #
+ # When disabling keepalive, the Mendix Runtime will update the server side
+ # timeout at every interaction with the client. If the client is inactive for a
+ # period longer than the SessionTimeout, the client session will be terminated.
+ #
+ # By default, the keepalive option is enabled. It can be disabled if you want
+ # to have user sessions being terminated if they do not create activity
+ # manually, regardless of still having the application opened in the browser.
+ #
+ # This option was introduced in Mendix version 4.1.0
+ #
+ # default: True
+ EnableKeepAlive: True
+
+ # The session timeout defines the maximum time a browser session can be
+ # inactive until the session is killed at the Mendix Runtime. With the
+ # EnableKeepAlive option enabled (which it is by default), the client will send
+ # keepalives to the Runtime at an interval of half the SessionTimeout. If
+ # EnableKeepAlive is disabled, user sessions will be terminated after no
+ # explicit user generated traffic has been seen for this amount of time.
+ #
+ # The SessionTimeout is specified in milliseconds, and defaults to 10 minutes.
+ SessionTimeout: 600000
+
+ # When enabling persistent sessions, information about logged in users will be
+ # stored in the database of your Mendix application, instead of only in the
+ # volatile application memory.
+ #
+ # Only login sessions will be stored in the database. The object cache
+ # (choosing edit in the client... editing... save...) and intermediate state of
+ # running microflows are not persistanly committed to the database, as doing so
+ # would instantly open the gates of performance hell.
+ #
+ # Enabling persistent sessions is not desirable in any use case. It might be
+ # fun that users are not logged out if you do a quick restart of the
+ # application, but all unsaved edit forms will generate errors or corrupt data
+ # when you do so.
+ #
+ # After all, it may only be desirable in a testing environment where integrity
+ # of data is not a big issue, when application restarts are done frequently and
+ # logging in again is more inconvenient than working through some red error
+ # popups. My advice... never enable persistent sessions.
+ #
+ # Do not enable persistent sessions together with disabling keepalive, because
+ # this will cause an extra database update to happen on the session store for
+ # every request the browser client issues (and that's a lot of times).
+ PersistentSessions: False
 
  # License key file (2.5.x only, for 3.x+ use the activate_license m2ee command)
  #KeyFile: /path/to/some/place/key.mx
