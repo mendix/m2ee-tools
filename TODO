@@ -1,19 +1,11 @@
-m2ee-tools 0.5
-[x] Mendix 5.0 compatibility
-[x] extend_classpath
-[x] apification
-[x] remove all left-overs of user interaction from lib files (raw_input etc)
-[x] runtime/'environment'-version-compare
-[x] document in full-documented-m2ee.yaml: options for web service client certificates
-[x] moar leveraging the version comparison for cli command availability signaling
-[x] document in full-documented-m2ee.yaml: EnableKeepAlive, PersistentSessions, SessionTimeout
-[x] document in full-documented-m2ee.yaml: jetty options
-[x] move felix config template writing from config to start
-
-m2ee-tools 0.5.1
+m2ee-tools 0.5.2
+[ ] KeyError: 'pop(): dictionary is empty' on licensecopy.pop('SeparateAnonymousUsers')
+    SeparateAnonymousUsers sometimes is not included in the license, when the dict is
+	empty also, m2ee crashes
 [ ] add command to display cache_statistics
 [ ] munin: show cache statistics (amount of transient objects in cache)
 [ ] implement munin/nagios plugins by importing m2ee instead of abusing the CLI tool
+[ ] rewrite configuration handling mess
 
 backlog
 [ ] split debian packaging into m2ee-tools and python-m2ee
