@@ -399,7 +399,7 @@ class CLI(cmd.Cmd):
         print("Company: %s" % licensecopy.pop('Company', 'Unknown'))
 
         limitations = licensecopy.pop('UserLimitations', None)
-        separate_anonymous = licensecopy.pop('SeparateAnonymousUsers')
+        separate_anonymous = licensecopy.pop('SeparateAnonymousUsers', True)
         if limitations is not None:
             print("License Limitations:")
             for limitation in limitations:
