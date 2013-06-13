@@ -443,7 +443,7 @@ class CLI(cmd.Cmd):
             return
         print("The command activate_license will set the license key used in "
               "this application.")
-        if self.m2ee.get_runtime_version() < 4.1:
+        if self.m2ee.config.get_runtime_version() < 4.1:
             print("Mendix Runtime versions before 4.1 do not check the "
                   "submitted license key for validity, so incorrect input "
                   "will un-license your Mendix application without warning! "
