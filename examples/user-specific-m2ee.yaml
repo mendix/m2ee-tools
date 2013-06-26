@@ -19,7 +19,7 @@ m2ee:
  #runtime_listen_addresses: "*"
  # custom java options, like -Xmx256m or -Djava.foo=bar
  javaopts: [
-   "-Dfile.encoding=UTF-8", "-XX:MaxPermSize=64M", "-Xmx128M", "-Xms128M",
+   "-Dfile.encoding=UTF-8", "-XX:MaxPermSize=128M", "-Xmx128M", "-Xms128M",
    "-Djava.io.tmpdir=/path/to/project/directory/data/tmp",
  ]
  # file which will be read back by the m2ee log command to provide live logging
