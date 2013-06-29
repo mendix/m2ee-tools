@@ -8,16 +8,7 @@
 import os
 import shutil
 import subprocess
-import tarfile
-from StringIO import StringIO
 from log import logger
-
-try:
-    import httplib2
-except ImportError:
-    logger.critical("Failed to import httplib2. This module is needed by "
-                    "m2ee. Please povide it on the python library path")
-    raise
 
 try:
     import readline
@@ -139,34 +130,24 @@ def run_post_unpack_hook(post_unpack_hook):
 
 def download_and_unpack_runtime(url, path):
     logger.info("Going to download and extract %s to %s" % (url, path))
-    h = httplib2.Http()
-    try:
-        response_headers, response_body = h.request(url)
-    except Exception as e:
-        logger.error("Could not open a connection to %s, reason %s" % (url, e))
-        return False
-    if (response_headers['status'] == "200"):
-        logger.trace("Download runtime response headers: %s"
-                     % response_headers)
-        try:
-            tar = tarfile.open(mode="r:gz", fileobj=StringIO(response_body))
-        except Exception as e:
-            logger.error("Could not open response as tar.gz file: %s" % e)
-            return False
-        for name in tar.getnames():
-            if not os.path.abspath(os.path.join(path, name)).startswith(path):
-                logger.error("The downloaded runtime tried to escape! '%s'"
-                             % name)
-                return False
-        logger.info("Download complete, now extracting...")
-        try:
-            tar.extractall(path)
-        except Exception as e:
-            logger.error("Error un untarring runtime file. Cleanup might be "
-                         "required in %s. Error: %s" % (path, e))
-            return False
+    p1 = subprocess.Popen([
+        'wget',
+        '-O',
+        '-',
+        url,
+    ], stdout=subprocess.PIPE)
+    p2 = subprocess.Popen([
+        'tar',
+        'xz',
+        '-C',
+        path,
+    ], stdin=p1.stdout, stdout=subprocess.PIPE)
+    p1.stdout.close()
+    stdout, stderr = p2.communicate()
+    if p2.returncode == 0:
+        logger.info("Successfully downloaded runtime")
         return True
     else:
-        logger.error("Download runtime non-200 http status code: %s %s" %
-                     (response_headers, response_body))
+        logger.error("Could not download and unpack. Clean up might be "
+                     "required in %s. Error: %s" % (path, stderr))
         return False
