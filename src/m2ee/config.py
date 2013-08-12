@@ -681,6 +681,9 @@ class M2EEConfig:
             if self._appcontainer_version:
                 return "com.mendix.m2ee.AppContainer"
             return "com.mendix.m2ee.server.HttpAdminAppContainer"
+        if self.runtime_version // 5:
+            return "org.apache.felix.main.Main"
+
         raise Exception("Trying to determine appcontainer main class for "
                         "runtime version %s. Please report this as a bug." %
                         self.runtime_version)
@@ -714,12 +717,19 @@ class M2EEConfig:
                          "determined")
             return []
 
-        classpath.extend([
-            os.path.join(self._runtime_path, 'server', '*'),
-            os.path.join(self._runtime_path, 'server', 'lib', '*'),
-            os.path.join(self._runtime_path, 'runtime', '*'),
-            os.path.join(self._runtime_path, 'runtime', 'lib', '*'),
-        ])
+        if self.runtime_version < 5:
+            classpath.extend([
+                os.path.join(self._runtime_path, 'server', '*'),
+                os.path.join(self._runtime_path, 'server', 'lib', '*'),
+                os.path.join(self._runtime_path, 'runtime', '*'),
+                os.path.join(self._runtime_path, 'runtime', 'lib', '*'),
+            ])
+        elif self.runtime_version // 5:
+            classpath.extend([
+                os.path.join(self._runtime_path, 'felix', 'bin', 'felix.jar'),
+                os.path.join(self._runtime_path, 'lib',
+                             'com.mendix.xml-apis-1.4.1.jar')
+            ])
 
         return classpath
 
