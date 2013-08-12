@@ -737,23 +737,24 @@ class M2EEConfig:
 
         classpath = []
 
-        # put model lib into classpath
-        model_lib = os.path.join(
-            self._conf['m2ee']['app_base'],
-            'model',
-            'lib'
-        )
-        if os.path.isdir(model_lib):
-            # put all jars into classpath
-            classpath.append(os.path.join(model_lib, 'userlib', '*'))
-            # put all directories as themselves into classpath
-            classpath.extend(
-                [os.path.join(model_lib, name)
-                    for name in os.listdir(model_lib)
-                    if os.path.isdir(os.path.join(model_lib, name))
-                 ])
-        else:
-            logger.warn("model has no lib dir?")
+        if self.runtime_version < 5:
+            # put model lib into classpath
+            model_lib = os.path.join(
+                self._conf['m2ee']['app_base'],
+                'model',
+                'lib'
+            )
+            if os.path.isdir(model_lib):
+                # put all jars into classpath
+                classpath.append(os.path.join(model_lib, 'userlib', '*'))
+                # put all directories as themselves into classpath
+                classpath.extend(
+                    [os.path.join(model_lib, name)
+                        for name in os.listdir(model_lib)
+                        if os.path.isdir(os.path.join(model_lib, name))
+                     ])
+            else:
+                logger.warn("model has no lib dir?")
 
         return classpath
 
