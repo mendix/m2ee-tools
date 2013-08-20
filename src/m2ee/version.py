@@ -53,8 +53,7 @@ class MXVersion:
         if isinstance(other, tuple):
             mxother = map(__to_mx_version__, other)
             return (self < min(mxother) or
-                    True in map(lambda x: self // x.major and self < x,
-                                mxother))
+                    any(map(lambda x: self // x.major and self < x, mxother)))
         return self._numbers() < __to_mx_version__(other)._numbers()
 
     def __le__(self, other):
@@ -62,15 +61,14 @@ class MXVersion:
 
     def __eq__(self, other):
         if isinstance(other, tuple):
-            return True in map(lambda x: self == x, other)
+            return any(map(lambda x: self == x, other))
         return self._numbers() == __to_mx_version__(other)._numbers()
 
     def __ge__(self, other):
         if isinstance(other, tuple):
             mxother = map(__to_mx_version__, other)
             return (self >= max(mxother) or
-                    True in map(lambda x: self // x.major and self >= x,
-                                mxother))
+                    any(map(lambda x: self // x.major and self >= x, mxother)))
         return self._numbers() >= __to_mx_version__(other)._numbers()
 
     def __gt__(self, other):
@@ -78,5 +76,5 @@ class MXVersion:
 
     def __floordiv__(self, other):
         if isinstance(other, tuple):
-            return True in map(lambda x: self // x, other)
+            return any(map(lambda x: self // x, other))
         return self in __to_mx_version__(other)
