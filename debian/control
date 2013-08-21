@@ -2,15 +2,13 @@ Source: m2ee-tools
 Section: misc
 Priority: extra
 Maintainer: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Build-Depends: debhelper (>= 7), python-support (>= 0.6)
+Build-Depends: debhelper (>= 8), python (>= 2.6.6-3~)
 Standards-Version: 3.9.1
 Homepage: http://www.mendix.com/
-XS-Python-Version: >= 2.5
 
 Package: m2ee-tools
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, unzip, python-yaml, python-simplejson, python-httplib2
-Suggests: postgresql-client
+Depends: ${python:Depends}, ${misc:Depends}, python-m2ee (= ${source:Version})
 Description: Mendix Runtime deployment tools
  The m2ee tools provide an interactive way to manage Mendix Business Server
  processes. Using the scripts, a Mendix application can be started, stopped
@@ -19,3 +17,11 @@ Description: Mendix Runtime deployment tools
  When using a PostgreSQL database as datastore for the application, m2ee
  also provides functionality to dump and restore databases, if the
  postgresql-client package is installed.
+
+Package: python-m2ee
+Architecture: all
+Depends: ${python:Depends}, ${misc:Depends}, unzip, python-yaml, python-httplib2
+Suggests: m2ee-tools, postgresql-client
+Description: Python modules for administrative interaction with the Mendix Runtime
+ The m2ee library provides modules to start, stop and interact with a Mendix
+ Runtime process.
