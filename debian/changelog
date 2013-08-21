@@ -1,3 +1,9 @@
+m2ee-tools (0.5.3-2) unstable; urgency=low
+
+  * Split packaging into m2ee-tools and python-m2ee
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Wed, 21 Aug 2013 17:17:57 +0200
+
 m2ee-tools (0.5.3-1) unstable; urgency=low
 
   * Drop support for Mendix 5 versions < 5.0.0-beta7
