@@ -28,6 +28,69 @@ config_funcs = {}
 values_funcs = {}
 
 
+default_stats = {
+    "languages": ["en_US"],
+    "entities": 0,
+    "threadpool": {
+        "threads_priority": 0,
+        "max_threads": 0,
+        "min_threads": 0,
+        "max_idle_time_s": 0,
+        "max_queued": -0,
+        "threads": 0,
+        "idle_threads": 0,
+        "max_stop_time_s": 0
+    },
+    "memory": {
+        "init_heap": 0,
+        "code": 0,
+        "used_heap": 0,
+        "survivor": 0,
+        "max_nonheap": 0,
+        "committed_heap": 0,
+        "tenured": 0,
+        "permanent": 0,
+        "used_nonheap": 0,
+        "eden": 0,
+        "init_nonheap": 0,
+        "committed_nonheap": 0,
+        "max_heap": 0
+    },
+    "sessions": {
+        "named_users": 0,
+        "anonymous_sessions": 0,
+        "named_user_sessions": 0,
+        "user_sessions": {}
+    },
+    "requests": {
+        "": 0,
+        "debugger/": 0,
+        "ws/": 0,
+        "xas/": 0,
+        "ws-doc/": 0,
+        "file": 0
+    },
+    "cache": {
+        "total_count": 0,
+        "disk_count": 0,
+        "memory_count": 0
+    },
+    "jetty": {
+        "max_idle_time_s": 0,
+        "current_connections": 0,
+        "max_connections": 0,
+        "max_idle_time_s_low_resources": 0
+    },
+    "connectionbus": {
+        "insert": 0,
+        "transaction": 0,
+        "update": 0,
+        "select": 0,
+        "delete": 0
+    }
+}
+
+
 def print_all(client, config, options, name, print_config=False):
 
     if name == "":
@@ -81,7 +144,7 @@ def print_all(client, config, options, name, print_config=False):
             except IOError, e:
                 logger.error("Error reading munin cache file %s: %s" %
                              (config_cache, e))
-                return
+                stats = default_stats
             except ValueError, e:
                 logger.error("Error parsing munin cache file %s: %s" %
                              (config_cache, e))
