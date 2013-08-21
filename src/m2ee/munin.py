@@ -74,17 +74,15 @@ def print_all(client, config, options, name, print_config=False):
         logger.error("Error fetching runtime/server statstics: %s", e)
         if print_config:
             logger.debug("Loading munin cache from %s" % config_cache)
-            fd = None
             try:
                 fd = open(config_cache)
-            except Exception, e:
+                stats = json.loads(fd.read())
+                fd.close()
+            except IOError, e:
                 logger.error("Error reading munin cache file %s: %s" %
                              (config_cache, e))
                 return
-            try:
-                stats = json.loads(fd.read())
-                fd.close()
-            except Exception, e:
+            except ValueError, e:
                 logger.error("Error parsing munin cache file %s: %s" %
                              (config_cache, e))
                 return
