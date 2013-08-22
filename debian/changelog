@@ -1,3 +1,11 @@
+m2ee-tools (0.5.3-2~mxbp60+1) squeeze-backports; urgency=low
+
+  * Rebuild for squeeze-backports.
+  * Use python-m2ee.install instead of python-m2ee.pyinstall
+    (pyinstall not supported by python < 2.7)
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Thu, 22 Aug 2013 13:18:28 +0200
+
 m2ee-tools (0.5.3-2) unstable; urgency=low
 
   * Split packaging into m2ee-tools and python-m2ee
