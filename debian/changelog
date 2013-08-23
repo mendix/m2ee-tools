@@ -1,10 +1,24 @@
-m2ee-tools (0.5.3-2~mxbp60+1) squeeze-backports; urgency=low
+m2ee-tools (0.5.4-1~mxbp60+1) squeeze-backports; urgency=low
 
   * Rebuild for squeeze-backports.
   * Use python-m2ee.install instead of python-m2ee.pyinstall
     (pyinstall not supported by python < 2.7)
 
  -- Pim van den Berg <pim.van.den.berg@mendix.com>  Thu, 22 Aug 2013 13:18:28 +0200
+
+m2ee-tools (0.5.4-1) unstable; urgency=low
+
+  [ Jouke Waleson ]
+  * munin.py: properly try/except on specific errors, no "except Exception"
+  * munin.py: return default stats on error
+
+  [ Pim van den Berg ]
+  * update CHANGES/TODO for 0.5.4
+  * set m2ee module version to 0.5.4
+  * debian: add gbp.conf to set default upstream-tag, compression
+  * debian/gbp.conf: update upstream- and debian-branch
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Fri, 23 Aug 2013 14:00:46 +0200
 
 m2ee-tools (0.5.3-2) unstable; urgency=low
 

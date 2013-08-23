@@ -1,3 +1,6 @@
+m2ee-tools 0.5.4, 23 aug 2013
+  * Munin: return default values on munin_config failure
+
 m2ee-tools 0.5.3, 20 aug 2013
   * Drop support for Mendix 5 versions < 5.0.0-beta7
   * Increase JVM MaxPermSize to 128M in example config
