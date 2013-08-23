@@ -1,4 +1,4 @@
-m2ee-tools 0.5.4
+m2ee-tools
 [ ] add command to display cache_statistics
 [ ] munin: show cache statistics (amount of transient objects in cache)
 [ ] implement munin/nagios plugins by importing m2ee instead of abusing the CLI tool
