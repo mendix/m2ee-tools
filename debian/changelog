@@ -1,3 +1,14 @@
+m2ee-tools (0.5.4.1-1) unstable; urgency=low
+
+  [ Hans van Kranenburg ]
+  * Eliminate usage of with (python >= 2.6)
+
+  [ Pim van den Berg ]
+  * update CHANGES for 0.5.4.1
+  * set m2ee module version to 0.5.4.1
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Mon, 26 Aug 2013 14:30:21 +0200
+
 m2ee-tools (0.5.4-1) unstable; urgency=low
 
   [ Jouke Waleson ]
