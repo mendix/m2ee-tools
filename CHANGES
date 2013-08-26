@@ -1,3 +1,6 @@
+m2ee-tools 0.5.4.1, 26 aug 2013
+  * Eliminate usage of with (python >= 2.6)
+
 m2ee-tools 0.5.4, 23 aug 2013
   * Munin: return default values on munin_config failure
 
