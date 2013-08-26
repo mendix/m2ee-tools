@@ -30,7 +30,7 @@ binary-indep:
 	dh_installdirs
 	dh_install
 	cp src/m2ee.py debian/m2ee-tools/usr/bin/m2ee
-	dh_python2 -p python-m2ee -v
+	dh_python2 -p python-m2ee -v -V '2.6-'
 	#dh_installinit
 	dh_strip
 	dh_compress

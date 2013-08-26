@@ -3,6 +3,7 @@ m2ee-tools (0.5.4.1-1~mxbp60+1) squeeze-backports; urgency=low
   * Rebuild for squeeze-backports.
   * Use python-m2ee.install instead of python-m2ee.pyinstall
     (pyinstall not supported by python < 2.7)
+  * debian/rules: drop support for python < 2.6
 
  -- Pim van den Berg <pim.van.den.berg@mendix.com>  Mon, 26 Aug 2013 14:35:55 +0200
 
