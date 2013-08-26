@@ -375,17 +375,22 @@ class M2EEConfig:
             logger.debug("writing felix configuration template from %s "
                          "to %s" % (felix_template_file, felix_config_file))
             try:
-                with open(felix_template_file) as input_file:
-                    template = input_file.read()
-                    with open(felix_config_file, 'w') as output_file:
-                        render = template.format(
-                            ProjectBundlesDir=project_bundles_path,
-                            InstallDir=self._runtime_path,
-                            FrameworkStorage=osgi_storage_path
-                        )
-                        output_file.write(render)
+                input_file = open(felix_template_file)
+                template = input_file.read()
             except IOError, e:
-                logger.error("felix configuration template could not be"
+                logger.error("felix configuration template could not be "
+                             "read: %s", e)
+                return False
+            try:
+                output_file = open(felix_config_file, 'w')
+                render = template.format(
+                    ProjectBundlesDir=project_bundles_path,
+                    InstallDir=self._runtime_path,
+                    FrameworkStorage=osgi_storage_path
+                )
+                output_file.write(render)
+            except IOError, e:
+                logger.error("felix configuration file could not be "
                              "written: %s", e)
                 return False
         else:
