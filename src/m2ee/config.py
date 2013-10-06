@@ -94,18 +94,18 @@ class M2EEConfig:
         classpath = []
 
         # search for server files and build classpath
-        if not self._run_from_source and self._appcontainer_version:
+        if self._run_from_source:
+            logger.debug("Building classpath to run hybrid appcontainer from "
+                         "source.")
+            # start appcontainer from source, which starts runtime from jars
+            classpath = self._setup_classpath_from_source()
+        elif self._appcontainer_version and not self.runtime_version >= 5:
             # start appcontainer from jars, which starts runtime from jars
             # start without classpath and main class, using java -jar
             logger.debug("Hybrid appcontainer from jars does not need a "
                          "classpath.")
             self._appcontainer_jar = self._lookup_appcontainer_jar()
-        elif self._run_from_source:
-            logger.debug("Building classpath to run hybrid appcontainer from "
-                         "source.")
-            # start appcontainer from source, which starts runtime from jars
-            classpath = self._setup_classpath_from_source()
-        elif not self._run_from_source and not self._appcontainer_version:
+        elif not self._appcontainer_version or self.runtime_version >= 5:
             logger.debug("Building classpath to run appcontainer/runtime from "
                          "jars.")
             # start appcontainer/runtime together from jars
@@ -518,19 +518,13 @@ class M2EEConfig:
             else:
                 logger.warn("javaopts option in m2ee section in configuration "
                             "is not a list")
-        if self._classpath and self.runtime_version < 5:
-            cmd.extend([
-                '-cp',
-                self._classpath,
-                self._get_appcontainer_mainclass()
-            ])
-        elif self.runtime_version >= 5:
-            cmd.extend([
-                '-Dfelix.config.properties=file:%s'
-                % self.get_felix_config_file(),
-                '-jar', os.path.join(self._runtime_path, 'runtime',
-                                     'felix', 'bin', 'felix.jar')
-            ])
+        if self._classpath:
+            cmd.extend(['-cp', self._classpath])
+
+            if self.runtime_version >= 5:
+                cmd.append('-Dfelix.config.properties=file:%s' % self.get_felix_config_file())
+
+            cmd.append( self._get_appcontainer_mainclass())
         elif self._appcontainer_version:
             cmd.extend(['-jar', self._appcontainer_jar])
         else:
@@ -731,7 +725,7 @@ class M2EEConfig:
             ])
         elif self.runtime_version // 5:
             classpath.extend([
-                os.path.join(self._runtime_path, 'felix', 'bin', 'felix.jar'),
+                os.path.join(self._runtime_path, 'runtime', 'felix', 'bin', 'felix.jar'),
                 os.path.join(self._runtime_path, 'lib',
                              'com.mendix.xml-apis-1.4.1.jar')
             ])
