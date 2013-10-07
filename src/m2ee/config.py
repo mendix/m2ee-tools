@@ -97,7 +97,7 @@ class M2EEConfig:
         if self._run_from_source:
             logger.debug("Building classpath to run hybrid appcontainer from source.")
             classpath = self._setup_classpath_from_source()
-        elif self._appcontainer_version and not self.runtime_version >= 5:
+        elif self.use_hybrid_appcontainer() and self.runtime_version < 5:
             logger.debug("Hybrid appcontainer from jars does not need a classpath.")
             self._appcontainer_jar = self._lookup_appcontainer_jar()
         elif not self._appcontainer_version or self.runtime_version >= 5:
