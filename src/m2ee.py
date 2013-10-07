@@ -564,7 +564,10 @@ class CLI(cmd.Cmd):
         if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
             return
-        pgutil.dumpdb(self.m2ee.config)
+        if len(args) > 0:
+            pgutil.dumpdb(self.m2ee.config, args)
+        else:
+            pgutil.dumpdb(self.m2ee.config)
 
     def do_restoredb(self, args):
         if not self.m2ee.config.is_using_postgresql():
