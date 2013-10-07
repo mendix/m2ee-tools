@@ -12,17 +12,15 @@ import time
 from log import logger
 
 
-def dumpdb(config):
+def dumpdb(config, name=None):
 
     env = os.environ.copy()
     env.update(config.get_pg_environment())
 
-    db_dump_file_name = (
-        os.path.join(
-            config.get_database_dump_path(), "%s_%s.backup" %
-            (env['PGDATABASE'], time.strftime("%Y%m%d_%H%M%S"))
-        )
-    )
+    if name is None:
+        name =  "%s_%s.backup" % (env['PGDATABASE'], time.strftime("%Y%m%d_%H%M%S"))
+
+    db_dump_file_name = os.path.join(config.get_database_dump_path(), name)
 
     logger.info("Writing database dump to %s" % db_dump_file_name)
     cmd = (config.get_pg_dump_binary(), "-O", "-x", "-F", "c")
