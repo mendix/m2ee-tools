@@ -726,7 +726,7 @@ class M2EEConfig:
         elif self.runtime_version // 5:
             classpath.extend([
                 os.path.join(self._runtime_path, 'runtime', 'felix', 'bin', 'felix.jar'),
-                os.path.join(self._runtime_path, 'lib',
+                os.path.join(self._runtime_path, 'runtime', 'lib',
                              'com.mendix.xml-apis-1.4.1.jar')
             ])
 
