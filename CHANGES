@@ -1,3 +1,10 @@
+m2ee-tools (0.5.5-1) unstable; urgency=low
+
+  [ Achiel van der Mandele ]
+  * Mendix 5 document exporter bugfix
+  * Mendix 5 document exporter lib fix
+  * dumpdb cmd allows optional filename argument
+
 m2ee-tools 0.5.4.1, 26 aug 2013
   * Eliminate usage of with (python >= 2.6)
 
