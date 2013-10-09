@@ -1,3 +1,11 @@
+m2ee-tools (0.5.5-1) unstable; urgency=low
+
+  [ Achiel van der Mandele ]
+  * Allow users to name backups when calling dumpdb
+  * Mendix 5 document exporter bugfix
+
+ -- Achiel van der Mandele <achiel.van.der.mandele@mendix.com>  Mon, 07 Oct 2013 17:09:25 +0200
+
 m2ee-tools (0.5.4.1-1~mxbp60+1) squeeze-backports; urgency=low
 
   * Rebuild for squeeze-backports.
