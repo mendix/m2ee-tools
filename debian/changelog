@@ -1,3 +1,10 @@
+m2ee-tools (0.5.5-1~mxbp60+2) unstable; urgency=low
+
+  [ Achiel van der Mandele ]
+  * Correct .deb build
+
+ -- Achiel van der Mandele <achiel.van.der.mandele@mendix.com>  Thu, 10 Oct 2013 13:25:58 +0200
+
 m2ee-tools (0.5.5-1~mxbp60+1) unstable; urgency=low
 
   [ Achiel van der Mandele ]
