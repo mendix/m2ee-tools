@@ -1,3 +1,6 @@
+m2ee-tools 0.5.6, 29 oct 2013
+  * fix PL-PGSQL error when restoring a database backup
+
 m2ee-tools 0.5.5, 10 jul 2013
   * Mendix 5 document exporter bugfix
   * Mendix 5 document exporter lib fix
