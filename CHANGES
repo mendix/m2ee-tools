@@ -1,6 +1,4 @@
-m2ee-tools (0.5.5-1) unstable; urgency=low
-
-  [ Achiel van der Mandele ]
+m2ee-tools 0.5.5, 10 jul 2013
   * Mendix 5 document exporter bugfix
   * Mendix 5 document exporter lib fix
   * dumpdb cmd allows optional filename argument
