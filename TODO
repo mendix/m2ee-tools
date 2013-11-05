@@ -1,11 +1,9 @@
 m2ee-tools
 [ ] add command to display cache_statistics
 [ ] munin: show cache statistics (amount of transient objects in cache)
-[ ] implement munin/nagios plugins by importing m2ee instead of abusing the CLI tool
 [ ] rewrite configuration handling mess
 
 backlog
-[ ] split debian packaging into m2ee-tools and python-m2ee
 [ ] refactor nagios plugin to combine check results instead of stopping at the first failure
 [ ] API stabilize m2ee-tools so we can release 1.0
 [ ] nagios: alert when license limits are (almost) reached
