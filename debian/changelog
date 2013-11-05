@@ -1,3 +1,9 @@
+m2ee-tools (0.5.6-1) unstable; urgency=low
+
+  * fix PL-PGSQL error when restoring a database backup
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Tue, 05 Nov 2013 12:16:19 +0100
+
 m2ee-tools (0.5.5-1) unstable; urgency=low
 
   [ Achiel van der Mandele ]
