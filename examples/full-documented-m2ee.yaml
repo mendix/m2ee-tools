@@ -61,23 +61,28 @@ mxnode:
  # searched for installed Mendix Runtime versions
  mxjar_repo: /usr/local/share/mendix/
  # or, when specifying multiple locations:
- #mxjar_repo: ["/opt/mendix/runtime/","/usr/local/share/mendix/"]
- # so, e.g. when starting an application that has been created using version
- # 4.2.2 of the Mendix Business Modeler, the following location would be checked
- # for existence: /usr/local/share/mendix/4.2.2/ when the configuration above is
- # used.
+ #mxjar_repo: ["/opt/mendix/runtime/", "/usr/local/share/mendix/"]
+ #
+ # When starting an application that has been created using version 4.2.2 of
+ # the Mendix Business Modeler, the following location would be checked for
+ # existence: /usr/local/share/mendix/4.2.2/ when the first configuration
+ # example above is used.
+ #
+ # If the mxjar_repo contains a path that is writable by the user itself, it can be
+ # used together with the download_runtime functionality to download runtimes on
+ # demand.
+ # If a 'runtimes' directory exists under the app_base location, as specified
+ # in the m2ee section below, it will be inserted at the front of the
+ # mxjar_repo automatically, to facilitate runtime downloads on demand.
 
- # download_runtime_location can be used to download runtimes on demand
- # If the new version of your application runs mendix 4.5.0 and the 4.5.0
- # runtime is not present on the system AND at least one mxjar_repo can is
- # writeable by this user, the m2ee console will offer the download_runtime
- # option.
- download_runtime_location: "https://download.mendix.com/runtimes"
- # The https://download.mendix.com/runtimes is available in beta, without any
- # guarantees.
- # It is probably a good idea to create a user-specific runtimes folder, under
- # i.e. /srv/mxinstances/USER/data/runtimes and add this to the mxjar_repo list
- # above.
+ # The download_runtime_url configures the location on which releases of the
+ # Mendix Runtime are provided for downloading on demand. When this option is
+ # configured, the download_runtime command can be used to install a missing
+ # Runtime version onto the local system, into the first mxjar_repo location
+ # which is writable by the system user account that is executing the command.
+ #
+ # default: "https://download.mendix.com/runtimes/"
+ download_runtime_url: "https://download.mendix.com/runtimes/"
 
  # When using PostgreSQL as database, the m2ee program contains functionality to
  # quickly dump or restore a database snapshot to the data/database directory of
