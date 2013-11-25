@@ -82,7 +82,7 @@ class M2EE():
                 return False
 
         if self.config.get_symlink_mxclientsystem():
-            mdautil.fix_mxclientsystem_symlink(self.config)
+            util.fix_mxclientsystem_symlink(self.config)
 
         logger.debug("Checking if the runtime is already alive...")
         (pid_alive, m2ee_alive) = self.check_alive()
