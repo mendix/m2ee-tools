@@ -81,6 +81,9 @@ mxnode:
  # Runtime version onto the local system, into the first mxjar_repo location
  # which is writable by the system user account that is executing the command.
  #
+ # It is recommended to not set this option, so the built-in default will be
+ # used.
+ #
  # default: "https://download.mendix.com/runtimes/"
  download_runtime_url: "https://download.mendix.com/runtimes/"
 

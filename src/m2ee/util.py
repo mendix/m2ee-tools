@@ -145,9 +145,9 @@ def download_and_unpack_runtime(url, path):
     p1.stdout.close()
     stdout, stderr = p2.communicate()
     if p2.returncode == 0:
-        logger.info("Successfully downloaded runtime")
+        logger.info("Successfully downloaded runtime!")
         return True
     else:
-        logger.error("Could not download and unpack. Clean up might be "
-                     "required in %s. Error: %s" % (path, stderr))
+        logger.error("Could not download and unpack runtime:")
+        logger.error(stderr)
         return False

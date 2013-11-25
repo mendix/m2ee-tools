@@ -100,6 +100,15 @@ class CLI(cmd.Cmd):
         Starting the Mendix Runtime can fail in both a temporary or permanent
         way. See the client_errno for possible error codes.
         """
+
+        if not self.m2ee.config.get_runtime_path():
+            logger.error("It appears that the Mendix Runtime version which "
+                         "has to be used for your application is not present "
+                         "yet.")
+            logger.info("You can try downloading it using the "
+                        "download_runtime command.")
+            return
+
         if not self.m2ee.start_appcontainer():
             return
 
@@ -810,20 +819,38 @@ class CLI(cmd.Cmd):
             M2EEProfiler(self.m2ee.client).cmdloop()
 
     def do_download_runtime(self, args):
-        if self.m2ee.config.get_runtime_path() :
-            logger.info("Runtime is already installed, nothing to do")
+        if args:
+            try:
+                mxversion = m2ee.version.MXVersion(args)
+            except Exception as e:
+                logger.error(e)
+                return
+        else:
+            mxversion = self.m2ee.config.get_runtime_version()
+
+        if not mxversion:
+            logger.info("You did not specify a Mendix Runtime version to "
+                        "download, and no current unpacked application "
+                        "model is available to determine the version from. "
+                        "Specify a version number or use unpack first.")
             return
-        if not self.m2ee.can_propose_runtime_download():
-            logger.error(
-                "You can not download a runtime. Requirements: \n"
-                " - a configured mxnode: mx_jar_repo option "
-                " - a configured mxnode: download_runtime_location option "
-                "in m2ee.yaml\n"
-                " - write access to at least one mxjar_repo\n"
-                " - an unpacked model, so we can see which version you need\n"
-            )
+
+        version = str(mxversion)
+
+        if self.m2ee.config.lookup_in_mxjar_repo(version):
+            logger.info("The Mendix Runtime for version %s is already "
+                        "installed. If you want to download another Runtime "
+                        "version, specify the version number as argument to "
+                        "download_runtime." % version)
             return
-        self.m2ee.download_and_unpack_runtime()
+
+        if not self.m2ee.config.get_first_writable_mxjar_repo():
+            logger.error("None of the locations specified in the mxjar_repo "
+                         "configuration option are writable by the current "
+                         "user account.")
+            return
+
+        self.m2ee.download_and_unpack_runtime(version)
 
     def _cleanup_logging(self):
         # atexit
@@ -865,6 +892,7 @@ class CLI(cmd.Cmd):
 
 Available commands:
  unpack - unpack an uploaded Mendix Deployment Archive from data/model-upload
+ download_runtime - download a missing Mendix Runtime distribution
  start - try starting the application using the unpacked deployment files
  stop - stop the application
  restart - restart the application

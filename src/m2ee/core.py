@@ -43,11 +43,6 @@ class M2EE():
             'http://127.0.0.1:%s/' % self.config.get_admin_port(),
             self.config.get_admin_pass())
         self.runner = M2EERunner(self.config, self.client)
-        if self.can_propose_runtime_download():
-            logger.info("It appears that the runtime version of your model "
-                        "is not present, but you can write to an mx_jar_repo "
-                        "and you have configured a runtime_download_location."
-                        "You can try the download_runtime command.")
 
     def check_alive(self):
         pid_alive = self.runner.check_pid()
@@ -319,24 +314,10 @@ class M2EE():
         if xmpp_credentials:
             self.client.connect_xmpp(xmpp_credentials).display_error()
 
-    def can_propose_runtime_download(self):
-        if self.config.all_systems_are_go():
-            return False
-        if self.config.get_runtime_version() is None:
-            return False
-        if self.config.get_runtime_path() is not None:
-            return False
-        if self.config.get_runtime_download_location() is None:
-            return False
-        return self.config.get_first_writable_mxjar_repo() is not None
-
-    def download_and_unpack_runtime(self):
-        url = self.config.get_runtime_download_location()
-        if url[:-1] != '/':
-            url += '/'
-        url += 'mendix-%s.tar.gz' % str(self.config.get_runtime_version())
-        repo = self.config.get_first_writable_mxjar_repo()
-        if util.download_and_unpack_runtime(url, repo):
+    def download_and_unpack_runtime(self, version):
+        url = self.config.get_runtime_download_url(version)
+        path = self.config.get_first_writable_mxjar_repo()
+        if util.download_and_unpack_runtime(url, path):
             self.reload_config()
         else:
             return False

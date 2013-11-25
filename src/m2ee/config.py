@@ -75,11 +75,11 @@ class M2EEConfig:
                                 "because product version is unknown.")
                 self._all_systems_are_go = False
             else:
-                self._runtime_path = self._lookup_in_mxjar_repo(
+                self._runtime_path = self.lookup_in_mxjar_repo(
                     str(self.runtime_version))
                 if self._runtime_path is None:
-                    logger.critical("Mendix Runtime not found for version %s" %
-                                    str(self.runtime_version))
+                    logger.error("Mendix Runtime not found for version %s" %
+                                 str(self.runtime_version))
                     self._all_systems_are_go = False
 
         self._setup_classpath()
@@ -526,7 +526,7 @@ class M2EEConfig:
             self._all_systems_are_go = False
             return ""
 
-        appcontainer_path = self._lookup_in_mxjar_repo(
+        appcontainer_path = self.lookup_in_mxjar_repo(
             'appcontainer-%s' % self._appcontainer_version)
         if appcontainer_path is None:
             logger.critical("AppContainer not found for version %s" %
@@ -638,8 +638,28 @@ class M2EEConfig:
     def get_pg_restore_binary(self):
         return self._conf['mxnode'].get('pg_restore', 'pg_restore')
 
-    def get_runtime_download_location(self):
-        return self._conf['mxnode'].get('runtime_download_location', None)
+    def get_first_writable_mxjar_repo(self):
+        repos = self._conf['mxnode']['mxjar_repo']
+        logger.debug("Searching for writeable mxjar repos... in %s"
+                     % repos)
+        repos = filter(lambda repo: os.access(repo, os.W_OK), repos)
+        if len(repos) > 0:
+            found = repos[0]
+            logger.debug("Found writable mxjar location: %s" % found)
+            return found
+        else:
+            logger.debug("No writable mxjar location found")
+            return None
+
+    def get_runtime_download_url(self, version):
+        url = self._conf['mxnode'].get(
+            'runtime_download_url',
+            'https://download.mendix.com/runtimes/'
+        )
+        if url[-1] != '/':
+            url += '/'
+        url += 'mendix-%s.tar.gz' % version
+        return url
 
     def get_database_dump_path(self):
         return self._conf['m2ee']['database_dump_path']
@@ -801,7 +821,7 @@ class M2EEConfig:
 
         return MXVersion(version)
 
-    def _lookup_in_mxjar_repo(self, dirname):
+    def lookup_in_mxjar_repo(self, dirname):
         logger.debug("Searching for %s in mxjar repo locations..." % dirname)
         path = None
         for repo in self._conf['mxnode']['mxjar_repo']:
@@ -812,16 +832,6 @@ class M2EEConfig:
                 break
 
         return path
-
-    def get_first_writable_mxjar_repo(self):
-        logger.debug("Searching for writeable mxjar repos")
-        repos = self._conf['mxnode']['mxjar_repo']
-        repos = filter(lambda repo: os.access(repo, os.W_OK), repos)
-        logger.trace("Found: %s" % repos)
-        if len(repos) > 0:
-            return repos[0]
-        else:
-            return None
 
     def get_runtime_path(self):
         return self._runtime_path
