@@ -312,6 +312,13 @@ class M2EEConfig:
             logger.warn("Model upload path %s is not a directory" %
                         self._conf['m2ee']['model_upload_path'])
 
+        # magically add app_base/runtimes to mxjar_repo when it's present
+        magic_runtimes = os.path.join(self._conf['m2ee']['app_base'],
+                                      'runtimes')
+        if ((magic_runtimes not in self._conf['mxnode']['mxjar_repo']
+             and os.path.isdir(magic_runtimes))):
+            self._conf['mxnode']['mxjar_repo'].insert(0, magic_runtimes)
+
     def fix_permissions(self):
         basepath = self._conf['m2ee']['app_base']
         for directory, mode in {
