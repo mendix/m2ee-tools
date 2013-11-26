@@ -653,7 +653,7 @@ class M2EEConfig:
 
     def get_runtime_download_url(self, version):
         url = self._conf['mxnode'].get(
-            'runtime_download_url',
+            'download_runtime_url',
             'https://download.mendix.com/runtimes/'
         )
         if url[-1] != '/':
