@@ -44,10 +44,7 @@ class M2EEClient:
         if params:
             body["params"] = params
         body = json.dumps(body)
-        # there are no parallel requests done, so we mess with socket timeout
-        # right before the request
-        socket.setdefaulttimeout(timeout)
-        h = httplib2.Http()  # httplib does not like os.fork
+        h = httplib2.Http(timeout=timeout)  # httplib does not like os.fork
         logger.trace("M2EE request body: %s" % body)
         (response_headers, response_body) = h.request(self._url, "POST", body,
                                                       headers=self._headers)
