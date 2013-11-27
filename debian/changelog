@@ -1,3 +1,9 @@
+m2ee-tools (0.5.7-1) unstable; urgency=low
+
+  * Add download_runtime command to download missing Mendix Runtime on demand
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Wed, 27 Nov 2013 18:14:17 +0100
+
 m2ee-tools (0.5.6-1) unstable; urgency=low
 
   * fix PL-PGSQL error when restoring a database backup
