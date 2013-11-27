@@ -822,8 +822,10 @@ class CLI(cmd.Cmd):
         if args:
             try:
                 mxversion = m2ee.version.MXVersion(args)
-            except Exception as e:
-                logger.error(e)
+            except Exception:
+                logger.error("The provided runtime version string is not a "
+                             "valid Mendix Runtime version number. Try using "
+                             "the format x.y.z, e.g. 4.7.1.")
                 return
         else:
             mxversion = self.m2ee.config.get_runtime_version()
