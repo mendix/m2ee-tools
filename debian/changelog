@@ -1,8 +1,8 @@
-m2ee-tools (0.5.7-1~mxbp60+1) squeeze-backports; urgency=low
+m2ee-tools (0.5.7-2) unstable; urgency=low
 
-  * Rebuild for Squeeze (no changes)
+  * debian/control: add dependency on tar and wget for download_runtime
 
- -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Wed, 27 Nov 2013 18:19:43 +0100
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Wed, 27 Nov 2013 18:37:24 +0100
 
 m2ee-tools (0.5.7-1) unstable; urgency=low
 
