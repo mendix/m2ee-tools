@@ -8,14 +8,26 @@
 import os
 import shutil
 import subprocess
+import socket
+import httplib
 from log import logger
 
 try:
     import readline
     # allow - in filenames we're completing without messing up completion
-    readline.set_completer_delims(readline.get_completer_delims().replace('-', ''))
+    readline.set_completer_delims(
+        readline.get_completer_delims().replace('-', '')
+    )
 except ImportError:
     pass
+
+try:
+    import httplib2
+except ImportError:
+    logger.critical("Failed to import httplib2. This module is needed by "
+                    "m2ee. Please povide it on the python library path")
+    raise
+
 
 def unpack(config, mda_name):
 
@@ -123,3 +135,54 @@ def run_post_unpack_hook(post_unpack_hook):
     else:
         logger.error("post-unpack-hook script %s does not exist." %
                      post_unpack_hook)
+
+
+def check_download_runtime_existence(url):
+    h = httplib2.Http(timeout=10)
+    logger.debug("Checking for existence of %s via HTTP HEAD" % url)
+    try:
+        (response_headers, response_body) = h.request(url, "HEAD")
+        logger.trace("Response headers: %s" % response_headers)
+    except (httplib2.HttpLib2Error, httplib.HTTPException,
+            socket.error) as e:
+        logger.error("Checking download url %s failed: %s: %s"
+                     % (url, e.__class__.__name__, e))
+        return False
+
+    if (response_headers['status'] == '200'):
+        logger.debug("Ok, got HTTP 200")
+        return True
+    if (response_headers['status'] == '404'):
+        logger.error("The location %s cannot be found." % url)
+        return False
+    logger.error("Checking download url %s failed, HTTP status code %s"
+                 % (url, response_headers['status']))
+    return False
+
+
+def download_and_unpack_runtime(url, path):
+    if not check_download_runtime_existence(url):
+        return
+
+    logger.info("Going to download and extract %s to %s" % (url, path))
+    p1 = subprocess.Popen([
+        'wget',
+        '-O',
+        '-',
+        url,
+    ], stdout=subprocess.PIPE)
+    p2 = subprocess.Popen([
+        'tar',
+        'xz',
+        '-C',
+        path,
+    ], stdin=p1.stdout, stdout=subprocess.PIPE)
+    p1.stdout.close()
+    stdout, stderr = p2.communicate()
+    if p2.returncode == 0:
+        logger.info("Successfully downloaded runtime!")
+        return True
+    else:
+        logger.error("Could not download and unpack runtime:")
+        logger.error(stderr)
+        return False

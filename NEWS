@@ -1,0 +1,21 @@
+m2ee-tools 0.5.7, 27 Nov 2013
+
+m2ee now has the possibility to download missing Mendix Runtime distributions on
+demand.
+
+In order to use this functionality, the mxjar_repo configuration setting (in the
+mxnode section of the yaml configuration file) needs to have a user writable
+location included. If a 'runtimes' directory exists under the app_base location,
+as specified in the m2ee section below, it will be inserted at the front of the
+mxjar_repo automatically, to facilitate runtime downloads on demand.
+
+The new download_runtime command can be used without any argument, in which case
+it will try downloading the Mendix Runtime for the current unpacked application
+model, if it's missing.
+
+When providing an argument to download_runtime, e.g. "download_runtime 4.7.1",
+another Mendix Runtime can be downloaded. When preparing for a new application
+release, this can be used to make sure the new version is already installed.
+
+Also, see the documentation in examples/full-documented-m2ee.yaml about
+configuring mxjar_repo
