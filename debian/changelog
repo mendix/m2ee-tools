@@ -1,3 +1,9 @@
+m2ee-tools (0.5.7-1~mxbp60+1) squeeze-backports; urgency=low
+
+  * Rebuild for Squeeze (no changes)
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Wed, 27 Nov 2013 18:19:43 +0100
+
 m2ee-tools (0.5.7-1) unstable; urgency=low
 
   * Add download_runtime command to download missing Mendix Runtime on demand
