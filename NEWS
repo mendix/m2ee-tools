@@ -1,4 +1,4 @@
-m2ee-tools 0.5.7, UNRELEASED
+m2ee-tools 0.5.7, 27 Nov 2013
 
 m2ee now has the possibility to download missing Mendix Runtime distributions on
 demand.

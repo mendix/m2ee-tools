@@ -1,4 +1,4 @@
-m2ee-tools 0.5.7, UNRELEASED
+m2ee-tools 0.5.7, 27 Nov 2013
   * Add download_runtime command to download missing Mendix Runtime on demand
 
 m2ee-tools 0.5.6, 29 oct 2013
