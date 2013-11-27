@@ -10,5 +10,4 @@ backlog
 [ ] add command to set logMinDurationQuery (ms) via update_configuration m2ee api
 [ ] possibility to use units (ms,s,h,d,w,y) for time length values
 [ ] man m2ee.yaml instead of lots of documentation in the example file itself
-[ ] somehow remember the name of the last unpacked .mda file (see mendix support #14621)
 [ ] munin: graph max license user limits (named/concurrent)

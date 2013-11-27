@@ -13,7 +13,7 @@ from client import M2EEClient
 from runner import M2EERunner
 from log import logger
 
-import mdautil
+import util
 import client_errno
 
 
@@ -77,7 +77,7 @@ class M2EE():
                 return False
 
         if self.config.get_symlink_mxclientsystem():
-            mdautil.fix_mxclientsystem_symlink(self.config)
+            util.fix_mxclientsystem_symlink(self.config)
 
         logger.debug("Checking if the runtime is already alive...")
         (pid_alive, m2ee_alive) = self.check_alive()
@@ -300,16 +300,24 @@ class M2EE():
         fd.close()
 
     def unpack(self, mda_name):
-        if mdautil.unpack(self.config, mda_name):
+        if util.unpack(self.config, mda_name):
             self.reload_config()
         else:
             return False
 
         post_unpack_hook = self.config.get_post_unpack_hook()
         if post_unpack_hook:
-            mdautil.run_post_unpack_hook(post_unpack_hook)
+            util.run_post_unpack_hook(post_unpack_hook)
 
     def _connect_xmpp(self):
         xmpp_credentials = self.config.get_xmpp_credentials()
         if xmpp_credentials:
             self.client.connect_xmpp(xmpp_credentials).display_error()
+
+    def download_and_unpack_runtime(self, version):
+        url = self.config.get_runtime_download_url(version)
+        path = self.config.get_first_writable_mxjar_repo()
+        if util.download_and_unpack_runtime(url, path):
+            self.reload_config()
+        else:
+            return False

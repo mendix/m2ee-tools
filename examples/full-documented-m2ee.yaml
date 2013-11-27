@@ -61,11 +61,31 @@ mxnode:
  # searched for installed Mendix Runtime versions
  mxjar_repo: /usr/local/share/mendix/
  # or, when specifying multiple locations:
- #mxjar_repo: ["/opt/mendix/runtime/","/usr/local/share/mendix/"]
- # so, e.g. when starting an application that has been created using version
- # 4.2.2 of the Mendix Business Modeler, the following location would be checked
- # for existence: /usr/local/share/mendix/4.2.2/ when the configuration above is
+ #mxjar_repo: ["/opt/mendix/runtime/", "/usr/local/share/mendix/"]
+ #
+ # When starting an application that has been created using version 4.2.2 of
+ # the Mendix Business Modeler, the following location would be checked for
+ # existence: /usr/local/share/mendix/4.2.2/ when the first configuration
+ # example above is used.
+ #
+ # If the mxjar_repo contains a path that is writable by the user itself, it can be
+ # used together with the download_runtime functionality to download runtimes on
+ # demand.
+ # If a 'runtimes' directory exists under the app_base location, as specified
+ # in the m2ee section below, it will be inserted at the front of the
+ # mxjar_repo automatically, to facilitate runtime downloads on demand.
+
+ # The download_runtime_url configures the location on which releases of the
+ # Mendix Runtime are provided for downloading on demand. When this option is
+ # configured, the download_runtime command can be used to install a missing
+ # Runtime version onto the local system, into the first mxjar_repo location
+ # which is writable by the system user account that is executing the command.
+ #
+ # It is recommended to not set this option, so the built-in default will be
  # used.
+ #
+ # default: "https://download.mendix.com/runtimes/"
+ download_runtime_url: "https://download.mendix.com/runtimes/"
 
  # When using PostgreSQL as database, the m2ee program contains functionality to
  # quickly dump or restore a database snapshot to the data/database directory of
