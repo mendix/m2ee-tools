@@ -117,9 +117,9 @@ class M2EE():
             self._connect_xmpp()
             response = self.client.create_runtime({
                 "runtime_path":
-                os.path.join(self.config.get_runtime_path(), 'runtime'),
+                os.path.join(self.config.get_inner_runtime_path(), 'runtime'),
                 "port": self.config.get_runtime_port(),
-                "application_base_path": self.config.get_app_base(),
+                "application_base_path": self.config.get_inner_app_base(),
                 "use_blocking_connector":
                 self.config.get_runtime_blocking_connector(),
             })
@@ -146,7 +146,7 @@ class M2EE():
         return startresponse
 
     def stop(self, timeout=10):
-        if self.runner.check_pid():
+        if self.runner.check_pid() or self.config.get_docker_config():
             logger.info("Waiting for the application to shutdown...")
             stopped = self.runner.stop(timeout)
             if stopped:
@@ -258,6 +258,13 @@ class M2EE():
                 config[option] = ','.join(config[option])
 
         logger.debug("Sending MxRuntime configuration...")
+        if self.config.get_docker_config():
+            config['BasePath'] = self.config.get_inner_app_base()
+            config['RuntimePath'] = os.path.join(
+                self.config.get_inner_runtime_path(),
+                'runtime'
+            )
+            config['DatabaseHost'] = self.config.get_docker_db_ip() + ':5432'
         m2eeresponse = self.client.update_configuration(config)
         result = m2eeresponse.get_result()
         if result == 1:

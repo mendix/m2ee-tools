@@ -51,7 +51,7 @@ class CLI(cmd.Cmd):
 
     def _stop(self):
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
-        if not pid_alive and not m2ee_alive:
+        if not self.m2ee.config.get_docker_config() and not pid_alive and not m2ee_alive:
             logger.info("Nothing to stop, the application is not running.")
             return True
 

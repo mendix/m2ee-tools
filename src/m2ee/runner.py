@@ -8,7 +8,10 @@ import subprocess
 import os
 import signal
 import errno
+import envoy
 from time import sleep
+import docker
+docker = docker.Client()
 
 from log import logger
 
@@ -69,6 +72,19 @@ class M2EERunner:
             return False
 
     def stop(self, timeout=5):
+        if self._config.get_docker_config():
+            db_cid = self._config.get_docker_db_cid()
+            logger.debug('db container id: %s' % db_cid)
+            if db_cid is not None:
+                logger.debug('stopping db')
+                docker.stop(db_cid, timeout)
+            app_cid = self._config.get_docker_app_cid()
+            logger.debug('app container id: %s' % app_cid)
+            if app_cid is not None:
+                logger.debug('stopping app')
+                docker.stop(app_cid, timeout)
+                docker.remove_container(app_cid)
+            return True
         self._client.shutdown()
         return self._wait_pid(timeout)
 
@@ -91,6 +107,54 @@ class M2EERunner:
         return self._wait_pid(timeout)
 
     def start(self, timeout=60, step=0.25):
+        if self._config.get_docker_config():
+            db_cid = self._config.get_docker_db_cid()
+            logger.debug('db container id: %s' % db_cid)
+            if db_cid is None:
+                logger.debug('starting db')
+                container = docker.create_container(
+                    'zaiste/postgresql',
+                    name=self._config.get_app_name() + '_db',
+                )
+                docker.start(container)
+                logger.trace(container)
+                with open(self._config.get_docker_db_cidfile(), 'w') as open_file:
+                    open_file.write(container['Id'] + '\n')
+            app_cid = self._config.get_docker_app_cid()
+            logger.debug('app container id: %s' % app_cid)
+            if app_cid is None:
+                logger.debug('starting app')
+                cmd = (
+                    'docker run -d -p 127.0.0.1:8000:8000 -p 127.0.0.1:9000:9000 '
+                    '-cidfile %s '
+                    '%s '
+                    '-name %s '
+                    '-link %s_db:db '
+                    '-v %s:/runtime:ro '
+                    '-v %s:/project:rw '
+                    'fkautz/java6-jre '
+                    '%s '
+                )
+                cmd = cmd % (
+                    self._config.get_docker_app_cidfile(),
+                    ' '.join(['-e %s=%s' % (k, v) for k,v in self._config.get_java_env().items()]),
+                    self._config.get_app_name(),
+                    self._config.get_app_name(),
+                    self._config.get_runtime_path(),
+                    self._config.get_app_base(),
+                    ' '.join(self._config.get_java_cmd()),
+                )
+                logger.trace(cmd)
+                r = envoy.run(cmd)
+                logger.trace(r.std_err)
+                logger.trace(r.std_out)
+                logger.trace(r.status_code)
+                cmd = self._config.get_java_cmd()
+                env = self._config.get_java_env()
+                logger.debug(cmd)
+                logger.debug(env)
+                sleep(6)
+            return True
         if self.check_pid():
             logger.error("The application process is already started!")
             return False

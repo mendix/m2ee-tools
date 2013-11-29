@@ -11,6 +11,11 @@ import sys
 import pwd
 import re
 import copy
+try:
+    import docker
+    docker = docker.Client()
+except:
+    pass
 
 from log import logger
 from collections import defaultdict
@@ -395,6 +400,12 @@ class M2EEConfig:
     def get_app_base(self):
         return self._conf['m2ee']['app_base']
 
+    def get_inner_app_base(self):
+        if self.get_docker_config():
+            return '/project'
+        else:
+            return self.get_app_base()
+
     def get_default_dotm2ee_directory(self):
         dotm2ee = os.path.join(pwd.getpwuid(os.getuid())[5], ".m2ee")
         if not os.path.isdir(dotm2ee):
@@ -564,6 +575,53 @@ class M2EEConfig:
     def get_runtime_listen_addresses(self):
         return self._conf['m2ee'].get('runtime_listen_addresses', '')
 
+    def get_docker_config(self):
+        return self._conf['docker']
+
+    def get_docker_db_cid(self):
+        return self._get_docker_cid(self.get_docker_db_cidfile())
+
+    def get_docker_app_cid(self):
+        return self._get_docker_cid(self.get_docker_app_cidfile(), False)
+
+    def get_docker_db_ip(self):
+        cid = self._get_docker_cid(self.get_docker_db_cidfile())
+        return docker.inspect_container(cid)['NetworkSettings']['IPAddress']
+
+    def get_docker_app_ip(self):
+        cid = self._get_docker_cid(self.get_docker_app_cidfile(), False)
+        return docker.inspect_container(cid)['NetworkSettings']['IPAddress']
+
+    def get_docker_db_cidfile(self):
+        return os.path.join(self._conf['m2ee']['app_base'], 'docker_db.cid')
+
+    def get_docker_app_cidfile(self):
+        return os.path.join(self._conf['m2ee']['app_base'], 'docker_app.cid')
+
+    def _get_docker_cid(self, path, try_to_start=True):
+        cid = self._read_docker_cid(path)
+        if cid is not None:
+            logger.trace('found cid: %s' % cid)
+            for container in docker.containers(all=True):
+                logger.trace(container)
+                if container['Id'] == cid:
+                    if 'Up' not in container['Status'] and try_to_start:
+                        docker.start(container)
+                    return cid
+            logger.trace('removing %s' % path)
+            os.remove(path)
+        return None
+
+
+    def _read_docker_cid(self, path):
+        logger.trace(path)
+        if os.path.exists(path):
+            with open(path, 'r') as open_file:
+                for line in open_file:
+                    return line.strip()
+        else:
+            return None
+
     def get_pidfile(self):
         return self._conf['m2ee'].get('pidfile',
                                       os.path.join(
@@ -724,22 +782,22 @@ class M2EEConfig:
         logger.debug("Running from binary distribution.")
         classpath = []
 
-        if not self._runtime_path:
+        if not self.get_inner_runtime_path():
             logger.debug("runtime_path is empty, no classpath can be "
                          "determined")
             return []
 
         if self.runtime_version < 5:
             classpath.extend([
-                os.path.join(self._runtime_path, 'server', '*'),
-                os.path.join(self._runtime_path, 'server', 'lib', '*'),
-                os.path.join(self._runtime_path, 'runtime', '*'),
-                os.path.join(self._runtime_path, 'runtime', 'lib', '*'),
+                os.path.join(self.get_inner_runtime_path(), 'server', '*'),
+                os.path.join(self.get_inner_runtime_path(), 'server', 'lib', '*'),
+                os.path.join(self.get_inner_runtime_path(), 'runtime', '*'),
+                os.path.join(self.get_inner_runtime_path(), 'runtime', 'lib', '*'),
             ])
         elif self.runtime_version // 5:
             classpath.extend([
-                os.path.join(self._runtime_path, 'runtime', 'felix', 'bin', 'felix.jar'),
-                os.path.join(self._runtime_path, 'runtime', 'lib',
+                os.path.join(self.get_inner_runtime_path(), 'runtime', 'felix', 'bin', 'felix.jar'),
+                os.path.join(self.get_inner_runtime_path(), 'runtime', 'lib',
                              'com.mendix.xml-apis-1.4.1.jar')
             ])
 
@@ -751,19 +809,24 @@ class M2EEConfig:
 
         if self.runtime_version < 5:
             # put model lib into classpath
-            model_lib = os.path.join(
-                self._conf['m2ee']['app_base'],
+            ext_model_lib = os.path.join(
+                self.get_app_base(),
                 'model',
                 'lib'
             )
-            if os.path.isdir(model_lib):
+            model_lib = os.path.join(
+                self.get_inner_app_base(),
+                'model',
+                'lib'
+            )
+            if os.path.isdir(ext_model_lib):
                 # put all jars into classpath
                 classpath.append(os.path.join(model_lib, 'userlib', '*'))
                 # put all directories as themselves into classpath
                 classpath.extend(
                     [os.path.join(model_lib, name)
-                        for name in os.listdir(model_lib)
-                        if os.path.isdir(os.path.join(model_lib, name))
+                        for name in os.listdir(ext_model_lib)
+                        if os.path.isdir(os.path.join(ext_model_lib, name))
                      ])
             else:
                 logger.warn("model has no lib dir?")
@@ -842,6 +905,12 @@ class M2EEConfig:
 
     def get_runtime_path(self):
         return self._runtime_path
+
+    def get_inner_runtime_path(self):
+        if self.get_docker_config():
+            return '/runtime'
+        else:
+            return self.get_runtime_path()
 
 
 def find_yaml_files():
