@@ -112,7 +112,11 @@ class CLI(cmd.Cmd):
         if not self.m2ee.start_appcontainer():
             return
 
-        if not self.m2ee.send_runtime_config():
+        database_password = None
+        if not self.m2ee.config.has_database_password():
+            database_password = getpass.getpass("Database password not configured, "
+                                                "please provide now:")
+        if not self.m2ee.send_runtime_config(database_password):
             self._stop()
             return
 

@@ -843,6 +843,9 @@ class M2EEConfig:
     def get_runtime_path(self):
         return self._runtime_path
 
+    def has_database_password(self):
+        return 'DatabasePassword' in self._conf['mxruntime']
+
 
 def find_yaml_files():
     yaml_files = []
