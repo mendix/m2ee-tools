@@ -4,21 +4,21 @@
 #
 #  Copyright 2010 Jeet Sukumaran and Mark T. Holder.
 #  All rights reserved.
-# 
+#
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions are met:
-# 
+#
 #      * Redistributions of source code must retain the above copyright
 #        notice, this list of conditions and the following disclaimer.
-# 
+#
 #      * Redistributions in binary form must reproduce the above copyright
 #        notice, this list of conditions and the following disclaimer in the
 #        documentation and/or other materials provided with the distribution.
-# 
+#
 #      * The names of its contributors may not be used to endorse or promote
 #        products derived from this software without specific prior written
 #        permission.
-# 
+#
 #  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
 #  IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
 #  THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -30,14 +30,16 @@
 #  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
-# 
+#
 #  If you use this work or any portion thereof in published work,
 #  please cite it as:
-# 
+#
 #     Sukumaran, J. and M. T. Holder. 2010. DendroPy: a Python library
 #     for phylogenetic computing. Bioinformatics 26: 1569-1571.
 
-def format_dict_table(rows, column_names=None, max_column_width=None, border_style=2):
+
+def format_dict_table(rows, column_names=None, max_column_width=None,
+                      border_style=2):
     """
     Returns a string representation of a tuple of dictionaries in a
     table format. This method can read the column names directly off the
@@ -88,7 +90,9 @@ def format_dict_table(rows, column_names=None, max_column_width=None, border_sty
                 for row in rows:
                     new_row = {}
                     for k in row.keys():
-                        new_row[k[:max_column_width]] = str(row[k])[:max_column_width]
+                        new_row[k[:max_column_width]] = (
+                            str(row[k])[:max_column_width]
+                        )
                     trunc_rows.append(new_row)
                 rows = trunc_rows
 
@@ -97,18 +101,32 @@ def format_dict_table(rows, column_names=None, max_column_width=None, border_sty
                 lengths[col] = max(rls+[len(col)])
                 rules[col] = horizontal_rule*lengths[col]
 
-            template_elements = ["%%(%s)-%ss" % (col, lengths[col]) for col in column_list]
+            template_elements = [
+                "%%(%s)-%ss" % (col, lengths[col]) for col in column_list
+            ]
             row_template = vertical_rule.join(template_elements)
             border_template = rule_junction.join(template_elements)
-            full_line = left_table_edge_rule_junction + (border_template % rules) + right_table_edge_rule_junction
+            full_line = (
+                left_table_edge_rule_junction +
+                (border_template % rules) +
+                right_table_edge_rule_junction
+            )
             display = []
             if border_style > 0:
                 display.append(full_line)
-            display.append(left_table_edge_rule + (row_template % dict(zip(column_list, column_list))) + right_table_edge_rule)
+            display.append(
+                left_table_edge_rule +
+                (row_template % dict(zip(column_list, column_list))) +
+                right_table_edge_rule
+            )
             if border_style > 0:
                 display.append(full_line)
             for row in rows:
-                display.append(left_table_edge_rule + (row_template % row) + right_table_edge_rule)
+                display.append(
+                    left_table_edge_rule +
+                    (row_template % row) +
+                    right_table_edge_rule
+                )
             if border_style > 0:
                 display.append(full_line)
             return "\n".join(display)

@@ -114,8 +114,10 @@ class CLI(cmd.Cmd):
 
         database_password = None
         if not self.m2ee.config.has_database_password():
-            database_password = getpass.getpass("Database password not configured, "
-                                                "please provide now:")
+            database_password = getpass.getpass(
+                "Database password not configured, "
+                "please provide now:"
+            )
         if not self.m2ee.send_runtime_config(database_password):
             self._stop()
             return
@@ -405,7 +407,8 @@ class CLI(cmd.Cmd):
         if 'ExpirationDate' in licensecopy:
             print("Expiration Date: %s" %
                   datetime.datetime.fromtimestamp(
-                  licensecopy.pop('ExpirationDate') / 1000)
+                      licensecopy.pop('ExpirationDate') / 1000
+                  )
                   .strftime("%a, %d %b %Y %H:%M:%S %z")
                   .rstrip())
         print("Runtime Mode: %s" % licensecopy.pop('RuntimeMode', 'Unknown'))
@@ -436,10 +439,11 @@ class CLI(cmd.Cmd):
                       % ("" if separate_anonymous else "and anonymous "))
             else:
                 print("- %s concurrent named %suser session%s allowed." %
-                      (limitation['NumberOfAllowedUsers'],
-                      '' if separate_anonymous else "and anonymous ",
-                      ('s' if limitation['NumberOfAllowedUsers'] != 1
-                      else '')))
+                      (
+                          limitation['NumberOfAllowedUsers'],
+                          '' if separate_anonymous else "and anonymous ",
+                          ('s' if limitation['NumberOfAllowedUsers'] != 1
+                           else '')))
         elif (limitation['LimitationType'] == 'ConcurrentAnonymous' and
               separate_anonymous):
             if limitation['AmountType'] == 'Unlimited':
@@ -447,9 +451,10 @@ class CLI(cmd.Cmd):
                       "allowed.")
             else:
                 print("- %s concurrent anonymous session%s allowed." %
-                      (limitation['NumberOfAllowedUsers'],
-                      ('s' if limitation['NumberOfAllowedUsers'] != 1
-                      else '')))
+                      (
+                          limitation['NumberOfAllowedUsers'],
+                          ('s' if limitation['NumberOfAllowedUsers'] != 1
+                           else '')))
 
     def do_activate_license(self, args):
         if self._report_not_implemented(3) or self._report_not_running():
@@ -729,8 +734,11 @@ class CLI(cmd.Cmd):
                 if len(avail_since) > 2:
                     implemented_in = (
                         '%s, %s and %s' %
-                        (', '.join(map(str, avail_since[:-2])),
-                        avail_since[-2], avail_since[-1]))
+                        (
+                            ', '.join(map(str, avail_since[:-2])),
+                            avail_since[-2], avail_since[-1]
+                        )
+                    )
                 else:
                     implemented_in = '%s and %s' % avail_since
             else:
