@@ -8,6 +8,7 @@
 
 import atexit
 import cmd
+import codecs
 import datetime
 import getpass
 import os
@@ -22,6 +23,8 @@ import yaml
 
 from m2ee import pgutil, M2EE, M2EEProfiler, logger, client_errno
 import m2ee
+
+sys.stdout = codecs.getwriter('utf8')(sys.stdout)
 
 
 class CLI(cmd.Cmd):
