@@ -509,7 +509,12 @@ class M2EEConfig:
         """
         Build complete JVM startup command line
         """
-        cmd = ['java']
+        cmd = []
+        cmd.append(self._conf['m2ee'].get('javabin', 'java'))
+
+        if 'java' not in cmd:
+            logger.info("Starting using custom configured binary: %s" % ''.join(cmd))
+
         if 'javaopts' in self._conf['m2ee']:
             if isinstance(self._conf['m2ee']['javaopts'], list):
                 cmd.extend(self._conf['m2ee']['javaopts'])
