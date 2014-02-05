@@ -1,3 +1,9 @@
+m2ee-tools (0.5.8-1~mxbp60+1) squeeze-backports; urgency=low
+
+  * Rebuild for squeeze-backports.
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Wed, 05 Feb 2014 13:16:08 +0100
+
 m2ee-tools (0.5.8-1) unstable; urgency=low
 
   [ Achiel ]
