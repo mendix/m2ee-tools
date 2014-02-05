@@ -1,3 +1,11 @@
+m2ee-tools (0.5.8.1-1) unstable; urgency=low
+
+  * Revert "use utf-8 for stdout to fix m2ee about (and more)"
+  * update CHANGES for 0.5.8.1
+  * set m2ee module version to 0.5.8.1
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Wed, 05 Feb 2014 15:45:15 +0100
+
 m2ee-tools (0.5.8-1) unstable; urgency=low
 
   [ Achiel ]
