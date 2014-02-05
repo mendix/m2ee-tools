@@ -1,8 +1,19 @@
-m2ee-tools (0.5.7-2~mxbp60+1) squeeze-backports; urgency=low
+m2ee-tools (0.5.8-1) unstable; urgency=low
 
-  * Rebuild for Squeeze (no changes)
+  [ Achiel ]
+  * allow users to fill in database password on start
 
- -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Wed, 27 Nov 2013 18:42:11 +0100
+  [ Jouke Waleson ]
+  * cosmetics only: pep8 applied EVERYWHERE
+  * m2ee.py: sort imports a-z
+  * use utf-8 for stdout to fix m2ee about (and more)
+
+  [ Pim van den Berg ]
+  * add configuration option "javabin" to override the java binary used to run the app
+  * update CHANGES for 0.5.8
+  * set m2ee module version to 0.5.8
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Wed, 05 Feb 2014 12:27:46 +0100
 
 m2ee-tools (0.5.7-2) unstable; urgency=low
 

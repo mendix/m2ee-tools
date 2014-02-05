@@ -69,9 +69,19 @@ End: %s \n \
 Duration: %sms \n \
 Form: %s \n \
 Original request: %s \n\n \
-" % (queries, self.request_id, self.username, userroles, self.still_running,
-     self.action, self.start_time_formatted, self.end_time_formatted,
-     self.duration, form_name, self.request_content)
+" % (
+            queries,
+            self.request_id,
+            self.username,
+            userroles,
+            self.still_running,
+            self.action,
+            self.start_time_formatted,
+            self.end_time_formatted,
+            self.duration,
+            form_name,
+            self.request_content
+        )
 
 
 def sort_logs(logs):
