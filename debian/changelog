@@ -1,3 +1,11 @@
+m2ee-tools (0.5.8.1-1~mxbp60+1) squeeze-backports; urgency=low
+
+  * Rebuild for squeeze-backports.
+  * debian: backport to squeeze
+  * debian/rules: drop support for python < 2.6
+
+ -- Pim van den Berg <pim.van.den.berg@mendix.com>  Wed, 05 Feb 2014 15:47:47 +0100
+
 m2ee-tools (0.5.8.1-1) unstable; urgency=low
 
   * Revert "use utf-8 for stdout to fix m2ee about (and more)"
