@@ -228,7 +228,7 @@ class M2EE():
                 logger.error("Setting mime types failed: %s" %
                              m2eeresponse.get_cause())
 
-    def send_runtime_config(self):
+    def send_runtime_config(self, database_password=None):
         # send runtime configuration
         # catch and report:
         # - configuration errors (X is not a file etc)
@@ -237,6 +237,9 @@ class M2EE():
         # if errors, abort.
 
         config = copy.deepcopy(self.config.get_runtime_config())
+        if database_password:
+            config['DatabasePassword'] = database_password
+
         custom_config_25 = None
         if self.config.get_runtime_version() // '2.5':
             custom_config_25 = config.pop('MicroflowConstants', None)

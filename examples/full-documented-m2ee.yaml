@@ -225,6 +225,10 @@ m2ee:
  custom_environment:
   PATH: "/bin:/usr/bin/:/opt/some/weird/jre/version/bin/"
 
+ # From Mendix 5 onwards, the JVM needs to support Java 7. Here you can specifiy
+ # the location of the java binary if you want to override the system default.
+ javabin: /usr/bin/java
+
  # javaopts are custom command line options that will be inserted when starting
  # the Mendix Runtime JVM process. Any command line option that is accepted by
  # the JVM you are using can be inserted here. Options that are recommended to

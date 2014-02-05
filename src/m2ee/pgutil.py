@@ -18,7 +18,9 @@ def dumpdb(config, name=None):
     env.update(config.get_pg_environment())
 
     if name is None:
-        name =  "%s_%s.backup" % (env['PGDATABASE'], time.strftime("%Y%m%d_%H%M%S"))
+        name = ("%s_%s.backup"
+                % (env['PGDATABASE'], time.strftime("%Y%m%d_%H%M%S"))
+                )
 
     db_dump_file_name = os.path.join(config.get_database_dump_path(), name)
 
@@ -41,7 +43,8 @@ def restoredb(config, dump_name):
     env.update(config.get_pg_environment())
 
     db_dump_file_name = os.path.join(
-            config.get_database_dump_path(), dump_name)
+        config.get_database_dump_path(), dump_name
+    )
     if not os.path.isfile(db_dump_file_name):
         logger.error("file %s does not exist: " % db_dump_file_name)
         return False

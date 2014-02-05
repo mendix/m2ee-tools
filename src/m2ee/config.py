@@ -61,7 +61,11 @@ class M2EEConfig:
         # >= 3.0: application information (e.g. runtime version)
         # if this file does not exist (i.e. < 3.0) try_load_json returns {}
         self._model_metadata = self._try_load_json(
-            os.path.join(self._conf['m2ee']['app_base'], 'model', 'metadata.json'))
+            os.path.join(
+                self._conf['m2ee']['app_base'],
+                'model',
+                'metadata.json',
+            ))
 
         self.runtime_version = self._lookup_runtime_version()
 
@@ -86,7 +90,8 @@ class M2EEConfig:
 
         if self._runtime_path and not 'RuntimePath' in self._conf['mxruntime']:
             runtimePath = os.path.join(self._runtime_path, 'runtime')
-            logger.debug("Setting RuntimePath runtime config option to %s" % runtimePath)
+            logger.debug("Setting RuntimePath runtime config option to %s"
+                         % runtimePath)
             self._conf['mxruntime']['RuntimePath'] = runtimePath
 
     def _setup_classpath(self):
@@ -95,13 +100,16 @@ class M2EEConfig:
         classpath = []
 
         if self._run_from_source:
-            logger.debug("Building classpath to run hybrid appcontainer from source.")
+            logger.debug("Building classpath to run hybrid appcontainer from "
+                         "source.")
             classpath = self._setup_classpath_from_source()
         elif self.use_hybrid_appcontainer() and self.runtime_version < 5:
-            logger.debug("Hybrid appcontainer from jars does not need a classpath.")
+            logger.debug("Hybrid appcontainer from jars does not need a "
+                         "classpath.")
             self._appcontainer_jar = self._lookup_appcontainer_jar()
         elif not self._appcontainer_version or self.runtime_version >= 5:
-            logger.debug("Building classpath to run appcontainer/runtime from jars.")
+            logger.debug("Building classpath to run appcontainer/runtime from "
+                         "jars.")
             classpath = self._setup_classpath_runtime_binary()
             classpath.extend(self._setup_classpath_model())
 
@@ -501,7 +509,12 @@ class M2EEConfig:
         """
         Build complete JVM startup command line
         """
-        cmd = ['java']
+        cmd = []
+        cmd.append(self._conf['m2ee'].get('javabin', 'java'))
+
+        if 'java' not in cmd:
+            logger.info("Starting using custom configured binary: %s" % ''.join(cmd))
+
         if 'javaopts' in self._conf['m2ee']:
             if isinstance(self._conf['m2ee']['javaopts'], list):
                 cmd.extend(self._conf['m2ee']['javaopts'])
@@ -512,9 +525,10 @@ class M2EEConfig:
             cmd.extend(['-cp', self._classpath])
 
             if self.runtime_version >= 5:
-                cmd.append('-Dfelix.config.properties=file:%s' % self.get_felix_config_file())
+                cmd.append('-Dfelix.config.properties=file:%s'
+                           % self.get_felix_config_file())
 
-            cmd.append( self._get_appcontainer_mainclass())
+            cmd.append(self._get_appcontainer_mainclass())
         elif self._appcontainer_version:
             cmd.extend(['-jar', self._appcontainer_jar])
         else:
@@ -738,7 +752,8 @@ class M2EEConfig:
             ])
         elif self.runtime_version // 5:
             classpath.extend([
-                os.path.join(self._runtime_path, 'runtime', 'felix', 'bin', 'felix.jar'),
+                os.path.join(self._runtime_path, 'runtime', 'felix', 'bin',
+                             'felix.jar'),
                 os.path.join(self._runtime_path, 'runtime', 'lib',
                              'com.mendix.xml-apis-1.4.1.jar')
             ])
@@ -842,6 +857,9 @@ class M2EEConfig:
 
     def get_runtime_path(self):
         return self._runtime_path
+
+    def has_database_password(self):
+        return 'DatabasePassword' in self._conf['mxruntime']
 
 
 def find_yaml_files():
