@@ -6,22 +6,25 @@
 # http://www.mendix.com/
 #
 
-import cmd
-import subprocess
 import atexit
-import os
-import pwd
-import sys
+import cmd
+import codecs
+import datetime
 import getpass
+import os
+import pprint
+import pwd
+import random
 import signal
 import string
-import random
-import pprint
+import subprocess
+import sys
 import yaml
-import datetime
 
 from m2ee import pgutil, M2EE, M2EEProfiler, logger, client_errno
 import m2ee
+
+sys.stdout = codecs.getwriter('utf8')(sys.stdout)
 
 
 class CLI(cmd.Cmd):
