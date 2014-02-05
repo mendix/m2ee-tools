@@ -1,3 +1,8 @@
+m2ee-tools 0.5.8, 05 Feb 2014
+  * allow users to fill in database password on start
+  * add configuration option "javabin" to override the java binary used to run the app
+  * use utf-8 for stdout to fix m2ee about (and more)
+
 m2ee-tools 0.5.7, 27 Nov 2013
   * Add download_runtime command to download missing Mendix Runtime on demand
 
