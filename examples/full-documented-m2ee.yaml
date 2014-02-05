@@ -223,7 +223,7 @@ m2ee:
  #
  # default: empty
  custom_environment:
-  PATH: "/bin:/usr/bin/:/opt/some/weird/jre/version/bin/"
+  PATH: "/opt/some/weird/jre/version/bin/:/bin:/usr/bin/"
 
  # From Mendix 5 onwards, the JVM needs to support Java 7. Here you can specifiy
  # the location of the java binary if you want to override the system default.
