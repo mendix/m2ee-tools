@@ -32,13 +32,14 @@ if not sys.stdout.isatty():
 
 class CLI(cmd.Cmd):
 
-    def __init__(self, yaml_files=None):
+    def __init__(self, yaml_files=None, assume_yes=False):
         logger.debug('Using m2ee-tools version %s' % m2ee.__version__)
         cmd.Cmd.__init__(self)
         if yaml_files:
             self.m2ee = M2EE(yamlfiles=yaml_files, load_default_files=False)
         else:
             self.m2ee = M2EE()
+        self.assume_yes = assume_yes
         self.do_status(None)
         username = pwd.getpwuid(os.getuid())[0]
         self._default_prompt = "m2ee(%s): " % username
@@ -70,8 +71,9 @@ class CLI(cmd.Cmd):
 
         answer = None
         while not answer in ('y', 'n'):
-            answer = raw_input("Do you want to try to signal the JVM "
-                               "process to stop immediately? (y)es, (n)o? ")
+            answer = ('y' if self.assume_yes
+                      else raw_input("Do you want to try to signal the JVM "
+                                     "process to stop immediately? (y)es, (n)o? "))
             if answer == 'y':
                 stopped = self.m2ee.terminate()
                 if stopped:
@@ -85,8 +87,9 @@ class CLI(cmd.Cmd):
 
         answer = None
         while not answer in ('y', 'n'):
-            answer = raw_input("Do you want to kill the JVM process? (y)es,"
-                               "(n)o? ")
+            answer = ('y' if self.assume_yes
+                      else raw_input("Do you want to kill the JVM process? "
+                                     "(y)es, (n)o? "))
             if answer == 'y':
                 stopped = self.m2ee.kill()
                 if stopped:
@@ -607,8 +610,9 @@ class CLI(cmd.Cmd):
                         "restore the database right now.")
             return
         database_name = self.m2ee.config.get_pg_environment()['PGDATABASE']
-        answer = raw_input("This command will restore this dump into database "
-                           "%s. Continue? (y)es, (N)o? " % database_name)
+        answer = ('y' if self.assume_yes
+                  else raw_input("This command will restore this dump into database "
+                                 "%s. Continue? (y)es, (N)o? " % database_name))
         if answer != 'y':
             logger.info("Aborting!")
             return
@@ -635,7 +639,8 @@ class CLI(cmd.Cmd):
         logger.info("This command will drop all tables and sequences in "
                     "database %s." %
                     self.m2ee.config.get_pg_environment()['PGDATABASE'])
-        answer = raw_input("Continue? (y)es, (N)o? ")
+        answer = ('y' if self.assume_yes
+                  else raw_input("Continue? (y)es, (N)o? "))
         if answer != 'y':
             print("Aborting!")
             return
@@ -655,7 +660,8 @@ class CLI(cmd.Cmd):
         logger.info("This command will replace the contents of the model/ and "
                     "web/ locations, using the files extracted from the "
                     "archive")
-        answer = raw_input("Continue? (y)es, (N)o? ")
+        answer = ('y' if self.assume_yes
+                  else raw_input("Continue? (y)es, (N)o? "))
         if answer != 'y':
             logger.info("Aborting!")
             return
@@ -985,6 +991,15 @@ if __name__ == '__main__':
         dest="quiet",
         help="decrease verbosity of output (-qq to be even more quiet)"
     )
+    parser.add_option(
+        "-y",
+        "--yes",
+        "--assume-yes",
+        action="store_true",
+        default=False,
+        dest="assume_yes",
+        help="automatically answer yes to confirmations about stop, unpack, restoredb and emptydb"
+    )
     (options, args) = parser.parse_args()
 
     # how verbose should we be? see
@@ -1001,7 +1016,10 @@ if __name__ == '__main__':
         verbosity = 5
     logger.setLevel(verbosity)
 
-    cli = CLI(yaml_files=options.yaml_files)
+    cli = CLI(
+        yaml_files=options.yaml_files,
+        assume_yes=options.assume_yes,
+    )
     atexit.register(cli._cleanup_logging)
     if args:
         cli.onecmd(' '.join(args))
