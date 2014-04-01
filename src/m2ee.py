@@ -32,14 +32,14 @@ if not sys.stdout.isatty():
 
 class CLI(cmd.Cmd):
 
-    def __init__(self, yaml_files=None, assume_yes=False):
+    def __init__(self, yaml_files=None, yolo_mode=False):
         logger.debug('Using m2ee-tools version %s' % m2ee.__version__)
         cmd.Cmd.__init__(self)
         if yaml_files:
             self.m2ee = M2EE(yamlfiles=yaml_files, load_default_files=False)
         else:
             self.m2ee = M2EE()
-        self.assume_yes = assume_yes
+        self.yolo_mode = yolo_mode
         self.do_status(None)
         username = pwd.getpwuid(os.getuid())[0]
         self._default_prompt = "m2ee(%s): " % username
@@ -71,7 +71,7 @@ class CLI(cmd.Cmd):
 
         answer = None
         while not answer in ('y', 'n'):
-            answer = ('y' if self.assume_yes
+            answer = ('y' if self.yolo_mode
                       else raw_input("Do you want to try to signal the JVM "
                                      "process to stop immediately? (y)es, (n)o? "))
             if answer == 'y':
@@ -87,7 +87,7 @@ class CLI(cmd.Cmd):
 
         answer = None
         while not answer in ('y', 'n'):
-            answer = ('y' if self.assume_yes
+            answer = ('y' if self.yolo_mode
                       else raw_input("Do you want to kill the JVM process? "
                                      "(y)es, (n)o? "))
             if answer == 'y':
@@ -610,7 +610,7 @@ class CLI(cmd.Cmd):
                         "restore the database right now.")
             return
         database_name = self.m2ee.config.get_pg_environment()['PGDATABASE']
-        answer = ('y' if self.assume_yes
+        answer = ('y' if self.yolo_mode
                   else raw_input("This command will restore this dump into database "
                                  "%s. Continue? (y)es, (N)o? " % database_name))
         if answer != 'y':
@@ -639,7 +639,7 @@ class CLI(cmd.Cmd):
         logger.info("This command will drop all tables and sequences in "
                     "database %s." %
                     self.m2ee.config.get_pg_environment()['PGDATABASE'])
-        answer = ('y' if self.assume_yes
+        answer = ('y' if self.yolo_mode
                   else raw_input("Continue? (y)es, (N)o? "))
         if answer != 'y':
             print("Aborting!")
@@ -660,7 +660,7 @@ class CLI(cmd.Cmd):
         logger.info("This command will replace the contents of the model/ and "
                     "web/ locations, using the files extracted from the "
                     "archive")
-        answer = ('y' if self.assume_yes
+        answer = ('y' if self.yolo_mode
                   else raw_input("Continue? (y)es, (N)o? "))
         if answer != 'y':
             logger.info("Aborting!")
@@ -993,12 +993,11 @@ if __name__ == '__main__':
     )
     parser.add_option(
         "-y",
-        "--yes",
-        "--assume-yes",
+        "--yolo",
         action="store_true",
         default=False,
-        dest="assume_yes",
-        help="automatically answer yes to confirmations about stop, unpack, restoredb and emptydb"
+        dest="yolo_mode",
+        help="automatically answer all questions to run as non-interactively as possible"
     )
     (options, args) = parser.parse_args()
 
@@ -1018,7 +1017,7 @@ if __name__ == '__main__':
 
     cli = CLI(
         yaml_files=options.yaml_files,
-        assume_yes=options.assume_yes,
+        yolo_mode=options.yolo_mode,
     )
     atexit.register(cli._cleanup_logging)
     if args:
