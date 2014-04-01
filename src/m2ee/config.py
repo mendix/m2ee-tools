@@ -707,7 +707,7 @@ class M2EEConfig:
         if self.runtime_version // 2.5:
             return "com.mendix.m2ee.server.M2EE"
         if self.runtime_version // 3 or self.runtime_version // 4:
-            if self._appcontainer_version:
+            if self.use_hybrid_appcontainer():
                 return "com.mendix.m2ee.AppContainer"
             return "com.mendix.m2ee.server.HttpAdminAppContainer"
         if self.runtime_version // 5:
