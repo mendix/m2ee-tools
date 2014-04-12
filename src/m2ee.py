@@ -198,8 +198,9 @@ class CLI(cmd.Cmd):
             {"verbose": True}).get_feedback()
         answer = None
         while not answer in ('v', 's', 'e', 'a'):
-            answer = raw_input("Do you want to (v)iew queries, (s)ave them to "
-                               "a file, (e)xecute and save them, or (a)bort: ")
+            answer = ('e' if self.yolo_mode
+                      else raw_input("Do you want to (v)iew queries, (s)ave them to "
+                                     "a file, (e)xecute and save them, or (a)bort: "))
             if answer == 'a':
                 pass
             elif answer == 'v':
