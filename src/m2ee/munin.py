@@ -182,6 +182,12 @@ def print_all(client, config, options, name, print_config=False):
         funcs['threadpool'](name, stats)
         print
 
+    # object cache
+    if "cache" in stats:
+        print("multigraph mxruntime_cache_%s" % name)
+        funcs['cache'](name, stats)
+        print
+
 
 def print_requests_config(name, stats):
     print("""graph_args --base 1000 -l 0
@@ -392,3 +398,21 @@ def print_threadpool_values(name, stats):
 
 config_funcs['threadpool'] = print_threadpool_config
 values_funcs['threadpool'] = print_threadpool_values
+
+
+def print_cache_config(name, stats):
+    print("""graph_args --base 1000 -l 0
+graph_vlabel objects
+graph_title %s - Object Cache
+graph_category Mendix
+graph_info This graph shows the total amount of objects in the runtime object cache
+total.label Objects in cache
+total.draw LINE1
+total.info Total amount of objects""" % name)
+
+
+def print_cache_values(name, stats):
+    print("total.value %s" % stats['cache']['total_count'])
+
+config_funcs['cache'] = print_cache_config
+values_funcs['cache'] = print_cache_values
