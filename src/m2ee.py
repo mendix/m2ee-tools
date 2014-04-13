@@ -158,10 +158,13 @@ class CLI(cmd.Cmd):
                                  "MicroflowConstants section.")
                     abort = True
                 elif result == client_errno.start_ADMIN_1:
-                    answer = self._handle_admin_1(
-                        startresponse.get_feedback()['users'])
-                    if answer == 'a':
-                        abort = True
+                    users = startresponse.get_feedback()['users']
+                    if self.yolo_mode:
+                        self._handle_admin_1_yolo(users)
+                    else:
+                        answer = self._handle_admin_1(users)
+                        if answer == 'a':
+                            abort = True
                 else:
                     abort = True
 
@@ -242,6 +245,29 @@ class CLI(cmd.Cmd):
             else:
                 print("Unknown option %s" % answer)
         return answer
+
+    def _handle_admin_1_yolo(self, users):
+        for username in users:
+            newpasswd = self._generate_password()
+            logger.info("Changing password for user %s to %s" %
+                        (username, newpasswd))
+            self.m2ee.client.update_admin_user({
+                "username": username,
+                "password": newpasswd,
+            })
+
+    def _generate_password(self):
+        newpasswd_list = []
+        for choosefrom in [
+            string.ascii_lowercase,
+            string.ascii_uppercase,
+            string.digits,
+            string.punctuation,
+        ]:
+            newpasswd_list.extend([random.choice(choosefrom)
+                                   for _ in range(random.randint(10, 20))])
+        random.shuffle(newpasswd_list)
+        return ''.join(newpasswd_list)
 
     def do_create_admin_user(self, args=None):
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
