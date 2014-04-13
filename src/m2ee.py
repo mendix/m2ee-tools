@@ -692,7 +692,8 @@ class CLI(cmd.Cmd):
               "your screen. This can be confusing, especially when you're "
               "typing something and everything gets messed up by the logging. "
               "Issuing the log command again will turn off logging output.")
-        answer = raw_input("Do you want to start log output (y/N): ")
+        answer = ('y' if self.yolo_mode
+                  else raw_input("Do you want to start log output (y/N): "))
         if answer == 'y':
             cmd = ("tail", "-F", logfile)
             proc = subprocess.Popen(cmd)
