@@ -1,3 +1,16 @@
+m2ee-tools 0.5.9, 14 Apr 2014
+
+The new -y (or --yolo) argument to m2ee can be used to suppress questions that
+ask for confirmation when using commands like stop, unpack, emptydb and
+restoredb. During start, activating yolo mode will even automatically execute
+and save DDL commands, and change passwords of admin users to some random
+password if the runtime refuses to start because they have password '1'.
+
+This option can be used for quick and dirty automation of application
+deployment using one-off m2ee commands, or it can be used when you're working in
+some test or development environment where you don't need to be cautious at all
+about throwing away data etc.
+
 m2ee-tools 0.5.7, 27 Nov 2013
 
 m2ee now has the possibility to download missing Mendix Runtime distributions on

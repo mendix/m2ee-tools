@@ -1,3 +1,10 @@
+m2ee-tools 0.5.9, 14 Apr 2014
+  * Add yolo mode (-y, --yolo) that automatically answers questions (see NEWS).
+  * Add experimental munin plugin to graph the total amount of objects in the
+    runtime object cache.
+  * Fix crash because of output encoding issues when stdout is not connected to an
+    interactive terminal.
+
 m2ee-tools 0.5.8.1, 05 Feb 2014
   * revert: use utf-8 for stdout to fix m2ee about (and more)
 
