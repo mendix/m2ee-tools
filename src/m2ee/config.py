@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009-2013, Mendix bv
+# Copyright (c) 2009-2014, Mendix bv
 # All Rights Reserved.
 #
 # http://www.mendix.com/
@@ -513,7 +513,10 @@ class M2EEConfig:
         cmd.append(self._conf['m2ee'].get('javabin', 'java'))
 
         if 'java' not in cmd:
-            logger.info("Starting using custom configured binary: %s" % ''.join(cmd))
+            logger.info(
+                'Starting using custom configured binary: %s'
+                % ''.join(cmd)
+            )
 
         if 'javaopts' in self._conf['m2ee']:
             if isinstance(self._conf['m2ee']['javaopts'], list):

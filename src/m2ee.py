@@ -24,15 +24,22 @@ from m2ee import pgutil, M2EE, M2EEProfiler, logger, client_errno
 import m2ee
 
 
+if not sys.stdout.isatty():
+    import codecs
+    import locale
+    sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
+
+
 class CLI(cmd.Cmd):
 
-    def __init__(self, yaml_files=None):
+    def __init__(self, yaml_files=None, yolo_mode=False):
         logger.debug('Using m2ee-tools version %s' % m2ee.__version__)
         cmd.Cmd.__init__(self)
         if yaml_files:
             self.m2ee = M2EE(yamlfiles=yaml_files, load_default_files=False)
         else:
             self.m2ee = M2EE()
+        self.yolo_mode = yolo_mode
         self.do_status(None)
         username = pwd.getpwuid(os.getuid())[0]
         self._default_prompt = "m2ee(%s): " % username
@@ -64,8 +71,9 @@ class CLI(cmd.Cmd):
 
         answer = None
         while not answer in ('y', 'n'):
-            answer = raw_input("Do you want to try to signal the JVM "
-                               "process to stop immediately? (y)es, (n)o? ")
+            answer = ('y' if self.yolo_mode
+                      else raw_input("Do you want to try to signal the JVM "
+                                     "process to stop immediately? (y)es, (n)o? "))
             if answer == 'y':
                 stopped = self.m2ee.terminate()
                 if stopped:
@@ -79,8 +87,9 @@ class CLI(cmd.Cmd):
 
         answer = None
         while not answer in ('y', 'n'):
-            answer = raw_input("Do you want to kill the JVM process? (y)es,"
-                               "(n)o? ")
+            answer = ('y' if self.yolo_mode
+                      else raw_input("Do you want to kill the JVM process? "
+                                     "(y)es, (n)o? "))
             if answer == 'y':
                 stopped = self.m2ee.kill()
                 if stopped:
@@ -149,10 +158,13 @@ class CLI(cmd.Cmd):
                                  "MicroflowConstants section.")
                     abort = True
                 elif result == client_errno.start_ADMIN_1:
-                    answer = self._handle_admin_1(
-                        startresponse.get_feedback()['users'])
-                    if answer == 'a':
-                        abort = True
+                    users = startresponse.get_feedback()['users']
+                    if self.yolo_mode:
+                        self._handle_admin_1_yolo(users)
+                    else:
+                        answer = self._handle_admin_1(users)
+                        if answer == 'a':
+                            abort = True
                 else:
                     abort = True
 
@@ -189,8 +201,9 @@ class CLI(cmd.Cmd):
             {"verbose": True}).get_feedback()
         answer = None
         while not answer in ('v', 's', 'e', 'a'):
-            answer = raw_input("Do you want to (v)iew queries, (s)ave them to "
-                               "a file, (e)xecute and save them, or (a)bort: ")
+            answer = ('e' if self.yolo_mode
+                      else raw_input("Do you want to (v)iew queries, (s)ave them to "
+                                     "a file, (e)xecute and save them, or (a)bort: "))
             if answer == 'a':
                 pass
             elif answer == 'v':
@@ -232,6 +245,29 @@ class CLI(cmd.Cmd):
             else:
                 print("Unknown option %s" % answer)
         return answer
+
+    def _handle_admin_1_yolo(self, users):
+        for username in users:
+            newpasswd = self._generate_password()
+            logger.info("Changing password for user %s to %s" %
+                        (username, newpasswd))
+            self.m2ee.client.update_admin_user({
+                "username": username,
+                "password": newpasswd,
+            })
+
+    def _generate_password(self):
+        newpasswd_list = []
+        for choosefrom in [
+            string.ascii_lowercase,
+            string.ascii_uppercase,
+            string.digits,
+            string.punctuation,
+        ]:
+            newpasswd_list.extend([random.choice(choosefrom)
+                                   for _ in range(random.randint(10, 20))])
+        random.shuffle(newpasswd_list)
+        return ''.join(newpasswd_list)
 
     def do_create_admin_user(self, args=None):
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
@@ -601,8 +637,9 @@ class CLI(cmd.Cmd):
                         "restore the database right now.")
             return
         database_name = self.m2ee.config.get_pg_environment()['PGDATABASE']
-        answer = raw_input("This command will restore this dump into database "
-                           "%s. Continue? (y)es, (N)o? " % database_name)
+        answer = ('y' if self.yolo_mode
+                  else raw_input("This command will restore this dump into database "
+                                 "%s. Continue? (y)es, (N)o? " % database_name))
         if answer != 'y':
             logger.info("Aborting!")
             return
@@ -629,7 +666,8 @@ class CLI(cmd.Cmd):
         logger.info("This command will drop all tables and sequences in "
                     "database %s." %
                     self.m2ee.config.get_pg_environment()['PGDATABASE'])
-        answer = raw_input("Continue? (y)es, (N)o? ")
+        answer = ('y' if self.yolo_mode
+                  else raw_input("Continue? (y)es, (N)o? "))
         if answer != 'y':
             print("Aborting!")
             return
@@ -649,7 +687,8 @@ class CLI(cmd.Cmd):
         logger.info("This command will replace the contents of the model/ and "
                     "web/ locations, using the files extracted from the "
                     "archive")
-        answer = raw_input("Continue? (y)es, (N)o? ")
+        answer = ('y' if self.yolo_mode
+                  else raw_input("Continue? (y)es, (N)o? "))
         if answer != 'y':
             logger.info("Aborting!")
             return
@@ -679,7 +718,8 @@ class CLI(cmd.Cmd):
               "your screen. This can be confusing, especially when you're "
               "typing something and everything gets messed up by the logging. "
               "Issuing the log command again will turn off logging output.")
-        answer = raw_input("Do you want to start log output (y/N): ")
+        answer = ('y' if self.yolo_mode
+                  else raw_input("Do you want to start log output (y/N): "))
         if answer == 'y':
             cmd = ("tail", "-F", logfile)
             proc = subprocess.Popen(cmd)
@@ -979,6 +1019,14 @@ if __name__ == '__main__':
         dest="quiet",
         help="decrease verbosity of output (-qq to be even more quiet)"
     )
+    parser.add_option(
+        "-y",
+        "--yolo",
+        action="store_true",
+        default=False,
+        dest="yolo_mode",
+        help="automatically answer all questions to run as non-interactively as possible"
+    )
     (options, args) = parser.parse_args()
 
     # how verbose should we be? see
@@ -995,7 +1043,10 @@ if __name__ == '__main__':
         verbosity = 5
     logger.setLevel(verbosity)
 
-    cli = CLI(yaml_files=options.yaml_files)
+    cli = CLI(
+        yaml_files=options.yaml_files,
+        yolo_mode=options.yolo_mode,
+    )
     atexit.register(cli._cleanup_logging)
     if args:
         cli.onecmd(' '.join(args))

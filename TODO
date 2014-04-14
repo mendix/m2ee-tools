@@ -1,7 +1,7 @@
 m2ee-tools
 [ ] add command to display cache_statistics
-[ ] munin: show cache statistics (amount of transient objects in cache)
 [ ] rewrite configuration handling mess
+[ ] refactor error handling, use exceptions instead of true/false etc
 
 backlog
 [ ] refactor nagios plugin to combine check results instead of stopping at the first failure
