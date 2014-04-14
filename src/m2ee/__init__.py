@@ -6,4 +6,4 @@ import munin  # noqa
 import version  # noqa
 from profile import M2EEProfiler  # noqa
 
-__version__ = '0.5.8.1'
+__version__ = '0.5.9'
