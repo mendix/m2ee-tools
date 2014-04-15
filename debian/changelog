@@ -1,3 +1,9 @@
+m2ee-tools (0.5.9-2~mxbp60+1) squeeze-backports; urgency=low
+
+  * Rebuild for squeeze-backports.
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Tue, 15 Apr 2014 12:08:11 +0200
+
 m2ee-tools (0.5.9-2) unstable; urgency=low
 
   * Include NEWS in the debian package
