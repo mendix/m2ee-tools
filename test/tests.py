@@ -10,6 +10,8 @@ import m2ee.nagios as nagios
 from m2ee.log import logger
 
 current_version = None
+
+
 def get_m2ee(version):
     testdir = 'projects/%s' % version
     app_base = os.path.join(os.getcwd(), '%s/deployment' % testdir)
@@ -21,6 +23,7 @@ def get_m2ee(version):
     m2ee.runtime_url = 'http://127.0.0.1:%d' % m2ee.config.get_runtime_port()
 
     return m2ee
+
 
 class M2EEApiTest(unittest.TestCase):
 

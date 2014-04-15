@@ -1,10 +1,18 @@
-m2ee-tools (0.5.8.1-1~mxbp60+1) squeeze-backports; urgency=low
+m2ee-tools (0.5.9-2) unstable; urgency=low
 
-  * Rebuild for squeeze-backports.
-  * debian: backport to squeeze
-  * debian/rules: drop support for python < 2.6
+  * Include NEWS in the debian package
 
- -- Pim van den Berg <pim.van.den.berg@mendix.com>  Wed, 05 Feb 2014 15:47:47 +0100
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Tue, 15 Apr 2014 00:29:34 +0200
+
+m2ee-tools (0.5.9-1) unstable; urgency=low
+
+  * Add yolo mode (-y, --yolo) that automatically answers questions (see NEWS).
+  * Add experimental munin plugin to graph the total amount of objects in the
+    runtime object cache.
+  * Fix crash because of output encoding issues when stdout is not connected to an
+    interactive terminal.
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Tue, 15 Apr 2014 00:01:39 +0200
 
 m2ee-tools (0.5.8.1-1) unstable; urgency=low
 

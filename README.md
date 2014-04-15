@@ -9,3 +9,6 @@ links via Documentation to Deployment to Mendix on GNU/Linux
 Since post 0.4.4 the development in this project is done using the branching and
 release strategy as described on:
 http://nvie.com/posts/a-successful-git-branching-model/
+
+m2ee-tools on github:
+https://github.com/mendix/m2ee-tools/
