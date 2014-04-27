@@ -879,14 +879,17 @@ class M2EEConfig:
         ]
         yaml_constants = self._conf['mxruntime']['MicroflowConstants'].keys()
 
-        for model_constant in model_constants:
-            if model_constant not in yaml_constants:
-                logger.warn('Constant not defined: %s' % model_constant)
+        missing = [m for m in model_constants if m not in yaml_constants]
+        if missing:
+            logger.warn('Constants not defined:')
+            for constant in missing:
+                logger.warn('- %s' % constant)
 
-        for yaml_constant in yaml_constants:
-            if yaml_constant not in model_constants:
-                logger.info('Constant defined but not needed by application: '
-                            '%s' % yaml_constant)
+        obsolete = [m for m in yaml_constants if m not in model_constants]
+        if obsolete:
+            logger.info('Constants defined but not needed by application:')
+            for constant in obsolete:
+                logger.info('- %s' % constant)
 
 
 def find_yaml_files():
