@@ -94,6 +94,8 @@ class M2EEConfig:
                          % runtimePath)
             self._conf['mxruntime']['RuntimePath'] = runtimePath
 
+        self._warn_constants()
+
     def _setup_classpath(self):
         logger.debug("Determining classpath to be used...")
 
@@ -863,6 +865,28 @@ class M2EEConfig:
 
     def has_database_password(self):
         return 'DatabasePassword' in self._conf['mxruntime']
+
+    def _warn_constants(self):
+        if 'Constants' not in self._model_metadata:
+            return
+        if 'MicroflowConstants' not in self._conf['mxruntime']:
+            return
+
+        model_constants = [
+            constant['Name']
+            for constant
+            in self._model_metadata['Constants']
+        ]
+        yaml_constants = self._conf['mxruntime']['MicroflowConstants'].keys()
+
+        for model_constant in model_constants:
+            if model_constant not in yaml_constants:
+                logger.warn('Constant not defined: %s' % model_constant)
+
+        for yaml_constant in yaml_constants:
+            if yaml_constant not in model_constants:
+                logger.info('Constant defined but not needed by application: '
+                            '%s' % yaml_constant)
 
 
 def find_yaml_files():
