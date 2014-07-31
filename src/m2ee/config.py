@@ -513,7 +513,7 @@ class M2EEConfig:
         cmd.append(self._conf['m2ee'].get('javabin', 'java'))
 
         if 'java' not in cmd:
-            logger.info(
+            logger.debug(
                 'Starting using custom configured binary: %s'
                 % ''.join(cmd)
             )
