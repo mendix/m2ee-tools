@@ -1,3 +1,8 @@
+m2ee-tools 0.5.10, UNRELEASED
+  * Add experimental command to show raw runtime cache statistics output.
+  * Warn about unused constant definitions when reloading config.
+  * Small fixes and cosmetics
+
 m2ee-tools 0.5.9, 14 Apr 2014
   * Add yolo mode (-y, --yolo) that automatically answers questions (see NEWS).
   * Add experimental munin plugin to graph the total amount of objects in the
