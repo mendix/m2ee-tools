@@ -70,7 +70,7 @@ class CLI(cmd.Cmd):
             return True
 
         answer = None
-        while not answer in ('y', 'n'):
+        while answer not in ('y', 'n'):
             answer = ('y' if self.yolo_mode
                       else raw_input("Do you want to try to signal the JVM "
                                      "process to stop immediately? (y)es, (n)o? "))
@@ -86,7 +86,7 @@ class CLI(cmd.Cmd):
                 print("Unknown option %s" % answer)
 
         answer = None
-        while not answer in ('y', 'n'):
+        while answer not in ('y', 'n'):
             answer = ('y' if self.yolo_mode
                       else raw_input("Do you want to kill the JVM process? "
                                      "(y)es, (n)o? "))
@@ -173,7 +173,7 @@ class CLI(cmd.Cmd):
 
     def _ask_user_whether_to_create_db(self):
         answer = None
-        while not answer in ('c', 'r', 'a'):
+        while answer not in ('c', 'r', 'a'):
             if self.m2ee.config.get_dtap_mode()[0] in 'DT':
                 answer = raw_input("Do you want to (c)reate, (r)etry, or "
                                    "(a)bort: ")
@@ -200,7 +200,7 @@ class CLI(cmd.Cmd):
         feedback = self.m2ee.client.get_ddl_commands(
             {"verbose": True}).get_feedback()
         answer = None
-        while not answer in ('v', 's', 'e', 'a'):
+        while answer not in ('v', 's', 'e', 'a'):
             answer = ('e' if self.yolo_mode
                       else raw_input("Do you want to (v)iew queries, (s)ave them to "
                                      "a file, (e)xecute and save them, or (a)bort: "))
@@ -221,7 +221,7 @@ class CLI(cmd.Cmd):
 
     def _handle_admin_1(self, users):
         answer = None
-        while not answer in ('c', 'a'):
+        while answer not in ('c', 'a'):
             answer = raw_input("Do you want to (c)hange passwords or "
                                "(a)bort: ")
             if answer == 'a':

@@ -88,7 +88,7 @@ class M2EEConfig:
 
         self._setup_classpath()
 
-        if self._runtime_path and not 'RuntimePath' in self._conf['mxruntime']:
+        if self._runtime_path and 'RuntimePath' not in self._conf['mxruntime']:
             runtimePath = os.path.join(self._runtime_path, 'runtime')
             logger.debug("Setting RuntimePath runtime config option to %s"
                          % runtimePath)
@@ -280,7 +280,7 @@ class M2EEConfig:
             sys.exit(1)
 
         # database_dump_path
-        if not 'database_dump_path' in self._conf['m2ee']:
+        if 'database_dump_path' not in self._conf['m2ee']:
             self._conf['m2ee']['database_dump_path'] = os.path.join(
                 self._conf['m2ee']['app_base'], 'data', 'database')
         if not os.path.isdir(self._conf['m2ee']['database_dump_path']):
@@ -313,7 +313,7 @@ class M2EEConfig:
             sys.exit(1)
 
         # model_upload_path
-        if not 'model_upload_path' in self._conf['m2ee']:
+        if 'model_upload_path' not in self._conf['m2ee']:
             self._conf['m2ee']['model_upload_path'] = os.path.join(
                 self._conf['m2ee']['app_base'], 'data', 'model-upload')
         if not os.path.isdir(self._conf['m2ee']['model_upload_path']):
