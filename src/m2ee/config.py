@@ -504,7 +504,9 @@ class M2EEConfig:
             env['M2EE_MONITORING_PASS'] = str(
                 self._conf['m2ee']['monitoring_pass'])
 
-        logger.trace("Environment to be used when starting the JVM: %s" % env)
+        logger.debug("Environment to be used when starting the JVM: %s" %
+                     ' '.join(["%s='%s'" % (k, v)
+                               for k, v in env.iteritems()]))
         return env
 
     def get_java_cmd(self):
@@ -540,7 +542,7 @@ class M2EEConfig:
             logger.critical("Unable to determine JVM startup parameters.")
             return None
 
-        logger.trace("Command line to be used when starting the JVM: %s" %
+        logger.debug("Command line to be used when starting the JVM: %s" %
                      ' '.join(cmd))
         return cmd
 

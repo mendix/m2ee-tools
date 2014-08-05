@@ -95,8 +95,8 @@ class M2EERunner:
             logger.error("The application process is already started!")
             return False
 
-        cmd = self._config.get_java_cmd()
         env = self._config.get_java_env()
+        cmd = self._config.get_java_cmd()
 
         try:
             logger.trace("[%s] Forking now..." % os.getpid())
