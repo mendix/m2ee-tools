@@ -379,7 +379,7 @@ class CLI(cmd.Cmd):
         stats.update(self.m2ee.client.server_statistics().get_feedback())
         pprint.pprint(stats)
 
-    def do_show_cache_statistics(self, args):
+    def do_show_cache_statistics_raw(self, args):
         if self._report_not_implemented(4) or self._report_not_running():
             return
         stats = self.m2ee.client.cache_statistics().get_feedback()
