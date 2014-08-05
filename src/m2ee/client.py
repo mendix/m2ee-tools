@@ -227,6 +227,9 @@ class M2EEClient:
     def get_debugger_status(self):
         return self.request("get_debugger_status")
 
+    def cache_statistics(self):
+        return self.request("cache_statistics")
+
 
 class M2EEResponse:
 
