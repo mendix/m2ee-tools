@@ -1,3 +1,14 @@
+m2ee-tools (0.5.10-1) unstable; urgency=low
+
+  * Warn about unused constant definitions when reloading config.
+  * Improve debug logging at start. Log the environment and command line which can
+    be copy/pasted to start the mendix runtime manually for debugging purposes
+    (without putting the process in the background).
+  * Add experimental command to show raw runtime cache statistics output.
+  * Small fixes and cosmetics
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Wed, 06 Aug 2014 21:49:34 +0200
+
 m2ee-tools (0.5.9-2) unstable; urgency=low
 
   * Include NEWS in the debian package
