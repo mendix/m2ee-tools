@@ -363,38 +363,27 @@ min_threads.info Minimum number of threads
 max_threads.label max threads
 max_threads.draw LINE1
 max_threads.info Maximum number of threads
-queue_size.label queue size
-queue_size.draw STACK
-queue_size.info Job queue size
-threadpool_size.label threadpool size
-threadpool_size.draw LINE2
-threadpool_size.info Current threadpool size
 active_threads.label active threads
 active_threads.draw LINE2
 active_threads.info Active thread count
-max_threads_and_queue.label max threads and queue
-max_threads_and_queue.draw LINE1
-max_threads_and_queue.info Maximum number of threads and queue size""" % name)
+threadpool_size.label threadpool size
+threadpool_size.draw LINE2
+threadpool_size.info Current threadpool size""" % name)
 
 
 def print_threadpool_values(name, stats):
     min_threads = stats['threadpool']['min_threads']
     max_threads = stats['threadpool']['max_threads']
-    #queue_size = stats['threadpool']['??']
     threadpool_size = stats['threadpool']['threads']
     idle_threads = stats['threadpool']['idle_threads']
-    max_queued = stats['threadpool']['max_queued']
 
     active_threads = threadpool_size - idle_threads
 
     print("min_threads.value %s" % min_threads)
     print("max_threads.value %s" % max_threads)
-    #print("queue_size.value %s" % queue_size)
-    print("threadpool_size.value %s" % threadpool_size)
     print("active_threads.value %s" % active_threads)
+    print("threadpool_size.value %s" % threadpool_size)
 
-    if max_queued != -1:
-        print("max_threads_and_queue %s" % max_threads + max_queued)
 
 config_funcs['threadpool'] = print_threadpool_config
 values_funcs['threadpool'] = print_threadpool_values
