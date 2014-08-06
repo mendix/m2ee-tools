@@ -504,9 +504,6 @@ class M2EEConfig:
             env['M2EE_MONITORING_PASS'] = str(
                 self._conf['m2ee']['monitoring_pass'])
 
-        logger.debug("Environment to be used when starting the JVM: %s" %
-                     ' '.join(["%s='%s'" % (k, v)
-                               for k, v in env.iteritems()]))
         return env
 
     def get_java_cmd(self):
@@ -515,12 +512,6 @@ class M2EEConfig:
         """
         cmd = []
         cmd.append(self._conf['m2ee'].get('javabin', 'java'))
-
-        if 'java' not in cmd:
-            logger.debug(
-                'Starting using custom configured binary: %s'
-                % ''.join(cmd)
-            )
 
         if 'javaopts' in self._conf['m2ee']:
             if isinstance(self._conf['m2ee']['javaopts'], list):
@@ -542,8 +533,6 @@ class M2EEConfig:
             logger.critical("Unable to determine JVM startup parameters.")
             return None
 
-        logger.debug("Command line to be used when starting the JVM: %s" %
-                     ' '.join(cmd))
         return cmd
 
     def _lookup_appcontainer_jar(self):
