@@ -1,3 +1,11 @@
+m2ee-tools 0.5.10, 6 Aug 2014
+  * Warn about unused constant definitions when reloading config.
+  * Improve debug logging at start. Log the environment and command line which can
+    be copy/pasted to start the mendix runtime manually for debugging purposes
+    (without putting the process in the background).
+  * Add experimental command to show raw runtime cache statistics output.
+  * Small fixes and cosmetics
+
 m2ee-tools 0.5.9, 14 Apr 2014
   * Add yolo mode (-y, --yolo) that automatically answers questions (see NEWS).
   * Add experimental munin plugin to graph the total amount of objects in the
