@@ -97,7 +97,7 @@ class M2EE():
         # check status, if it's created or starting, go on, else stop
         m2eeresponse = self.client.runtime_status()
         status = m2eeresponse.get_feedback()['status']
-        if not status in ['feut', 'created', 'starting']:
+        if status not in ['feut', 'created', 'starting']:
             logger.error("Cannot start MxRuntime when it has status %s" %
                          status)
             return False

@@ -88,11 +88,13 @@ class M2EEConfig:
 
         self._setup_classpath()
 
-        if self._runtime_path and not 'RuntimePath' in self._conf['mxruntime']:
+        if self._runtime_path and 'RuntimePath' not in self._conf['mxruntime']:
             runtimePath = os.path.join(self._runtime_path, 'runtime')
             logger.debug("Setting RuntimePath runtime config option to %s"
                          % runtimePath)
             self._conf['mxruntime']['RuntimePath'] = runtimePath
+
+        self._warn_constants()
 
     def _setup_classpath(self):
         logger.debug("Determining classpath to be used...")
@@ -280,7 +282,7 @@ class M2EEConfig:
             sys.exit(1)
 
         # database_dump_path
-        if not 'database_dump_path' in self._conf['m2ee']:
+        if 'database_dump_path' not in self._conf['m2ee']:
             self._conf['m2ee']['database_dump_path'] = os.path.join(
                 self._conf['m2ee']['app_base'], 'data', 'database')
         if not os.path.isdir(self._conf['m2ee']['database_dump_path']):
@@ -313,7 +315,7 @@ class M2EEConfig:
             sys.exit(1)
 
         # model_upload_path
-        if not 'model_upload_path' in self._conf['m2ee']:
+        if 'model_upload_path' not in self._conf['m2ee']:
             self._conf['m2ee']['model_upload_path'] = os.path.join(
                 self._conf['m2ee']['app_base'], 'data', 'model-upload')
         if not os.path.isdir(self._conf['m2ee']['model_upload_path']):
@@ -502,7 +504,6 @@ class M2EEConfig:
             env['M2EE_MONITORING_PASS'] = str(
                 self._conf['m2ee']['monitoring_pass'])
 
-        logger.trace("Environment to be used when starting the JVM: %s" % env)
         return env
 
     def get_java_cmd(self):
@@ -511,12 +512,6 @@ class M2EEConfig:
         """
         cmd = []
         cmd.append(self._conf['m2ee'].get('javabin', 'java'))
-
-        if 'java' not in cmd:
-            logger.info(
-                'Starting using custom configured binary: %s'
-                % ''.join(cmd)
-            )
 
         if 'javaopts' in self._conf['m2ee']:
             if isinstance(self._conf['m2ee']['javaopts'], list):
@@ -538,8 +533,6 @@ class M2EEConfig:
             logger.critical("Unable to determine JVM startup parameters.")
             return None
 
-        logger.trace("Command line to be used when starting the JVM: %s" %
-                     ' '.join(cmd))
         return cmd
 
     def _lookup_appcontainer_jar(self):
@@ -707,7 +700,7 @@ class M2EEConfig:
         if self.runtime_version // 2.5:
             return "com.mendix.m2ee.server.M2EE"
         if self.runtime_version // 3 or self.runtime_version // 4:
-            if self._appcontainer_version:
+            if self.use_hybrid_appcontainer():
                 return "com.mendix.m2ee.AppContainer"
             return "com.mendix.m2ee.server.HttpAdminAppContainer"
         if self.runtime_version // 5:
@@ -863,6 +856,31 @@ class M2EEConfig:
 
     def has_database_password(self):
         return 'DatabasePassword' in self._conf['mxruntime']
+
+    def _warn_constants(self):
+        if 'Constants' not in self._model_metadata:
+            return
+        if 'MicroflowConstants' not in self._conf['mxruntime']:
+            return
+
+        model_constants = [
+            constant['Name']
+            for constant
+            in self._model_metadata['Constants']
+        ]
+        yaml_constants = self._conf['mxruntime']['MicroflowConstants'].keys()
+
+        missing = [m for m in model_constants if m not in yaml_constants]
+        if missing:
+            logger.warn('Constants not defined:')
+            for constant in missing:
+                logger.warn('- %s' % constant)
+
+        obsolete = [m for m in yaml_constants if m not in model_constants]
+        if obsolete:
+            logger.info('Constants defined but not needed by application:')
+            for constant in obsolete:
+                logger.info('- %s' % constant)
 
 
 def find_yaml_files():
