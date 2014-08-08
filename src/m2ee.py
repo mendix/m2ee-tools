@@ -41,8 +41,8 @@ class CLI(cmd.Cmd):
             self.m2ee = M2EE()
         self.yolo_mode = yolo_mode
         self.do_status(None)
-        username = pwd.getpwuid(os.getuid())[0]
-        self._default_prompt = "m2ee(%s): " % username
+        self.prompt_username = pwd.getpwuid(os.getuid())[0]
+        self._default_prompt = "m2ee(%s): " % self.prompt_username
         self.prompt = self._default_prompt
         logger.info("Application Name: %s" % self.m2ee.config.get_app_name())
 
@@ -386,20 +386,17 @@ class CLI(cmd.Cmd):
         pprint.pprint(stats)
 
     def do_munin_config(self, args):
-        m2ee.munin.print_all(
+        m2ee.munin.print_config(
             self.m2ee.client,
             self.m2ee.config,
-            self.m2ee.config.get_munin_options(),
-            args,
-            print_config=True
+            self.prompt_username,
         )
 
     def do_munin_values(self, args):
-        m2ee.munin.print_all(
+        m2ee.munin.print_values(
             self.m2ee.client,
             self.m2ee.config,
-            self.m2ee.config.get_munin_options(),
-            args
+            self.prompt_username,
         )
 
     def do_nagios(self, args):
