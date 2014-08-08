@@ -98,6 +98,7 @@ def print_config(client, config, name):
     print_jvmheap_config(name, stats)
     print_threadpool_config(name, stats)
     print_cache_config(name, stats)
+    print_jvm_threads_config(name, stats)
 
 
 def print_values(client, config, name):
@@ -112,6 +113,7 @@ def print_values(client, config, name):
     print_jvmheap_values(name, stats)
     print_threadpool_values(name, stats)
     print_cache_values(name, stats)
+    print_jvm_threads_values(name, stats)
 
 
 def get_stats(action, client, config):
@@ -125,7 +127,7 @@ def get_stats(action, client, config):
     # TODO: even better error/exception handling
     stats = None
     try:
-        stats = get_stats_from_runtime(client)
+        stats = get_stats_from_runtime(client, config)
         write_last_known_good_stats_cache(stats, config_cache)
     except Exception, e:
         if action == 'config':
@@ -140,7 +142,7 @@ def get_stats(action, client, config):
     return stats
 
 
-def get_stats_from_runtime(client):
+def get_stats_from_runtime(client, config):
     stats = {}
     logger.debug("trying to fetch runtime/server statistics")
     m2eeresponse = client.runtime_statistics()
@@ -155,6 +157,13 @@ def get_stats_from_runtime(client):
         for x in stats['requests']:
             bork[x['name']] = x['value']
         stats['requests'] = bork
+
+    runtime_version = config.get_runtime_version()
+    if runtime_version is not None and runtime_version >= 3.2:
+        m2eeresponse = client.get_all_thread_stack_traces()
+        if not m2eeresponse.has_error():
+            stats['threads'] = len(m2eeresponse.get_feedback())
+
     return stats
 
 
@@ -430,4 +439,27 @@ def print_cache_values(name, stats):
         return
     print("multigraph mxruntime_cache_%s" % name)
     print("total.value %s" % stats['cache']['total_count'])
+    print("")
+
+
+def print_jvm_threads_config(name, stats):
+    if "threads" not in stats:
+        return
+    print("multigraph mxruntime_threads_%s" % name)
+    print("""graph_args --base 1000 -l 0
+graph_vlabel objects
+graph_title %s - JVM Threads
+graph_category Mendix
+graph_info This graph shows the total amount of threads in the JVM process
+total.label threads
+total.draw LINE1
+total.info Total amount of threads in the JVM process""" % name)
+    print("")
+
+
+def print_jvm_threads_values(name, stats):
+    if "threads" not in stats:
+        return
+    print("multigraph mxruntime_threads_%s" % name)
+    print("total.value %s" % stats['threads'])
     print("")
