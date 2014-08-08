@@ -194,24 +194,22 @@ def read_stats_from_last_known_good_stats_cache(config_cache):
 
 def print_requests_config(name, stats):
     print("multigraph mxruntime_requests_%s" % name)
-    print("""graph_args --base 1000 -l 0
-graph_vlabel Requests per second
-graph_title %s - MxRuntime Requests
-graph_category Mendix
-graph_info This graph shows the amount of requests this MxRuntime handles""" %
-          name)
+    print("graph_args --base 1000 -l 0")
+    print("graph_vlabel Requests per second")
+    print("graph_title %s - MxRuntime Requests" % name)
+    print("graph_category Mendix")
+    print("graph_info This graph shows the amount of requests this MxRuntime handles")
     for sub in stats['requests'].iterkeys():
         substrip = '_' + string.strip(sub, '/').replace('-', '_')
         if sub != '':
             subname = sub
         else:
             subname = '/'
-        print("""%s.label %s
-%s.draw LINE1
-%s.info amount of requests this MxRuntime handles on %s
-%s.type DERIVE
-%s.min 0""" % (substrip, subname, substrip, substrip, subname, substrip,
-               substrip))
+        print("%s.label %s" % (substrip, subname))
+        print("%s.draw LINE1" % substrip)
+        print("%s.info amount of requests this MxRuntime handles on %s" % (substrip, subname))
+        print("%s.type DERIVE" % substrip)
+        print("%s.min 0" % substrip)
     print("")
 
 
@@ -227,18 +225,17 @@ def print_connectionbus_config(name, stats):
     if 'connectionbus' not in stats:
         return
     print("multigraph mxruntime_connectionbus_%s" % name)
-    print("""graph_args --base 1000 -l 0
-graph_vlabel Statements per second
-graph_title %s - Database Queries
-graph_category Mendix
-graph_info This graph shows the amount of executed transactions and queries"""
-          % name)
+    print("graph_args --base 1000 -l 0")
+    print("graph_vlabel Statements per second")
+    print("graph_title %s - Database Queries" % name)
+    print("graph_category Mendix")
+    print("graph_info This graph shows the amount of executed transactions and queries")
     for s in stats['connectionbus'].iterkeys():
-        print("""%s.label %ss
-%s.draw LINE1
-%s.info amount of %ss
-%s.type DERIVE
-%s.min 0""" % (s, s, s, s, s, s, s))
+        print("%s.label %ss" % (s, s))
+        print("%s.draw LINE1" % s)
+        print("%s.info amount of %ss" % (s, s))
+        print("%s.type DERIVE" % s)
+        print("%s.min 0" % s)
     print("")
 
 
@@ -272,14 +269,14 @@ def print_sessions_pre254_config(name, stats):
     !! you stil need to rename the rrd files in /var/lib/munin/ !!
     """
     print("multigraph mxruntime_sessions_%s" % name)
-    print("""graph_args --base 1000 -l 0
-graph_vlabel Concurrent user sessions
-graph_title %s - MxRuntime Users
-graph_category Mendix
-graph_info This graph shows the amount of concurrent user sessions
-named_user_sessions.label concurrent user sessions
-named_user_sessions.draw LINE1
-named_user_sessions.info amount of concurrent user sessions""" % name)
+    print("graph_args --base 1000 -l 0")
+    print("graph_vlabel Concurrent user sessions")
+    print("graph_title %s - MxRuntime Users" % name)
+    print("graph_category Mendix")
+    print("graph_info This graph shows the amount of concurrent user sessions")
+    print("named_user_sessions.label concurrent user sessions")
+    print("named_user_sessions.draw LINE1")
+    print("named_user_sessions.info amount of concurrent user sessions")
     print("")
 
 
@@ -291,21 +288,21 @@ def print_sessions_pre254_values(name, stats):
 
 def print_sessions_since254_config(name, stats, graph_total_named_users):
     print("multigraph mxruntime_sessions_%s" % name)
-    print("""graph_args --base 1000 -l 0
-graph_vlabel Concurrent user sessions
-graph_title %s - MxRuntime Users
-graph_category Mendix
-graph_info This graph shows the amount of user accounts and sessions""" % name)
+    print("graph_args --base 1000 -l 0")
+    print("graph_vlabel Concurrent user sessions")
+    print("graph_title %s - MxRuntime Users" % name)
+    print("graph_category Mendix")
+    print("graph_info This graph shows the amount of user accounts and sessions")
     if graph_total_named_users:
-        print("""named_users.label named users
-named_users.draw LINE1
-named_users.info total amount of named users in the application""")
-    print("""named_user_sessions.label concurrent named user sessions
-named_user_sessions.draw LINE1
-named_user_sessions.info amount of concurrent named user sessions
-anonymous_sessions.label concurrent anonymous user sessions
-anonymous_sessions.draw LINE1
-anonymous_sessions.info amount of concurrent anonymous user sessions""")
+        print("named_users.label named users")
+        print("named_users.draw LINE1")
+        print("named_users.info total amount of named users in the application")
+    print("named_user_sessions.label concurrent named user sessions")
+    print("named_user_sessions.draw LINE1")
+    print("named_user_sessions.info amount of concurrent named user sessions")
+    print("anonymous_sessions.label concurrent anonymous user sessions")
+    print("anonymous_sessions.draw LINE1")
+    print("anonymous_sessions.info amount of concurrent anonymous user sessions")
     print("")
 
 
@@ -322,36 +319,35 @@ def print_sessions_since254_values(name, stats, graph_total_named_users):
 
 def print_jvmheap_config(name, stats):
     print("multigraph mxruntime_jvmheap_%s" % name)
-    print("""graph_args --base 1024 -l 0
-graph_vlabel Bytes
-graph_title %s - JVM Memory Usage
-graph_category Mendix
-graph_info This graph shows memory pool information on the Java JVM
-permanent.label permanent generation
-permanent.draw AREA
-permanent.info Non-heap memory used to store bytecode versions of classes
-code.label code cache
-code.draw STACK
-code.info Non-heap memory used for compilation and storage of native code
-tenured.label tenured generation
-tenured.draw STACK
-tenured.info Old generation of the heap that holds long living objects
-survivor.label survivor space
-survivor.draw STACK
-survivor.info Survivor Space of the Young Generation
-eden.label eden space
-eden.draw STACK
-eden.info Objects are created in Eden
-free.label unused
-free.draw STACK
-free.info Unused memory allocated for use by this JVM
-committed.label allocated memory
-committed.draw LINE1
-committed.info Allocated size of memory for all memory pools
-max.label max memory
-max.draw LINE1
-max.info Total maximum size of memory that could be allocated for this JVM""" %
-          name)
+    print("graph_args --base 1024 -l 0")
+    print("graph_vlabel Bytes")
+    print("graph_title %s - JVM Memory Usage" % name)
+    print("graph_category Mendix")
+    print("graph_info This graph shows memory pool information on the Java JVM")
+    print("permanent.label permanent generation")
+    print("permanent.draw AREA")
+    print("permanent.info Non-heap memory used to store bytecode versions of classes")
+    print("code.label code cache")
+    print("code.draw STACK")
+    print("code.info Non-heap memory used for compilation and storage of native code")
+    print("tenured.label tenured generation")
+    print("tenured.draw STACK")
+    print("tenured.info Old generation of the heap that holds long living objects")
+    print("survivor.label survivor space")
+    print("survivor.draw STACK")
+    print("survivor.info Survivor Space of the Young Generation")
+    print("eden.label eden space")
+    print("eden.draw STACK")
+    print("eden.info Objects are created in Eden")
+    print("free.label unused")
+    print("free.draw STACK")
+    print("free.info Unused memory allocated for use by this JVM")
+    print("committed.label allocated memory")
+    print("committed.draw LINE1")
+    print("committed.info Allocated size of memory for all memory pools")
+    print("max.label max memory")
+    print("max.draw LINE1")
+    print("max.info Total maximum size of memory that could be allocated for this JVM")
     print("")
 
 
@@ -381,23 +377,23 @@ def print_threadpool_config(name, stats):
     if "threadpool" not in stats:
         return
     print("multigraph m2eeserver_threadpool_%s" % name)
-    print("""graph_args --base 1000 -l 0
-graph_vlabel Jetty Threadpool
-graph_title %s - Jetty Threadpool
-graph_category Mendix
-graph_info This graph shows threadpool usage information on Jetty
-min_threads.label min threads
-min_threads.draw LINE1
-min_threads.info Minimum number of threads
-max_threads.label max threads
-max_threads.draw LINE1
-max_threads.info Maximum number of threads
-active_threads.label active threads
-active_threads.draw LINE1
-active_threads.info Active thread count
-threadpool_size.label threadpool size
-threadpool_size.draw LINE1
-threadpool_size.info Current threadpool size""" % name)
+    print("graph_args --base 1000 -l 0")
+    print("graph_vlabel Jetty Threadpool")
+    print("graph_title %s - Jetty Threadpool" % name)
+    print("graph_category Mendix")
+    print("graph_info This graph shows threadpool usage information on Jetty")
+    print("min_threads.label min threads")
+    print("min_threads.draw LINE1")
+    print("min_threads.info Minimum number of threads")
+    print("max_threads.label max threads")
+    print("max_threads.draw LINE1")
+    print("max_threads.info Maximum number of threads")
+    print("active_threads.label active threads")
+    print("active_threads.draw LINE1")
+    print("active_threads.info Active thread count")
+    print("threadpool_size.label threadpool size")
+    print("threadpool_size.draw LINE1")
+    print("threadpool_size.info Current threadpool size")
     print("")
 
 
@@ -423,14 +419,14 @@ def print_cache_config(name, stats):
     if "cache" not in stats:
         return
     print("multigraph mxruntime_cache_%s" % name)
-    print("""graph_args --base 1000 -l 0
-graph_vlabel objects
-graph_title %s - Object Cache
-graph_category Mendix
-graph_info This graph shows the total amount of objects in the runtime object cache
-total.label Objects in cache
-total.draw LINE1
-total.info Total amount of objects""" % name)
+    print("graph_args --base 1000 -l 0")
+    print("graph_vlabel objects")
+    print("graph_title %s - Object Cache" % name)
+    print("graph_category Mendix")
+    print("graph_info This graph shows the total amount of objects in the runtime object cache")
+    print("total.label Objects in cache")
+    print("total.draw LINE1")
+    print("total.info Total amount of objects")
     print("")
 
 
@@ -446,14 +442,14 @@ def print_jvm_threads_config(name, stats):
     if "threads" not in stats:
         return
     print("multigraph mxruntime_threads_%s" % name)
-    print("""graph_args --base 1000 -l 0
-graph_vlabel objects
-graph_title %s - JVM Threads
-graph_category Mendix
-graph_info This graph shows the total amount of threads in the JVM process
-total.label threads
-total.draw LINE1
-total.info Total amount of threads in the JVM process""" % name)
+    print("graph_args --base 1000 -l 0")
+    print("graph_vlabel objects")
+    print("graph_title %s - JVM Threads" % name)
+    print("graph_category Mendix")
+    print("graph_info This graph shows the total amount of threads in the JVM process")
+    print("total.label threads")
+    print("total.draw LINE1")
+    print("total.info Total amount of threads in the JVM process")
     print("")
 
 
