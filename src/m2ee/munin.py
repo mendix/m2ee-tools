@@ -125,47 +125,61 @@ def get_stats(action, client, config):
     # TODO: even better error/exception handling
     stats = None
     try:
-        stats = {}
-        logger.debug("trying to fetch runtime/server statistics")
-        m2eeresponse = client.runtime_statistics()
-        if not m2eeresponse.has_error():
-            stats.update(m2eeresponse.get_feedback())
-        m2eeresponse = client.server_statistics()
-        if not m2eeresponse.has_error():
-            stats.update(m2eeresponse.get_feedback())
-        if type(stats['requests']) == list:
-            # convert back to normal, whraagh
-            bork = {}
-            for x in stats['requests']:
-                bork[x['name']] = x['value']
-            stats['requests'] = bork
-        # write last-known-good stats to cache
-        try:
-            file(config_cache, 'w+').write(json.dumps(stats))
-        except Exception, e:
-            logger.error("Error writing munin config cache to %s: %s",
-                         (config_cache, e))
+        stats = get_stats_from_runtime(client)
+        write_last_known_good_stats_cache(stats, config_cache)
     except Exception, e:
-        # assume something bad happened, like
-        # socket.error: [Errno 111] Connection refused
-        logger.error("Error fetching runtime/server statstics: %s", e)
         if action == 'config':
-            logger.debug("Loading munin cache from %s" % config_cache)
-            try:
-                fd = open(config_cache)
-                stats = json.loads(fd.read())
-                fd.close()
-            except IOError, e:
-                logger.error("Error reading munin cache file %s: %s" %
-                             (config_cache, e))
-                stats = default_stats
-            except ValueError, e:
-                logger.error("Error parsing munin cache file %s: %s" %
-                             (config_cache, e))
+            logger.debug("Error fetching runtime/server statstics: %s", e)
+            stats = read_stats_from_last_known_good_stats_cache(config_cache)
+            if stats is None:
                 stats = default_stats
         else:
-            return None
+            # assume something bad happened, like
+            # socket.error: [Errno 111] Connection refused
+            logger.error("Error fetching runtime/server statstics: %s", e)
+    return stats
 
+
+def get_stats_from_runtime(client):
+    stats = {}
+    logger.debug("trying to fetch runtime/server statistics")
+    m2eeresponse = client.runtime_statistics()
+    if not m2eeresponse.has_error():
+        stats.update(m2eeresponse.get_feedback())
+    m2eeresponse = client.server_statistics()
+    if not m2eeresponse.has_error():
+        stats.update(m2eeresponse.get_feedback())
+    if type(stats['requests']) == list:
+        # convert back to normal, whraagh
+        bork = {}
+        for x in stats['requests']:
+            bork[x['name']] = x['value']
+        stats['requests'] = bork
+    return stats
+
+
+def write_last_known_good_stats_cache(stats, config_cache):
+    logger.debug("Writing munin cache to %s" % config_cache)
+    try:
+        file(config_cache, 'w+').write(json.dumps(stats))
+    except Exception, e:
+        logger.error("Error writing munin config cache to %s: %s",
+                     (config_cache, e))
+
+
+def read_stats_from_last_known_good_stats_cache(config_cache):
+    stats = None
+    logger.debug("Loading munin cache from %s" % config_cache)
+    try:
+        fd = open(config_cache)
+        stats = json.loads(fd.read())
+        fd.close()
+    except IOError, e:
+        logger.error("Error reading munin cache file %s: %s" %
+                     (config_cache, e))
+    except ValueError, e:
+        logger.error("Error parsing munin cache file %s: %s" %
+                     (config_cache, e))
     return stats
 
 
