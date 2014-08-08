@@ -203,7 +203,7 @@ graph_info This graph shows the amount of requests this MxRuntime handles""" %
         else:
             subname = '/'
         print("""%s.label %s
-%s.draw LINE2
+%s.draw LINE1
 %s.info amount of requests this MxRuntime handles on %s
 %s.type DERIVE
 %s.min 0""" % (substrip, subname, substrip, substrip, subname, substrip,
@@ -228,7 +228,7 @@ graph_info This graph shows the amount of executed transactions and queries"""
           % name)
     for s in stats['connectionbus'].iterkeys():
         print("""%s.label %ss
-%s.draw LINE2
+%s.draw LINE1
 %s.info amount of %ss
 %s.type DERIVE
 %s.min 0""" % (s, s, s, s, s, s, s))
@@ -254,7 +254,7 @@ graph_title %s - MxRuntime Users
 graph_category Mendix
 graph_info This graph shows the amount of concurrent user sessions
 named_user_sessions.label concurrent user sessions
-named_user_sessions.draw LINE2
+named_user_sessions.draw LINE1
 named_user_sessions.info amount of concurrent user sessions""" % name)
 
 
@@ -276,10 +276,10 @@ graph_info This graph shows the amount of user accounts and sessions""" % name)
 named_users.draw LINE1
 named_users.info total amount of named users in the application""")
     print("""named_user_sessions.label concurrent named user sessions
-named_user_sessions.draw LINE2
+named_user_sessions.draw LINE1
 named_user_sessions.info amount of concurrent named user sessions
 anonymous_sessions.label concurrent anonymous user sessions
-anonymous_sessions.draw LINE2
+anonymous_sessions.draw LINE1
 anonymous_sessions.info amount of concurrent anonymous user sessions""")
 
 
@@ -320,7 +320,7 @@ free.label unused
 free.draw STACK
 free.info Unused memory allocated for use by this JVM
 committed.label allocated memory
-committed.draw LINE2
+committed.draw LINE1
 committed.info Allocated size of memory for all memory pools
 max.label max memory
 max.draw LINE1
@@ -364,10 +364,10 @@ max_threads.label max threads
 max_threads.draw LINE1
 max_threads.info Maximum number of threads
 active_threads.label active threads
-active_threads.draw LINE2
+active_threads.draw LINE1
 active_threads.info Active thread count
 threadpool_size.label threadpool size
-threadpool_size.draw LINE2
+threadpool_size.draw LINE1
 threadpool_size.info Current threadpool size""" % name)
 
 
