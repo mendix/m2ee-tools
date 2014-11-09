@@ -341,35 +341,17 @@ def print_jvmheap_config(name, stats):
     print("eden.info Objects are created in Eden")
     print("free.label unused")
     print("free.draw STACK")
-    print("free.info Unused memory allocated for use by this JVM")
-    print("committed.label allocated memory")
-    print("committed.draw LINE1")
-    print("committed.info Allocated size of memory for all memory pools")
-    print("max.label max memory")
-    print("max.draw LINE1")
-    print("max.info Total maximum size of memory that could be allocated for this JVM")
+    print("free.info Unused memory reserved for use by the JVM heap")
     print("")
 
 
 def print_jvmheap_values(name, stats):
     print("multigraph mxruntime_jvmheap_%s" % name)
     memory = stats['memory']
-    used = 0
     for k in ['permanent', 'code', 'tenured', 'survivor', 'eden']:
-        used = used + memory[k]
         print('%s.value %s' % (k, memory[k]))
-
-    committed = 0
-    free = 0
-    maxx = 0
-
-    committed = memory['committed_nonheap'] + memory['committed_heap']
-    free = committed - used
-    maxx = memory['max_nonheap'] + memory['max_heap']
-
+    free = (memory['committed_heap'] - memory['used_heap'])
     print("free.value %s" % free)
-    print("committed.value %s" % committed)
-    print("max.value %s" % maxx)
     print("")
 
 
