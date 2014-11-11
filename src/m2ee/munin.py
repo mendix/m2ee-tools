@@ -9,6 +9,7 @@ import os
 import string
 
 from m2ee.log import logger
+import smaps
 
 # Use json if available. If not (python 2.5) we need to import the simplejson
 # module instead, which has to be available.
@@ -86,11 +87,11 @@ default_stats = {
 }
 
 
-def print_config(client, config, name):
-    stats = get_stats('config', client, config)
+def print_config(m2ee, name):
+    stats = get_stats('config', m2ee.client, m2ee.config)
     if stats is None:
         return
-    options = config.get_munin_options()
+    options = m2ee.config.get_munin_options()
 
     print_requests_config(name, stats)
     print_connectionbus_config(name, stats)
@@ -99,13 +100,14 @@ def print_config(client, config, name):
     print_threadpool_config(name, stats)
     print_cache_config(name, stats)
     print_jvm_threads_config(name, stats)
+    print_jvm_process_memory_config(name, m2ee.runner.get_pid())
 
 
-def print_values(client, config, name):
-    stats = get_stats('values', client, config)
+def print_values(m2ee, name):
+    stats = get_stats('values', m2ee.client, m2ee.config)
     if stats is None:
         return
-    options = config.get_munin_options()
+    options = m2ee.config.get_munin_options()
 
     print_requests_values(name, stats)
     print_connectionbus_values(name, stats)
@@ -114,6 +116,7 @@ def print_values(client, config, name):
     print_threadpool_values(name, stats)
     print_cache_values(name, stats)
     print_jvm_threads_values(name, stats)
+    print_jvm_process_memory_values(name, stats, m2ee.runner.get_pid())
 
 
 def get_stats(action, client, config):
@@ -321,7 +324,7 @@ def print_jvmheap_config(name, stats):
     print("multigraph mxruntime_jvmheap_%s" % name)
     print("graph_args --base 1024 -l 0")
     print("graph_vlabel Bytes")
-    print("graph_title %s - JVM Memory Usage" % name)
+    print("graph_title %s - JVM Heap Memory Usage" % name)
     print("graph_category Mendix")
     print("graph_info This graph shows memory pool information on the Java JVM")
     print("permanent.label permanent generation")
@@ -440,4 +443,48 @@ def print_jvm_threads_values(name, stats):
         return
     print("multigraph mxruntime_threads_%s" % name)
     print("total.value %s" % stats['threads'])
+    print("")
+
+
+def print_jvm_process_memory_config(name, pid):
+    if not smaps.has_smaps(pid):
+        return
+    print("multigraph mxruntime_jvm_process_memory_%s" % name)
+    print("graph_args --base 1024 -l 0")
+    print("graph_vlabel Bytes")
+    print("graph_title %s - JVM Process Memory Usage" % name)
+    print("graph_category Mendix")
+    print("graph_info This graph shows the total memory usage of the Java JVM process")
+    print("nativecode.label native code")
+    print("nativecode.draw AREA")
+    print("nativecode.info Native program code, e.g. the java binary itself")
+    print("jar.label jar files")
+    print("jar.draw STACK")
+    print("jar.info JAR file contents loaded into memory")
+    print("javaheap.label java heap")
+    print("javaheap.draw STACK")
+    print("javaheap.info Java Heap")
+    print("nativemem.label native memory")
+    print("nativemem.draw STACK")
+    print("nativemem.info Native heap and memory arenas")
+    print("stacks.label thread stacks")
+    print("stacks.draw STACK")
+    print("stacks.info Thread stacks")
+    print("other.label other")
+    print("other.draw STACK")
+    print("other.info Other, unknown, undetermined memory usage")
+    print("")
+
+
+def print_jvm_process_memory_values(name, stats, pid):
+    totals = smaps.get_smaps_rss_by_category(pid, stats['memory']['committed_heap']/1024)
+    if totals is None:
+        return
+    print("multigraph mxruntime_jvm_process_memory_%s" % name)
+    print("nativecode.value %s" % (totals[smaps.CATEGORY_CODE] * 1024))
+    print("jar.value %s" % (totals[smaps.CATEGORY_JAR] * 1024))
+    print("javaheap.value %s" % (totals[smaps.CATEGORY_JVM_HEAP] * 1024))
+    print("nativemem.value %s" % (totals[smaps.CATEGORY_NATIVE_HEAP_ARENA] * 1024))
+    print("stacks.value %s" % (totals[smaps.CATEGORY_THREAD_STACK] * 1024))
+    print("other.value %s" % (totals[smaps.CATEGORY_OTHER] * 1024))
     print("")

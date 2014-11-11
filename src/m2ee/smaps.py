@@ -55,22 +55,31 @@ class Smap:
                  self.rss, self.swap, self.inode, self.descr))
 
 
+def has_smaps(pid):
+    return _load_proc_smaps_lines(pid) is not None
+
+
 def get_smaps_rss_by_category(pid, committed_heap):
-    smaps = _load_smaps(pid)
+    lines = _load_proc_smaps_lines(pid)
+    if lines is None:
+        return None
+    smaps = _parse_lines_to_smaps(lines)
     smaps = _educated_guess_category(smaps, committed_heap)
     return _get_rss_by_category(smaps)
 
 
-def _load_smaps(pid):
+def _load_proc_smaps_lines(pid):
     try:
         lines = open('/proc/%s/smaps' % pid).readlines()
     except EnvironmentError:
-        return False
+        return None
+    return [line.strip() for line in lines]
 
+
+def _parse_lines_to_smaps(lines):
     smaps = []
     smap = None
     for line in lines:
-        line = line.strip()
         if not line.split()[0].endswith(':'):
             smap = Smap()
             smaps.append(smap)
@@ -147,11 +156,7 @@ def _get_rss_by_category(smaps):
 if __name__ == "__main__":
     pid = int(sys.argv[1])
     committed_heap = int(sys.argv[2])
-    smaps = _load_smaps(pid)
-    smaps = _educated_guess_category(smaps, committed_heap)
-    for smap in smaps:
-        print(smap)
-    totals = _get_rss_by_category(smaps)
+    totals = get_smaps_rss_by_category(pid, committed_heap)
 
     print('Native code: %s kB' % totals[CATEGORY_CODE])
     print('Native heap and memory arenas: %s kB' % totals[CATEGORY_NATIVE_HEAP_ARENA])

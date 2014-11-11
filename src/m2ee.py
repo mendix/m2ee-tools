@@ -399,15 +399,13 @@ class CLI(cmd.Cmd):
 
     def do_munin_config(self, args):
         m2ee.munin.print_config(
-            self.m2ee.client,
-            self.m2ee.config,
+            self.m2ee,
             self.prompt_username,
         )
 
     def do_munin_values(self, args):
         m2ee.munin.print_values(
-            self.m2ee.client,
-            self.m2ee.config,
+            self.m2ee,
             self.prompt_username,
         )
 
