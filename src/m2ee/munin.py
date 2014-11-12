@@ -473,6 +473,9 @@ def print_jvm_process_memory_config(name, pid):
     print("other.label other")
     print("other.draw STACK")
     print("other.info Other, unknown, undetermined memory usage")
+    print("total.label total")
+    print("total.draw LINE1")
+    print("total.info Total memory usage")
     print("")
 
 
@@ -487,4 +490,5 @@ def print_jvm_process_memory_values(name, stats, pid):
     print("nativemem.value %s" % (totals[smaps.CATEGORY_NATIVE_HEAP_ARENA] * 1024))
     print("stacks.value %s" % (totals[smaps.CATEGORY_THREAD_STACK] * 1024))
     print("other.value %s" % (totals[smaps.CATEGORY_OTHER] * 1024))
+    print("total.value %s" % (sum(totals.values()) * 1024))
     print("")
