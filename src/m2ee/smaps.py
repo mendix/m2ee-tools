@@ -110,6 +110,13 @@ def _educated_guess_category(smaps, committed_heap):
               smap.descr is not None and
               smap.descr.startswith('[stack')):
             smap.category = CATEGORY_THREAD_STACK
+        elif (not found_heap and
+              smap.flags.startswith('rw') and
+              smap.inode == 0 and
+              smap.size > committed_heap * 0.9 and
+              smap.size < committed_heap * 1.1):
+            smap.category = CATEGORY_JVM_HEAP
+            found_heap = True
         elif (i+1 < len(smaps) and
               smap.vm_end == smaps[i+1].vm_start and
               smap.rss != 0 and smaps[i+1].rss == 0 and
@@ -125,13 +132,6 @@ def _educated_guess_category(smaps, committed_heap):
               smaps[i-1].inode == 0 and
               smap.size + smaps[i-1].size == 1028):
             smap.category = CATEGORY_THREAD_STACK
-        elif (not found_heap and
-              smap.flags.startswith('rw') and
-              smap.inode == 0 and
-              smap.size > committed_heap * 0.95 and
-              smap.size < committed_heap * 1.05):
-            smap.category = CATEGORY_JVM_HEAP
-            found_heap = True
         elif (smap.flags.startswith('---') and
               smap.rss == 0):
             smap.category = CATEGORY_NONE
