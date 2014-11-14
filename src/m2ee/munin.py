@@ -353,7 +353,7 @@ def print_jvmheap_values(name, stats):
     memory = stats['memory']
     for k in ['permanent', 'code', 'tenured', 'survivor', 'eden']:
         print('%s.value %s' % (k, memory[k]))
-    free = (memory['committed_heap'] - memory['used_heap'])
+    free = (memory['max_heap'] - memory['used_heap'])
     print("free.value %s" % free)
     print("")
 
