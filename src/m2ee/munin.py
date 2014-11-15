@@ -100,7 +100,7 @@ def print_config(m2ee, name):
     print_threadpool_config(name, stats)
     print_cache_config(name, stats)
     print_jvm_threads_config(name, stats)
-    print_jvm_process_memory_config(name, m2ee.runner.get_pid())
+    print_jvm_process_memory_config(name)
 
 
 def print_values(m2ee, name):
@@ -444,8 +444,8 @@ def print_jvm_threads_values(name, stats):
     print("")
 
 
-def print_jvm_process_memory_config(name, pid):
-    if not smaps.has_smaps(pid):
+def print_jvm_process_memory_config(name):
+    if not smaps.has_smaps('self'):
         return
     print("multigraph mxruntime_jvm_process_memory_%s" % name)
     print("graph_args --base 1024 -l 0")
@@ -478,6 +478,8 @@ def print_jvm_process_memory_config(name, pid):
 
 
 def print_jvm_process_memory_values(name, stats, pid):
+    if pid is None:
+        return
     totals = smaps.get_smaps_rss_by_category(pid, stats['memory']['committed_heap']/1024)
     if totals is None:
         return
