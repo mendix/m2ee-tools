@@ -327,31 +327,29 @@ def print_jvmheap_config(name, stats):
     print("graph_title %s - JVM Heap Memory Usage" % name)
     print("graph_category Mendix")
     print("graph_info This graph shows memory pool information on the Java JVM")
-    print("permanent.label permanent generation")
-    print("permanent.draw AREA")
-    print("permanent.info Non-heap memory used to store bytecode versions of classes")
-    print("code.label code cache")
-    print("code.draw STACK")
-    print("code.info Non-heap memory used for compilation and storage of native code")
     print("tenured.label tenured generation")
-    print("tenured.draw STACK")
+    print("tenured.draw AREA")
     print("tenured.info Old generation of the heap that holds long living objects")
+    print("tenured.colour COLOUR2")
     print("survivor.label survivor space")
     print("survivor.draw STACK")
     print("survivor.info Survivor Space of the Young Generation")
+    print("survivor.colour COLOUR3")
     print("eden.label eden space")
     print("eden.draw STACK")
     print("eden.info Objects are created in Eden")
+    print("eden.colour COLOUR4")
     print("free.label unused")
     print("free.draw STACK")
     print("free.info Unused memory reserved for use by the JVM heap")
+    print("free.colour COLOUR5")
     print("")
 
 
 def print_jvmheap_values(name, stats):
     print("multigraph mxruntime_jvmheap_%s" % name)
     memory = stats['memory']
-    for k in ['permanent', 'code', 'tenured', 'survivor', 'eden']:
+    for k in ['tenured', 'survivor', 'eden']:
         print('%s.value %s' % (k, memory[k]))
     free = (memory['max_heap'] - memory['used_heap'])
     print("free.value %s" % free)
