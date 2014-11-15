@@ -114,7 +114,7 @@ def _educated_guess_category(smaps, committed_heap):
               smap.flags.startswith('rw') and
               smap.inode == 0 and
               smap.size > committed_heap * 0.9 and
-              smap.size < committed_heap * 1.1):
+              smap.size < committed_heap * 1.25):
             smap.category = CATEGORY_JVM_HEAP
             found_heap = True
         elif (i+1 < len(smaps) and
