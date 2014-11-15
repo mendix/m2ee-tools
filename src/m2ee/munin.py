@@ -343,6 +343,10 @@ def print_jvmheap_config(name, stats):
     print("free.draw STACK")
     print("free.info Unused memory reserved for use by the JVM heap")
     print("free.colour COLOUR5")
+    print("limit.label heap size limit")
+    print("limit.draw LINE1")
+    print("limit.info Java Heap memory usage limit")
+    print("limit.colour COLOUR6")
     print("")
 
 
@@ -353,6 +357,7 @@ def print_jvmheap_values(name, stats):
         print('%s.value %s' % (k, memory[k]))
     free = (memory['max_heap'] - memory['used_heap'])
     print("free.value %s" % free)
+    print("limit.value %s" % memory['max_heap'])
     print("")
 
 
