@@ -459,9 +459,21 @@ def print_jvm_process_memory_config(name):
     print("jar.label jar files")
     print("jar.draw STACK")
     print("jar.info JAR file contents loaded into memory")
-    print("javaheap.label java heap")
+    print("tenured.label tenured generation")
+    print("tenured.draw STACK")
+    print("tenured.info Old generation of the Java Heap that holds long living objects")
+    print("survivor.label survivor space")
+    print("survivor.draw STACK")
+    print("survivor.info Survivor Space of the Young Generation, Java Heap")
+    print("eden.label eden space")
+    print("eden.draw STACK")
+    print("eden.info Objects are created in Eden, Java Heap")
+    print("javaheap.label unused java heap")
     print("javaheap.draw STACK")
-    print("javaheap.info Java Heap")
+    print("javaheap.info Unused Java Heap")
+    print("permanent.label permanent generation")
+    print("permanent.draw STACK")
+    print("permanent.info Non-heap memory used to store bytecode versions of classes")
     print("nativemem.label native memory")
     print("nativemem.draw STACK")
     print("nativemem.info Native heap and memory arenas")
@@ -483,11 +495,20 @@ def print_jvm_process_memory_values(name, stats, pid):
     totals = smaps.get_smaps_rss_by_category(pid, stats['memory']['committed_heap']/1024)
     if totals is None:
         return
+    memory = stats['memory']
     print("multigraph mxruntime_jvm_process_memory_%s" % name)
     print("nativecode.value %s" % (totals[smaps.CATEGORY_CODE] * 1024))
     print("jar.value %s" % (totals[smaps.CATEGORY_JAR] * 1024))
-    print("javaheap.value %s" % (totals[smaps.CATEGORY_JVM_HEAP] * 1024))
-    print("nativemem.value %s" % (totals[smaps.CATEGORY_NATIVE_HEAP_ARENA] * 1024))
+
+    javaheap = totals[smaps.CATEGORY_JVM_HEAP] * 1024
+    for k in ['tenured', 'survivor', 'eden']:
+        print('%s.value %s' % (k, memory[k]))
+    print("javaheap.value %s" % (javaheap - memory['used_heap']))
+
+    nativemem = totals[smaps.CATEGORY_NATIVE_HEAP_ARENA] * 1024
+    print("permanent.value %s" % memory['permanent'])
+    print("nativemem.value %s" % (nativemem - memory['permanent']))
+
     print("stacks.value %s" % (totals[smaps.CATEGORY_THREAD_STACK] * 1024))
     print("other.value %s" % (totals[smaps.CATEGORY_OTHER] * 1024))
     print("total.value %s" % (sum(totals.values()) * 1024))
