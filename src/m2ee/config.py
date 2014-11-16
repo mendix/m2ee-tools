@@ -602,7 +602,7 @@ class M2EEConfig:
         return jetty_opts
 
     def get_munin_options(self):
-        return self._conf['m2ee'].get('munin', None)
+        return self._conf['m2ee'].get('munin', {})
 
     def get_dtap_mode(self):
         return self._conf['mxruntime']['DTAPMode'].upper()

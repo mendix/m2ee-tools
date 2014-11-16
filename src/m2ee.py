@@ -11,7 +11,6 @@ import cmd
 import datetime
 import getpass
 import os
-import pprint
 import pwd
 import random
 import signal
@@ -23,6 +22,17 @@ import yaml
 from m2ee import pgutil, M2EE, M2EEProfiler, logger, client_errno
 import m2ee
 
+# Use json if available. If not (python 2.5) we need to import the simplejson
+# module instead, which has to be available.
+try:
+    import json
+except ImportError:
+    try:
+        import simplejson as json
+    except ImportError, ie:
+        logger.critical("Failed to import json as well as simplejson. If "
+                        "using python 2.5, you need to provide the simplejson "
+                        "module in your python library path.")
 
 if not sys.stdout.isatty():
     import codecs
@@ -41,8 +51,8 @@ class CLI(cmd.Cmd):
             self.m2ee = M2EE()
         self.yolo_mode = yolo_mode
         self.do_status(None)
-        username = pwd.getpwuid(os.getuid())[0]
-        self._default_prompt = "m2ee(%s): " % username
+        self.prompt_username = pwd.getpwuid(os.getuid())[0]
+        self._default_prompt = "m2ee(%s): " % self.prompt_username
         self.prompt = self._default_prompt
         logger.info("Application Name: %s" % self.m2ee.config.get_app_name())
 
@@ -377,29 +387,26 @@ class CLI(cmd.Cmd):
             return
         stats = self.m2ee.client.runtime_statistics().get_feedback()
         stats.update(self.m2ee.client.server_statistics().get_feedback())
-        pprint.pprint(stats)
+        print(json.dumps(stats, sort_keys=True,
+                         indent=4, separators=(',', ': ')))
 
     def do_show_cache_statistics_raw(self, args):
         if self._report_not_implemented(4) or self._report_not_running():
             return
         stats = self.m2ee.client.cache_statistics().get_feedback()
-        pprint.pprint(stats)
+        print(json.dumps(stats, sort_keys=True,
+                         indent=4, separators=(',', ': ')))
 
     def do_munin_config(self, args):
-        m2ee.munin.print_all(
-            self.m2ee.client,
-            self.m2ee.config,
-            self.m2ee.config.get_munin_options(),
-            args,
-            print_config=True
+        m2ee.munin.print_config(
+            self.m2ee,
+            self.prompt_username,
         )
 
     def do_munin_values(self, args):
-        m2ee.munin.print_all(
-            self.m2ee.client,
-            self.m2ee.config,
-            self.m2ee.config.get_munin_options(),
-            args
+        m2ee.munin.print_values(
+            self.m2ee,
+            self.prompt_username,
         )
 
     def do_nagios(self, args):
@@ -836,7 +843,8 @@ class CLI(cmd.Cmd):
         if not m2eeresp.has_error():
             feedback = m2eeresp.get_feedback()
             print("Current JVM Thread Stacktraces:")
-            print(pprint.pprint(feedback))
+            print(json.dumps(feedback, sort_keys=True,
+                             indent=4, separators=(',', ': ')))
 
     def do_interrupt_request(self, args):
         if (self._report_not_implemented(('2.5.8', 3.1))
