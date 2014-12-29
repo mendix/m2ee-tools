@@ -16,20 +16,19 @@ Take a look at the example `m2ee.yaml` file. This example configuration file con
 
 We can alter a few options to get a fully working configuration file:
 
-In the m2ee section:
+ * In the m2ee section:
+   - `app_name`: short description of the application
+   - `app_base`: path to the project directory of your application
+   - `runtime_port`: TCP port we want the application to present itself for end users (when using the modeler, this defaults to port 8080)
+   - `runtime_listen_addresses`: by default, the application process only listens on the localhost address. set this option to "\*" if you want to have the public runtime port accessible from other hosts than localhost
+   - `admin_port`: a different TCP port, on which the m2ee helper program communicates with the mendix server process when it's running
+   - `admin_pass`: a password which protects the administrative interface, running on the admin TCP port. set this password to e.g. a long random string, it's not used manually anywhere
+ * In the logging section, edit the logging options if you want to log to a file directly.
+ * In the mxruntime section, you can configure your database login host and credentials, microflow constants and scheduled events.
 
- * app\_name: short description of the application
- * app\_base: path to the project directory of your application
- * runtime\_port: TCP port we want the application to present itself for end users (when using the modeler, this defaults to port 8080)
- * runtime\_listen\_addresses: by default, the application process only listens on the localhost address. set this option to "\*" if you want to have the public runtime port accessible from other hosts than localhost
- * admin\_port: a different TCP port, on which the m2ee helper program communicates with the mendix server process when it's running
- * admin\_pass: a password which protects the administrative interface, running on the admin TCP port. set this password to e.g. a long random string, it's not used manually anywhere
+*For more in-depth information about possible configuration settings, have a look at the `full-documented-m2ee.yaml` file in the examples directory.*
 
-In the logging section, edit the logging options if you want to log to a file directly.
-
-In the mxruntime section, you can configure your database login host and credentials, microflow constants and scheduled events.
-
-For more in-depth information about possible configuration settings, have a look at the `full-documented-m2ee.yaml` file in the examples directory.
+## Try it!
 
 Right now, we can start m2ee using the current configuration:
 
@@ -91,6 +90,6 @@ When for whatever reason the server you're hosting on gets rebooted, you might w
 
 ## License key activation
 
-The show\_license\_information to display the generated server ID. Using this server ID, a license key can be obtained which can be installed in the application using the activate\_license m2ee command.
+The `show_license_information` in the interactive m2ee console can be used to display a generated server ID. Using this server ID, a license key can be obtained which can be installed in the application using the `activate_license` m2ee command. Please contact your Mendix account manager or Mendix Support for further instructions about on premise licensing.
 
 [Back to overview](README.md)
