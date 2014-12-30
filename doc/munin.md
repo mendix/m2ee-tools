@@ -6,13 +6,13 @@ The Mendix m2ee-tools software has built in munin support.
 
 ## Mendix munin plugin
 
-A plugin to use with munin-node is available in the munin folder in the m2ee-tools source. If you're using the Debian packages already, it's in an additional package named `munin-plugins-m2ee` which installs the plugin at `/usr/share/munin/plugins/mxruntime_`.
+A plugin to use with munin-node is available in the munin folder in the m2ee-tools source. If you're using the Debian packages already, it's in an additional package named `munin-plugins-m2ee` which installs the plugin at `/usr/share/munin-m2ee/plugins/mxruntime_`.
 
 To activate this plugin for a specific application, just symlink the script, appending the user name of the account the application uses and make sure you run the plugin as this user by defining this in a file in the plugin-conf.d directory.
 
 E.g. when monitoring 'Some Customer', using server account somecust:
 
-    example.mendix.net:/etc/munin/plugins 0-# ln -s /usr/share/munin/plugins/mxruntime_mxruntime_somecust
+    example.mendix.net:/etc/munin/plugins 0-# ln -s /usr/share/munin-m2ee/plugins/mxruntime_mxruntime_somecust
 
     example.mendix.net:/etc/munin/plugin-conf.d 0-# cat mxruntime
     [mxruntime_somecust]
