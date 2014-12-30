@@ -1,3 +1,16 @@
+m2ee-tools (0.5.11~pre1-1) unstable; urgency=medium
+
+  * Add a munin graph of the total number of JVM threads
+  * Increase correctness of the munin JVM heap memory graph
+  * Add experimental graph of about the entire JVM process memory (i.e. also all
+    memory that is being used outside of the object heap.
+  * Move documentation from world.mendix.com to the m2ee-source
+  * Move the m2ee munin plugin into the m2ee source tree
+  * Make some error messages less cryptic
+  * Small fixes and cosmetics
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Tue, 30 Dec 2014 14:28:01 +0100
+
 m2ee-tools (0.5.10-1) unstable; urgency=low
 
   * Warn about unused constant definitions when reloading config.
