@@ -1,3 +1,13 @@
+m2ee-tools 0.5.11~pre1, 30 Dec 2014
+  * Add a munin graph of the total number of JVM threads
+  * Increase correctness of the munin JVM heap memory graph
+  * Add experimental graph of about the entire JVM process memory (i.e. also all
+    memory that is being used outside of the object heap.
+  * Move documentation from world.mendix.com to the m2ee-source
+  * Move the m2ee munin plugin into the m2ee source tree
+  * Make some error messages less cryptic
+  * Small fixes and cosmetics
+
 m2ee-tools 0.5.10, 6 Aug 2014
   * Warn about unused constant definitions when reloading config.
   * Improve debug logging at start. Log the environment and command line which can

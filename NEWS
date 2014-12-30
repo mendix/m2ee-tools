@@ -1,4 +1,16 @@
+m2ee-tools 0.5.11~pre1, 30 Dec 2014
+===================================
+
+The source of the munin plugin for m2ee and all documentation are now also
+included in the m2ee source tree.
+
+A new graph, a JVM Process Memory breakdown is included in the munin plugin.
+Unfortunately, to be able to use this graph munin needs to be patched to set
+group permissions correctly. See the munin page in the documentation for more
+information about this.
+
 m2ee-tools 0.5.9, 14 Apr 2014
+=============================
 
 The new -y (or --yolo) argument to m2ee can be used to suppress questions that
 ask for confirmation when using commands like stop, unpack, emptydb and
@@ -12,6 +24,7 @@ some test or development environment where you don't need to be cautious at all
 about throwing away data etc.
 
 m2ee-tools 0.5.7, 27 Nov 2013
+=============================
 
 m2ee now has the possibility to download missing Mendix Runtime distributions on
 demand.
