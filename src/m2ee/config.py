@@ -75,15 +75,17 @@ class M2EEConfig:
         if (not self._run_from_source or
                 self._run_from_source == 'appcontainer'):
             if self.runtime_version is None:
-                logger.critical("Unable to look up mendix runtime files "
-                                "because product version is unknown.")
+                logger.info("Unable to look up mendix runtime files "
+                            "because product version is yet unknown.")
                 self._all_systems_are_go = False
             else:
                 self._runtime_path = self.lookup_in_mxjar_repo(
                     str(self.runtime_version))
                 if self._runtime_path is None:
-                    logger.error("Mendix Runtime not found for version %s" %
-                                 str(self.runtime_version))
+                    logger.warn("Mendix Runtime not found for version %s. "
+                                "You can try downloading it using the "
+                                "download_runtime command." %
+                                str(self.runtime_version))
                     self._all_systems_are_go = False
 
         self._setup_classpath()
@@ -295,11 +297,11 @@ class M2EEConfig:
 
         if (not self._run_from_source or
                 self._run_from_source == 'appcontainer'):
-            if not self._conf.get('mxnode', {}).get('mxjar_repo', None):
-                logger.warn("mxnode/mxjar_repo is not specified!")
             # ensure mxjar_repo is a list, multiple locations are allowed for
             # searching
-            if not type(self._conf.get('mxnode', {})['mxjar_repo']) == list:
+            if not self._conf.get('mxnode', {}).get('mxjar_repo', None):
+                self._conf['mxnode']['mxjar_repo'] = []
+            elif not type(self._conf.get('mxnode', {})['mxjar_repo']) == list:
                 self._conf['mxnode']['mxjar_repo'] = [
                     self._conf['mxnode']['mxjar_repo']]
         # m2ee
@@ -600,7 +602,7 @@ class M2EEConfig:
         return jetty_opts
 
     def get_munin_options(self):
-        return self._conf['m2ee'].get('munin', None)
+        return self._conf['m2ee'].get('munin', {})
 
     def get_dtap_mode(self):
         return self._conf['mxruntime']['DTAPMode'].upper()
@@ -777,7 +779,9 @@ class M2EEConfig:
                         if os.path.isdir(os.path.join(model_lib, name))
                      ])
             else:
-                logger.warn("model has no lib dir?")
+                logger.info("No current unpacked application model is available. "
+                            "Use the unpack command to unpack a mendix deployment "
+                            "archive from %s" % self._conf['m2ee']['model_upload_path'])
 
         return classpath
 
