@@ -21,7 +21,7 @@ Description: Mendix Runtime deployment tools
 Package: python-m2ee
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}, unzip, python-yaml, python-httplib2, tar, wget
-Breaks: munin-plugins-mendix (< 9-2)
+Breaks: munin-plugins-mendix (<< 9-3)
 Suggests: m2ee-tools, postgresql-client
 Description: Python modules for administrative interaction with the Mendix Runtime
  The m2ee library provides modules to start, stop and interact with a Mendix
