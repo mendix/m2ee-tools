@@ -1,3 +1,9 @@
+m2ee-tools (0.5.11~pre1-2) unstable; urgency=medium
+
+  * Fix breaks dependency on munin-plugins-mendix
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Tue, 30 Dec 2014 15:27:21 +0100
+
 m2ee-tools (0.5.11~pre1-1) unstable; urgency=medium
 
   * Add a munin graph of the total number of JVM threads
