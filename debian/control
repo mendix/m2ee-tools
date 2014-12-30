@@ -25,3 +25,12 @@ Suggests: m2ee-tools, postgresql-client
 Description: Python modules for administrative interaction with the Mendix Runtime
  The m2ee library provides modules to start, stop and interact with a Mendix
  Runtime process.
+
+Package: munin-plugins-m2ee
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: munin-node
+Description: m2ee plugin for Munin
+ This package provides the Mendix Runtime plugin for Munin. Included graphs are
+ showing e.g. the amount of logged in users, memory usage, usage of threads and
+ statistics about executed database queries.
