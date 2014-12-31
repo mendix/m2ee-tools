@@ -25,7 +25,7 @@ Create a simple directory structure where all software and the application will 
 
 ## m2ee-tools
 
-Either download the latest m2ee-tools release from [http://packages.mendix.com/platform/mirror/](http://packages.mendix.com/platform/mirror/) and extract it in the m2ee-tools directory or directly clone the [m2ee-tools git repository from github]() and checkout a release tag.
+Either download the latest m2ee-tools release (choose a vX.Y.Z tag, not a debian/X.Y.Z one) from [the releases page](https://github.com/mendix/m2ee-tools/releases) and extract it in the m2ee-tools directory or directly clone the [m2ee-tools git repository from github]() and checkout a release tag. Also, when choosing a version (tag), choose one with the vX.Y.Z format (e.g. v0.5.10), and not the `debian/X.Y.Z`. The debian tags are created when doing the additional packaging work to create debian packages.
 
 ## PyYAML
 
