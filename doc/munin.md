@@ -27,9 +27,11 @@ When using the interactive m2ee command line, the commands `munin_config` and `m
 
 ## The smaps statistics
 
-The Mendix Runtime munin plugin contains a graph that, when running on Linux, explores the internal memory usage of the JVM process, using information from the `smaps` file that is available via the `/proc/` file system for the JVM process id.
+The Mendix Runtime munin plugin contains a graph that, when running on Linux, explores the internal memory usage of the JVM process, using information from the `smaps` file that is available via the `/proc/` file system for the JVM process id. This graph is still a bit experimental, as it requires quite some educated guessing to be done to interpret the memory information that can be read from the Linux kernel.
 
 In order for the plugin to be able to read this information, the plugin must run with the primary group set to the same group id as the runtime process itself is using. Sadly, munin-node only adds the group that is defined in the plugin configuration as secondary group. In order to fix this, a [patch for munin-node is necessary](https://github.com/munin-monitoring/munin/pull/305), which actually also fixes a security issue.
+
+Also, the calculations in this plugin assume that the JVM settings for initial and maximum Java Object Heap (-Xms and -Xmx) are set to the same value!
 
 ## Examples
 
