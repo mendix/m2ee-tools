@@ -1,3 +1,13 @@
+m2ee-tools (0.5.11~pre2-1) unstable; urgency=medium
+
+  * Fix documentation: munin-plugins-m2ee path
+  * Some more munin smaps documentation hints
+  * Fix/improve documentation about release tags for download
+  * Improve smaps analyzer a bit
+  * Bump copyright to 2015
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Fri, 02 Jan 2015 21:43:29 +0100
+
 m2ee-tools (0.5.11~pre1-3) unstable; urgency=medium
 
   * Install m2ee munin plugin in separate plugins folder
