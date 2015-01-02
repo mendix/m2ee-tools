@@ -479,6 +479,9 @@ def print_jvm_process_memory_config(name):
     print("permanent.label permanent generation")
     print("permanent.draw STACK")
     print("permanent.info Non-heap memory used to store bytecode versions of classes")
+    print("codecache.label code cache")
+    print("codecache.draw STACK")
+    print("codecache.info Non-heap memory used for compilation and storage of native code")
     print("nativemem.label native memory")
     print("nativemem.draw STACK")
     print("nativemem.info Native heap and memory arenas")
@@ -497,7 +500,7 @@ def print_jvm_process_memory_config(name):
 def print_jvm_process_memory_values(name, stats, pid):
     if pid is None:
         return
-    totals = smaps.get_smaps_rss_by_category(pid, stats['memory']['committed_heap']/1024)
+    totals = smaps.get_smaps_rss_by_category(pid)
     if totals is None:
         return
     memory = stats['memory']
@@ -508,11 +511,12 @@ def print_jvm_process_memory_values(name, stats, pid):
     javaheap = totals[smaps.CATEGORY_JVM_HEAP] * 1024
     for k in ['tenured', 'survivor', 'eden']:
         print('%s.value %s' % (k, memory[k]))
-    print("javaheap.value %s" % (javaheap - memory['used_heap']))
+    print("javaheap.value %s" % (javaheap - memory['used_heap'] - memory['used_nonheap']))
+    print("permanent.value %s" % memory['permanent'])
+    print("codecache.value %s" % memory['code'])
 
     nativemem = totals[smaps.CATEGORY_NATIVE_HEAP_ARENA] * 1024
-    print("permanent.value %s" % memory['permanent'])
-    print("nativemem.value %s" % (nativemem - memory['permanent']))
+    print("nativemem.value %s" % nativemem)
 
     print("stacks.value %s" % (totals[smaps.CATEGORY_THREAD_STACK] * 1024))
     print("other.value %s" % (totals[smaps.CATEGORY_OTHER] * 1024))

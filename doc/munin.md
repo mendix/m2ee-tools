@@ -31,8 +31,6 @@ The Mendix Runtime munin plugin contains a graph that, when running on Linux, ex
 
 In order for the plugin to be able to read this information, the plugin must run with the primary group set to the same group id as the runtime process itself is using. Sadly, munin-node only adds the group that is defined in the plugin configuration as secondary group. In order to fix this, a [patch for munin-node is necessary](https://github.com/munin-monitoring/munin/pull/305), which actually also fixes a security issue.
 
-Also, the calculations in this plugin assume that the JVM settings for initial and maximum Java Object Heap (-Xms and -Xmx) are set to the same value!
-
 ## Examples
 
 Here's some examples of graphs this plugin will show:
