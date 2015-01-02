@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009-2014, Mendix bv
+# Copyright (c) 2009-2015, Mendix bv
 # All Rights Reserved.
 #
 # http://www.mendix.com/
@@ -17,6 +17,12 @@ CATEGORY_NONE = 6
 
 categories = (CATEGORY_CODE, CATEGORY_NATIVE_HEAP_ARENA, CATEGORY_JVM_HEAP,
               CATEGORY_THREAD_STACK, CATEGORY_JAR, CATEGORY_OTHER, CATEGORY_NONE)
+
+STAGE_BORK = -1
+STAGE_CODE = 0
+STAGE_SEEN_NATIVE_HEAP = 1
+STAGE_IN_JVM_HEAP = 2
+STAGE_SEEN_JVM_HEAP = 3
 
 
 class Smap:
@@ -59,21 +65,20 @@ def has_smaps(pid):
     return _load_proc_smaps_lines(pid) is not None
 
 
-def get_smaps_rss_by_category(pid, committed_heap):
+def get_smaps_rss_by_category(pid):
     lines = _load_proc_smaps_lines(pid)
     if lines is None:
         return None
     smaps = _parse_lines_to_smaps(lines)
-    smaps = _educated_guess_category(smaps, committed_heap)
+    smaps = _educated_guess_category(smaps)
     return _get_rss_by_category(smaps)
 
 
 def _load_proc_smaps_lines(pid):
     try:
-        lines = open('/proc/%s/smaps' % pid).readlines()
+        return open('/proc/%s/smaps' % pid).read().splitlines()
     except EnvironmentError:
         return None
-    return [line.strip() for line in lines]
 
 
 def _parse_lines_to_smaps(lines):
@@ -87,60 +92,80 @@ def _parse_lines_to_smaps(lines):
     return smaps
 
 
-def _educated_guess_category(smaps, committed_heap):
+def _educated_guess_category(smaps, debug=False):
     num_smaps = len(smaps)
-    found_heap = False
+    stage = STAGE_CODE
     i = 0
     while i < num_smaps:
         smap = smaps[i]
-        if ((smap.inode != 0 and
-             smap.descr is not None and
-             smap.flags == 'r-xp')):
-            smap.category = CATEGORY_CODE
-        elif (i > 0 and
-              smap.inode != 0 and
-              smap.inode == smaps[i-1].inode and
-              smap.descr is not None and
-              smap.descr == smaps[i-1].descr):
-            smap.category = smaps[i-1].category
-        elif (smap.inode == 0 and
-              smap.descr == '[heap]'):
-            smap.category = CATEGORY_NATIVE_HEAP_ARENA
-        elif (smap.inode == 0 and
-              smap.descr is not None and
-              smap.descr.startswith('[stack')):
-            smap.category = CATEGORY_THREAD_STACK
-        elif (not found_heap and
-              smap.flags.startswith('rw') and
-              smap.inode == 0 and
-              smap.size > committed_heap * 0.9 and
-              smap.size < committed_heap * 1.25):
-            smap.category = CATEGORY_JVM_HEAP
-            found_heap = True
-        elif (i+1 < len(smaps) and
-              smap.vm_end == smaps[i+1].vm_start and
-              smap.rss != 0 and smaps[i+1].rss == 0 and
-              (smap.size + smaps[i+1].size) % 65536 == 0 and
-              smap.inode == 0 and smaps[i+1].inode == 0):
-            smap.category = CATEGORY_NATIVE_HEAP_ARENA
-            smaps[i+1].category = CATEGORY_NATIVE_HEAP_ARENA
-            i = i + 1
-        elif (smap.flags.startswith('rw') and
-              smap.inode == 0 and
-              i > 0 and
-              smaps[i-1].flags.startswith('---') and
-              smaps[i-1].inode == 0 and
-              smap.size + smaps[i-1].size == 1028):
-            smap.category = CATEGORY_THREAD_STACK
-        elif (smap.flags.startswith('---') and
-              smap.rss == 0):
-            smap.category = CATEGORY_NONE
-        elif (smap.flags.startswith('r-') and
-              smap.descr is not None and
-              smap.descr.endswith('jar')):
-            smap.category = CATEGORY_JAR
-        else:
-            smap.category = CATEGORY_OTHER
+
+        if stage == STAGE_CODE:
+            if ((smap.inode != 0 and
+                 smap.descr is not None)):
+                smap.category = CATEGORY_CODE
+            elif (smap.inode == 0 and
+                  smap.descr == '[heap]'):
+                smap.category = CATEGORY_NATIVE_HEAP_ARENA
+                stage = STAGE_SEEN_NATIVE_HEAP
+            else:
+                stage = STAGE_BORK
+        elif stage == STAGE_SEEN_NATIVE_HEAP:
+            if smap.flags.startswith('rw') and smap.inode == 0:
+                smap.category = CATEGORY_JVM_HEAP
+                stage = STAGE_IN_JVM_HEAP
+            else:
+                stage = STAGE_BORK
+        elif stage == STAGE_IN_JVM_HEAP:
+            if ((smap.inode == 0 and
+                 smap.vm_start == smaps[i-1].vm_end)):
+                smap.category = CATEGORY_JVM_HEAP
+            else:
+                stage = STAGE_SEEN_JVM_HEAP
+        if stage == STAGE_SEEN_JVM_HEAP:
+            if ((smap.inode != 0 and
+                 smap.descr is not None and
+                 smap.flags == 'r-xp')):
+                smap.category = CATEGORY_CODE
+            elif (i > 0 and
+                  smap.inode != 0 and
+                  smap.inode == smaps[i-1].inode and
+                  smap.descr is not None and
+                  smap.descr == smaps[i-1].descr):
+                smap.category = smaps[i-1].category
+            elif (smap.inode == 0 and
+                  smap.descr == '[heap]'):
+                smap.category = CATEGORY_NATIVE_HEAP_ARENA
+            elif (smap.inode == 0 and
+                  smap.descr is not None and
+                  smap.descr.startswith('[stack')):
+                smap.category = CATEGORY_THREAD_STACK
+            elif (i+1 < len(smaps) and
+                  smap.vm_end == smaps[i+1].vm_start and
+                  smap.rss != 0 and smaps[i+1].rss == 0 and
+                  (smap.size + smaps[i+1].size) % 65536 == 0 and
+                  smap.inode == 0 and smaps[i+1].inode == 0):
+                smap.category = CATEGORY_NATIVE_HEAP_ARENA
+                smaps[i+1].category = CATEGORY_NATIVE_HEAP_ARENA
+                i = i + 1
+            elif (smap.flags.startswith('rw') and
+                  smap.inode == 0 and
+                  i > 0 and
+                  smaps[i-1].flags.startswith('---') and
+                  smaps[i-1].inode == 0 and
+                  smap.size + smaps[i-1].size == 1028):
+                smap.category = CATEGORY_THREAD_STACK
+            elif (smap.flags.startswith('---') and
+                  smap.rss == 0):
+                smap.category = CATEGORY_NONE
+            elif (smap.flags.startswith('r-') and
+                  smap.descr is not None and
+                  smap.descr.endswith('jar')):
+                smap.category = CATEGORY_JAR
+            else:
+                smap.category = CATEGORY_OTHER
+
+        if debug:
+            print(smap)
         i = i + 1
     return smaps
 
@@ -154,9 +179,10 @@ def _get_rss_by_category(smaps):
 
 
 if __name__ == "__main__":
-    pid = int(sys.argv[1])
-    committed_heap = int(sys.argv[2])
-    totals = get_smaps_rss_by_category(pid, committed_heap)
+    lines = sys.stdin.read().splitlines()
+    smaps = _parse_lines_to_smaps(lines)
+    smaps = _educated_guess_category(smaps, debug=True)
+    totals = _get_rss_by_category(smaps)
 
     print('Native code: %s kB' % totals[CATEGORY_CODE])
     print('Native heap and memory arenas: %s kB' % totals[CATEGORY_NATIVE_HEAP_ARENA])

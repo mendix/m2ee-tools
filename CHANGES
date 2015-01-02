@@ -1,3 +1,6 @@
+m2ee-tools 0.5.11~pre2, 2 Jan 2015
+  * Fixes in documentation and munin jvm process memory plugin
+
 m2ee-tools 0.5.11~pre1, 30 Dec 2014
   * Add a munin graph of the total number of JVM threads
   * Increase correctness of the munin JVM heap memory graph
