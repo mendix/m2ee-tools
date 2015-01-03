@@ -1,8 +1,37 @@
-m2ee-tools (0.5.10-1~mxbp60+1) squeeze-backports; urgency=low
+m2ee-tools (0.5.11~pre2-1) unstable; urgency=medium
 
-  * Backport for Squeeze (no changes)
+  * Fix documentation: munin-plugins-m2ee path
+  * Some more munin smaps documentation hints
+  * Fix/improve documentation about release tags for download
+  * Improve smaps analyzer a bit
+  * Bump copyright to 2015
 
- -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Wed, 06 Aug 2014 21:55:21 +0200
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Fri, 02 Jan 2015 21:43:29 +0100
+
+m2ee-tools (0.5.11~pre1-3) unstable; urgency=medium
+
+  * Install m2ee munin plugin in separate plugins folder
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Tue, 30 Dec 2014 15:49:13 +0100
+
+m2ee-tools (0.5.11~pre1-2) unstable; urgency=medium
+
+  * Fix breaks dependency on munin-plugins-mendix
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Tue, 30 Dec 2014 15:27:21 +0100
+
+m2ee-tools (0.5.11~pre1-1) unstable; urgency=medium
+
+  * Add a munin graph of the total number of JVM threads
+  * Increase correctness of the munin JVM heap memory graph
+  * Add experimental graph of about the entire JVM process memory (i.e. also all
+    memory that is being used outside of the object heap.
+  * Move documentation from world.mendix.com to the m2ee-source
+  * Move the m2ee munin plugin into the m2ee source tree
+  * Make some error messages less cryptic
+  * Small fixes and cosmetics
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Tue, 30 Dec 2014 14:28:01 +0100
 
 m2ee-tools (0.5.10-1) unstable; urgency=low
 
