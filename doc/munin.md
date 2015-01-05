@@ -33,9 +33,11 @@ In order for the plugin to be able to read this information, the plugin must run
 
 ## Examples
 
-Here's some examples of graphs this plugin will show:
+Here's some examples of graphs this plugin will show.
 
-![JVM Heap Memory](images/mxruntime_jvmheap_example-week.png)
+![JVM Heap Memory](images/mxruntime_jvmheap_example-day.png)
+
+![JVM Process Memory](images/mxruntime_jvm_process_memory_example-day.png)
 
 ![Requests](images/mxruntime_requests_example-week.png)
 
@@ -47,7 +49,7 @@ Here's some examples of graphs this plugin will show:
 
 ![Jetty Threadpool](images/m2eeserver_threadpool_example-week.png)
 
-There are two more graph types, which are brand new: JVM Process Memory Usage (the smaps one) and a graph of the Total Amount of JVM Threads. I'll add examples of those later.
+![JVM Threads](images/mxruntime_threads_example-day.png)
 
 - - -
 
