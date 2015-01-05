@@ -1,26 +1,4 @@
-m2ee-tools (0.5.11~pre2-1) unstable; urgency=medium
-
-  * Fix documentation: munin-plugins-m2ee path
-  * Some more munin smaps documentation hints
-  * Fix/improve documentation about release tags for download
-  * Improve smaps analyzer a bit
-  * Bump copyright to 2015
-
- -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Fri, 02 Jan 2015 21:43:29 +0100
-
-m2ee-tools (0.5.11~pre1-3) unstable; urgency=medium
-
-  * Install m2ee munin plugin in separate plugins folder
-
- -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Tue, 30 Dec 2014 15:49:13 +0100
-
-m2ee-tools (0.5.11~pre1-2) unstable; urgency=medium
-
-  * Fix breaks dependency on munin-plugins-mendix
-
- -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Tue, 30 Dec 2014 15:27:21 +0100
-
-m2ee-tools (0.5.11~pre1-1) unstable; urgency=medium
+m2ee-tools (0.5.11-1) unstable; urgency=low
 
   * Add a munin graph of the total number of JVM threads
   * Increase correctness of the munin JVM heap memory graph
@@ -31,7 +9,7 @@ m2ee-tools (0.5.11~pre1-1) unstable; urgency=medium
   * Make some error messages less cryptic
   * Small fixes and cosmetics
 
- -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Tue, 30 Dec 2014 14:28:01 +0100
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Mon, 05 Jan 2015 14:41:59 +0100
 
 m2ee-tools (0.5.10-1) unstable; urgency=low
 
