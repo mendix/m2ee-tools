@@ -11,9 +11,9 @@ This page describes installation instructions for Debian and RHEL/Centos in case
 
 ## Deployment Tools for Debian
 
-The deployment tools, written in python are available in a public apt repository. When using Debian Wheezy this repository can be added to your apt sources as follows:
+The deployment tools, written in python are available in a public apt repository. When using Debian Jessie this repository can be added to your apt sources as follows:
 
-    deb http://packages.mendix.com/platform/debian/ wheezy main contrib non-free
+    deb http://packages.mendix.com/platform/debian/ jessie main contrib non-free
 
 ### GPG keyring
 
