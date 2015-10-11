@@ -872,7 +872,7 @@ class CLI(cmd.Cmd):
         return -1
 
     def do_EOF(self, args):
-        print
+        print("exit")
         return -1
 
     def do_profiler(self, args):
@@ -949,6 +949,15 @@ class CLI(cmd.Cmd):
         if line:
             logger.trace("Executing command: %s" % line)
         return line
+
+    def cmdloop_handle_ctrl_c(self):
+        quit = False
+        while quit is not True:
+            try:
+                self.cmdloop()
+                quit = True
+            except KeyboardInterrupt:
+                sys.stdout.write('\n')
 
     # if the emptyline function is not defined, Cmd will automagically
     # repeat the previous command given, and that's not what we want
@@ -1065,8 +1074,4 @@ if __name__ == '__main__':
     if args:
         cli.onecmd(' '.join(args))
     else:
-        try:
-            cli.cmdloop()
-        except KeyboardInterrupt:
-            print("^C")
-            sys.exit(130)  # 128 + SIGINT
+        cli.cmdloop_handle_ctrl_c()
