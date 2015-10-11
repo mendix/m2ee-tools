@@ -9,6 +9,7 @@ import os
 import string
 
 from m2ee.log import logger
+from m2ee.client import M2EEAdminException, M2EEAdminNotAvailable
 import smaps
 
 # Use json if available. If not (python 2.5) we need to import the simplejson
@@ -120,40 +121,38 @@ def print_values(m2ee, name):
 
 
 def get_stats(action, client, config):
+    stats = None
+    try:
+        stats = get_stats_from_runtime(client, config)
+        write_last_known_good_stats_cache(stats, config_cache)
+    except (M2EEAdminException, M2EEAdminNotAvailable) as e:
+        logger.error(e)
+        if action == 'config':
+            return get_last_known_good_or_fake_stats(config)
+    return stats
+
+
+def get_last_known_good_or_fake_stats(config):
     # place to store last known good statistics result to be used for munin
     # config when the app is down or b0rked
     options = config.get_munin_options()
     config_cache = options.get('config_cache',
                                os.path.join(config.get_default_dotm2ee_directory(),
                                             'munin-cache.json'))
-
-    # TODO: even better error/exception handling
-    stats = None
-    try:
-        stats = get_stats_from_runtime(client, config)
-        write_last_known_good_stats_cache(stats, config_cache)
-    except Exception, e:
-        if action == 'config':
-            logger.debug("Error fetching runtime/server statstics: %s", e)
-            stats = read_stats_from_last_known_good_stats_cache(config_cache)
-            if stats is None:
-                stats = default_stats
-        else:
-            # assume something bad happened, like
-            # socket.error: [Errno 111] Connection refused
-            logger.error("Error fetching runtime/server statstics: %s", e)
+    stats = read_stats_from_last_known_good_stats_cache(config_cache)
+    if stats is not None:
+        logger.debug("Reusing last known statistics.")
+    else:
+        logger.debug("No last known good statistics found, using fake statistics.")
+        stats = default_stats
     return stats
 
 
 def get_stats_from_runtime(client, config):
     stats = {}
     logger.debug("trying to fetch runtime/server statistics")
-    m2eeresponse = client.runtime_statistics()
-    if not m2eeresponse.has_error():
-        stats.update(m2eeresponse.get_feedback())
-    m2eeresponse = client.server_statistics()
-    if not m2eeresponse.has_error():
-        stats.update(m2eeresponse.get_feedback())
+    stats.update(client.runtime_statistics())
+    stats.update(client.server_statistics())
     if type(stats['requests']) == list:
         # convert back to normal, whraagh
         bork = {}
@@ -163,9 +162,7 @@ def get_stats_from_runtime(client, config):
 
     runtime_version = config.get_runtime_version()
     if runtime_version is not None and runtime_version >= 3.2:
-        m2eeresponse = client.get_all_thread_stack_traces()
-        if not m2eeresponse.has_error():
-            stats['threads'] = len(m2eeresponse.get_feedback())
+        stats['threads'] = len(client.get_all_thread_stack_traces())
 
     return stats
 
