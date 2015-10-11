@@ -324,8 +324,6 @@ class CLI(cmd.Cmd, object):
             code.interact(local=locals())
 
     def do_status(self, args):
-        if self._report_not_running():
-            return
         feedback = self.m2ee.client.runtime_status().get_feedback()
         logger.info("The application process is running, the MxRuntime has "
                     "status: %s" % feedback['status'])
@@ -342,9 +340,6 @@ class CLI(cmd.Cmd, object):
                         "complete list." % max_show_users)
 
     def do_show_critical_log_messages(self, args):
-        if self._report_not_running():
-            return
-
         critlist = self.m2ee.client.get_critical_log_messages()
         if len(critlist) == 0:
             logger.info("No messages were logged to a critical loglevel since "
@@ -353,7 +348,7 @@ class CLI(cmd.Cmd, object):
         print("\n".join(critlist))
 
     def do_check_health(self, args):
-        if self._report_not_implemented('2.5.4') or self._report_not_running():
+        if self._report_not_implemented('2.5.4'):
             return
         health_response = self.m2ee.client.check_health()
         if not health_response.has_error():
@@ -383,15 +378,13 @@ class CLI(cmd.Cmd, object):
                 health_response.display_error()
 
     def do_statistics(self, args):
-        if self._report_not_running():
-            return
         stats = self.m2ee.client.runtime_statistics().get_feedback()
         stats.update(self.m2ee.client.server_statistics().get_feedback())
         print(json.dumps(stats, sort_keys=True,
                          indent=4, separators=(',', ': ')))
 
     def do_show_cache_statistics_raw(self, args):
-        if self._report_not_implemented(4) or self._report_not_running():
+        if self._report_not_implemented(4):
             return
         stats = self.m2ee.client.cache_statistics().get_feedback()
         print(json.dumps(stats, sort_keys=True,
@@ -417,8 +410,6 @@ class CLI(cmd.Cmd, object):
 
     def do_about(self, args):
         print('Using m2ee-tools version %s' % m2ee.__version__)
-        if self._report_not_running():
-            return
         feedback = self.m2ee.client.about().get_feedback()
         print("Using %s version %s" % (feedback['name'], feedback['version']))
         print(feedback['copyright'])
@@ -432,7 +423,7 @@ class CLI(cmd.Cmd, object):
                 print('Model version: %s' % feedback['model_version'])
 
     def do_show_license_information(self, args):
-        if self._report_not_implemented(3) or self._report_not_running():
+        if self._report_not_implemented(3):
             return
         m2eeresp = self.m2ee.client.get_license_information()
         m2eeresp.display_error()
@@ -506,7 +497,7 @@ class CLI(cmd.Cmd, object):
                            else '')))
 
     def do_activate_license(self, args):
-        if self._report_not_implemented(3) or self._report_not_running():
+        if self._report_not_implemented(3):
             return
         print("The command activate_license will set the license key used in "
               "this application.")
@@ -537,7 +528,7 @@ class CLI(cmd.Cmd, object):
         m2eeresp.display_error()
 
     def do_enable_debugger(self, args):
-        if self._report_not_implemented(4.3) or self._report_not_running():
+        if self._report_not_implemented(4.3):
             return
 
         if not args:
@@ -563,7 +554,7 @@ class CLI(cmd.Cmd, object):
                         "https://app.example.com/debugger/). ")
 
     def do_disable_debugger(self, args):
-        if self._report_not_implemented(4.3) or self._report_not_running():
+        if self._report_not_implemented(4.3):
             return
 
         m2eeresp = self.m2ee.client.disable_debugger()
@@ -573,7 +564,7 @@ class CLI(cmd.Cmd, object):
             m2eeresp.display_error()
 
     def do_show_debugger_status(self, args):
-        if self._report_not_implemented(4.3) or self._report_not_running():
+        if self._report_not_implemented(4.3):
             return
 
         m2eeresp = self.m2ee.client.get_debugger_status()
@@ -598,8 +589,6 @@ class CLI(cmd.Cmd, object):
             m2eeresp.display_error()
 
     def do_who(self, args):
-        if self._report_not_running():
-            return
         if args:
             try:
                 limitint = int(args)
@@ -740,8 +729,6 @@ class CLI(cmd.Cmd, object):
             self.prompt = "LOG %s" % self._default_prompt
 
     def do_loglevel(self, args):
-        if self._report_not_running():
-            return
         args = string.split(args)
         if len(args) == 3:
             (subscriber, node, level) = args
@@ -800,30 +787,8 @@ class CLI(cmd.Cmd, object):
             return True
         return False
 
-    def _report_not_running(self):
-        """
-        To be used by actions to see whether m2ee is available for executing
-        requests. Also prints a line when the application is not running.
-
-        if self._report_not_running():
-            return
-        do_things_that_communicate_using_m2ee_client()
-
-        returns True when m2ee is not available for requests, else False
-        """
-        (pid_alive, m2ee_alive) = self.m2ee.check_alive()
-        if not pid_alive and not m2ee_alive:
-            logger.info("The application process is not running.")
-            return True
-        # if pid is alive, but m2ee does not respond, errors are already
-        # printed by check_alive
-        if pid_alive and not m2ee_alive:
-            return True
-        return False
-
     def do_show_current_runtime_requests(self, args):
-        if (self._report_not_implemented(('2.5.8', 3.1))
-                or self._report_not_running()):
+        if self._report_not_implemented(('2.5.8', 3.1)):
             return
         m2eeresp = self.m2ee.client.get_current_runtime_requests()
         m2eeresp.display_error()
@@ -836,7 +801,7 @@ class CLI(cmd.Cmd, object):
                 print(yaml.safe_dump(feedback))
 
     def do_show_all_thread_stack_traces(self, args):
-        if self._report_not_implemented(3.2) or self._report_not_running():
+        if self._report_not_implemented(3.2):
             return
         m2eeresp = self.m2ee.client.get_all_thread_stack_traces()
         m2eeresp.display_error()
