@@ -54,7 +54,9 @@ class M2EEClient:
                 raise M2EEAdminHTTPException("Non OK http status code: %s %s" %
                                              (response_headers, response_body))
             response = json.loads(response_body)
-            return M2EEResponse(action, response)
+            if response['result'] != 0:
+                raise M2EEAdminException(action, response)
+            return response.get('feedback', {})
         except AttributeError, e:
             # httplib 0.6 throws this in case of a connection refused :-|
             if str(e) == "'NoneType' object has no attribute 'makefile'":
@@ -81,7 +83,7 @@ class M2EEClient:
         return self.request("echo", myparams, timeout)
 
     def get_critical_log_messages(self):
-        echo_feedback = self.echo().get_feedback()
+        echo_feedback = self.echo()
         if echo_feedback['echo'] != "pong":
             errors = echo_feedback['errors']
             # default to 3.0 format [{"message":"Hello,
@@ -231,60 +233,6 @@ class M2EEClient:
 
     def cache_statistics(self):
         return self.request("cache_statistics")
-
-
-class M2EEResponse:
-
-    ERR_REQUEST_NULL = -1
-    ERR_CONTENT_TYPE = -2
-    ERR_HTTP_METHOD = -3
-    ERR_FORBIDDEN = -4
-    ERR_ACTION_NOT_FOUND = -5
-    ERR_READ_REQUEST = -6
-    ERR_WRITE_REQUEST = -7
-
-    def __init__(self, action, json):
-        self._action = action
-        self._json = json
-        self._result = self._json['result']
-        self._feedback = self._json.get('feedback', {})
-        self._message = self._json.get('message', None)
-        self._cause = self._json.get('cause', None)
-        self._stacktrace = self._json.get('stacktrace', None)
-
-    def get_result(self):
-        return self._result
-
-    def get_feedback(self):
-        return self._feedback
-
-    def get_message(self):
-        return self._message
-
-    def get_cause(self):
-        return self._cause
-
-    def get_stacktrace(self):
-        return self._stacktrace
-
-    def has_error(self):
-        return self._result != 0
-
-    def display_error(self):
-        if self.has_error():
-            logger.error(self.get_error())
-            if self._stacktrace:
-                logger.debug(self._stacktrace)
-
-    def get_error(self):
-        error = "Executing %s did not succeed: result: %s, message: %s" % (
-            self._action, self._json['result'], self._json['message'])
-        if self._json.get('cause', None) is not None:
-            error = "%s, caused by: %s" % (error, self._json['cause'])
-        return error
-
-    def __str__(self):
-        return str({"action": self._action, "json": self._json})
 
 
 class M2EEAdminHTTPException(Exception):
