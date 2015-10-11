@@ -40,7 +40,7 @@ if not sys.stdout.isatty():
     sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
 
 
-class CLI(cmd.Cmd):
+class CLI(cmd.Cmd, object):
 
     def __init__(self, yaml_files=None, yolo_mode=False):
         logger.debug('Using m2ee-tools version %s' % m2ee.__version__)
@@ -50,7 +50,7 @@ class CLI(cmd.Cmd):
         else:
             self.m2ee = M2EE()
         self.yolo_mode = yolo_mode
-        self.do_status(None)
+        self.onecmd('status')
         self.prompt_username = pwd.getpwuid(os.getuid())[0]
         self._default_prompt = "m2ee(%s): " % self.prompt_username
         self.prompt = self._default_prompt
@@ -958,6 +958,18 @@ class CLI(cmd.Cmd):
                 quit = True
             except KeyboardInterrupt:
                 sys.stdout.write('\n')
+
+    def onecmd(self, line):
+        try:
+            return super(CLI, self).onecmd(line)
+        except m2ee.client.M2EEAdminNotAvailable:
+            (pid_alive, m2ee_alive) = self.m2ee.check_alive()
+            if not pid_alive and not m2ee_alive:
+                logger.info("The application process is not running.")
+        except m2ee.client.M2EEAdminException as e:
+            logger.error(e)
+        except m2ee.client.M2EEAdminHTTPException as e:
+            logger.error(e)
 
     # if the emptyline function is not defined, Cmd will automagically
     # repeat the previous command given, and that's not what we want

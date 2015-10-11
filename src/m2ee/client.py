@@ -44,39 +44,41 @@ class M2EEClient:
         if params:
             body["params"] = params
         body = json.dumps(body)
-        h = httplib2.Http(timeout=timeout)  # httplib does not like os.fork
-        logger.trace("M2EE request body: %s" % body)
-        (response_headers, response_body) = h.request(self._url, "POST", body,
-                                                      headers=self._headers)
-        if (response_headers['status'] == "200"):
+        try:
+            h = httplib2.Http(timeout=timeout)  # httplib does not like os.fork
+            logger.trace("M2EE request body: %s" % body)
+            (response_headers, response_body) = h.request(self._url, "POST", body,
+                                                          headers=self._headers)
             logger.trace("M2EE response: %s" % response_body)
-            return M2EEResponse(action, json.loads(response_body))
-        else:
-            logger.error("non-200 http status code: %s %s" %
-                         (response_headers, response_body))
+            if (response_headers['status'] != "200"):
+                raise M2EEAdminHTTPException("Non OK http status code: %s %s" %
+                                             (response_headers, response_body))
+            response = json.loads(response_body)
+            return M2EEResponse(action, response)
+        except AttributeError, e:
+            # httplib 0.6 throws this in case of a connection refused :-|
+            if str(e) == "'NoneType' object has no attribute 'makefile'":
+                message = "Admin API not available for requests."
+                logger.trace("%s (%s: %s)" % (message, type(e), e))
+                raise M2EEAdminNotAvailable(message)
+            raise e
+        except (socket.error, socket.timeout), e:
+            message = "Admin API not available for requests: (%s: %s)" % (type(e), e)
+            logger.trace(message)
+            raise M2EEAdminNotAvailable(message)
 
     def ping(self, timeout=5):
         try:
-            response = self.request("echo", {"echo": "ping"}, timeout)
-            if response.get_result() == 0:
-                return True
-        except AttributeError, e:
-            # httplib 0.6 throws AttributeError: 'NoneType' object has no
-            # attribute 'makefile' in case of a connection refused :-|
-            logger.trace("Got %s: %s" % (type(e), e))
-        except (socket.error, socket.timeout), e:
-            logger.trace("Got %s: %s" % (type(e), e))
-        except Exception, e:
-            logger.error("Got %s: %s" % (type(e), e))
-            import traceback
-            logger.error(traceback.format_exc())
-        return False
+            self.echo(timeout=timeout)
+            return True
+        except (M2EEAdminException, M2EEAdminHTTPException, M2EEAdminNotAvailable):
+            return False
 
-    def echo(self, params=None):
+    def echo(self, params=None, timeout=5):
         myparams = {"echo": "ping"}
         if params is not None:
             myparams.update(params)
-        return self.request("echo", myparams)
+        return self.request("echo", myparams, timeout)
 
     def get_critical_log_messages(self):
         echo_feedback = self.echo().get_feedback()
@@ -283,3 +285,38 @@ class M2EEResponse:
 
     def __str__(self):
         return str({"action": self._action, "json": self._json})
+
+
+class M2EEAdminHTTPException(Exception):
+    pass
+
+
+class M2EEAdminNotAvailable(Exception):
+    pass
+
+
+class M2EEAdminException(Exception):
+
+    ERR_REQUEST_NULL = -1
+    ERR_CONTENT_TYPE = -2
+    ERR_HTTP_METHOD = -3
+    ERR_FORBIDDEN = -4
+    ERR_ACTION_NOT_FOUND = -5
+    ERR_READ_REQUEST = -6
+    ERR_WRITE_REQUEST = -7
+
+    def __init__(self, action, json):
+        self.action = action
+        self.json = json
+        self.result = json['result']
+        self.feedback = json.get('feedback', {})
+        self.message = json.get('message', None)
+        self.cause = json.get('cause', None)
+        self.stacktrace = json.get('stacktrace', None)
+
+    def __str__(self):
+        error = "Executing %s did not succeed: result: %s, message: %s" % (
+            self.action, self.result, self.message)
+        if self.cause is not None:
+            error = "%s, caused by: %s" % (error, self.cause)
+        return error
