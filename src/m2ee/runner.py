@@ -52,17 +52,19 @@ class M2EERunner:
             os.unlink(pidfile)
 
     def get_pid(self):
-        if not self._pid:
+        if self._pid is None:
             self._read_pidfile()
         return self._pid
 
     def check_pid(self, pid=None):
         if pid is None:
             pid = self.get_pid()
-        if not pid:
+        if pid is None:
+            logger.trace("No pid available.")
             return False
         try:
             os.kill(pid, 0)  # doesn't actually kill process
+            logger.trace("pid %s is alive!" % pid)
             return True
         except OSError:
             logger.trace("No process with pid %s, or not ours." % pid)
