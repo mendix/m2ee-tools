@@ -12,6 +12,7 @@ from config import M2EEConfig
 from client import M2EEClient, M2EEAdminNotAvailable
 from runner import M2EERunner
 from log import logger
+from m2ee.exceptions import M2EEException
 
 import util
 import client_errno

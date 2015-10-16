@@ -15,6 +15,7 @@ import copy
 from log import logger
 from collections import defaultdict
 from version import MXVersion
+from m2ee.exceptions import M2EEException
 
 # Use json if available. If not (python 2.5) we need to import the simplejson
 # module instead, which has to be available.
