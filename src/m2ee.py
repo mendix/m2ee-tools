@@ -421,21 +421,18 @@ class CLI(cmd.Cmd, object):
     def do_show_license_information(self, args):
         if self._report_not_implemented(3):
             return
-        m2eeresp = self.m2ee.client.get_license_information()
-        m2eeresp.display_error()
-        if not m2eeresp.has_error():
-            feedback = m2eeresp.get_feedback()
-            if 'license' in feedback:
-                logger.debug(yaml.safe_dump(feedback['license'],
-                             allow_unicode=True))
-                import copy
-                licensecopy = copy.deepcopy(feedback['license'])
-                self._print_license(licensecopy)
-            elif 'license_id' in feedback:
-                print("Unlicensed environment.")
-                print("Server ID: %s" % feedback['license_id'])
-            else:
-                print("Unlicensed environment.")
+        feedback = self.m2ee.client.get_license_information()
+        if 'license' in feedback:
+            logger.debug(yaml.safe_dump(feedback['license'],
+                         allow_unicode=True))
+            import copy
+            licensecopy = copy.deepcopy(feedback['license'])
+            self._print_license(licensecopy)
+        elif 'license_id' in feedback:
+            print("Unlicensed environment.")
+            print("Server ID: %s" % feedback['license_id'])
+        else:
+            print("Unlicensed environment.")
 
     def _print_license(self, licensecopy):
         print("Server ID: %s" % licensecopy.pop('LicenseID', 'Unknown'))
