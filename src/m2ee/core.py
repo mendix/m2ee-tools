@@ -15,7 +15,6 @@ from log import logger
 from m2ee.exceptions import M2EEException
 
 import util
-import client_errno
 
 
 class M2EE():

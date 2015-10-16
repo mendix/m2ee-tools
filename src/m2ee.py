@@ -136,7 +136,11 @@ class CLI(cmd.Cmd, object):
                 "Database password not configured, "
                 "please provide now:"
             )
-        if not self.m2ee.send_runtime_config(database_password):
+        try:
+            self.m2ee.send_runtime_config(database_password)
+        except m2ee.client.M2EEAdminException as e:
+            logger.error("Sending configuration failed: %s" % e.cause)
+            logger.error("You'll have to fix the configuration and run start again...")
             self._stop()
             return
 
@@ -144,30 +148,29 @@ class CLI(cmd.Cmd, object):
         fully_started = False
         params = {}
         while not (fully_started or abort):
-            startresponse = self.m2ee.start_runtime(params)
-            result = startresponse.get_result()
-            if result == client_errno.SUCCESS:
+            try:
+                self.m2ee.start_runtime(params)
                 fully_started = True
-            else:
-                startresponse.display_error()
-                if result == client_errno.start_NO_EXISTING_DB:
+            except m2ee.client.M2EEAdminException as e:
+                logger.error(e)
+                if e.result == client_errno.start_NO_EXISTING_DB:
                     answer = self._ask_user_whether_to_create_db()
                     if answer == 'a':
                         abort = True
                     elif (self.m2ee.config.get_runtime_version() // 2.5 and
                           answer == 'c'):
                         params["autocreatedb"] = True
-                elif result == client_errno.start_INVALID_DB_STRUCTURE:
+                elif e.result == client_errno.start_INVALID_DB_STRUCTURE:
                     answer = self._handle_ddl_commands()
                     if answer == 'a':
                         abort = True
-                elif result == client_errno.start_MISSING_MF_CONSTANT:
+                elif e.result == client_errno.start_MISSING_MF_CONSTANT:
                     logger.error("You'll have to add the constant definitions "
                                  "to the configuration in the "
                                  "MicroflowConstants section.")
                     abort = True
-                elif result == client_errno.start_ADMIN_1:
-                    users = startresponse.get_feedback()['users']
+                elif e.result == client_errno.start_ADMIN_1:
+                    users = e.feedback['users']
                     if self.yolo_mode:
                         self._handle_admin_1_yolo(users)
                     else:
@@ -199,15 +202,13 @@ class CLI(cmd.Cmd, object):
                     # If in Development/Test, call execute_ddl_commands,
                     # because since 3.0, this tries to create a database and
                     # immediately executes initial ddl commands
-                    m2eeresponse = self.m2ee.client.execute_ddl_commands()
-                    m2eeresponse.display_error()
+                    self.m2ee.client.execute_ddl_commands()
             else:
                 print("Unknown option %s" % answer)
         return answer
 
     def _handle_ddl_commands(self):
-        feedback = self.m2ee.client.get_ddl_commands(
-            {"verbose": True}).get_feedback()
+        feedback = self.m2ee.client.get_ddl_commands({"verbose": True})
         answer = None
         while answer not in ('v', 's', 'e', 'a'):
             answer = ('e' if self.yolo_mode
@@ -222,8 +223,7 @@ class CLI(cmd.Cmd, object):
                 ddl_commands = feedback['ddl_commands']
                 self.m2ee.save_ddl_commands(ddl_commands)
                 if answer == 'e':
-                    m2eeresponse = self.m2ee.client.execute_ddl_commands()
-                    m2eeresponse.display_error()
+                    self.m2ee.client.execute_ddl_commands()
             else:
                 print("Unknown option %s" % answer)
         return answer
@@ -246,11 +246,12 @@ class CLI(cmd.Cmd, object):
                         if newpw1 != newpw2:
                             print("The passwords are not equal!")
                         else:
-                            m2eeresponse = self.m2ee.client.update_admin_user(
-                                {"username": username, "password": newpw1})
-                            m2eeresponse.display_error()
-                            if not m2eeresponse.has_error():
+                            try:
+                                self.m2ee.client.update_admin_user(
+                                    {"username": username, "password": newpw1})
                                 changed = True
+                            except m2ee.client.M2EEAdminException as e:
+                                logger.error(e)
             else:
                 print("Unknown option %s" % answer)
         return answer
