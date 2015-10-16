@@ -309,9 +309,7 @@ class CLI(cmd.Cmd, object):
         if newpw1 != newpw2:
             print("The passwords are not equal!")
         else:
-            m2eeresponse = self.m2ee.client.update_admin_user(
-                {"username": username, "password": newpw1})
-            m2eeresponse.display_error()
+            self.m2ee.client.update_admin_user({"username": username, "password": newpw1})
 
     def do_debug(self, args):
         answer = raw_input("This command will throw you into a local python "
