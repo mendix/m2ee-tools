@@ -293,9 +293,7 @@ class M2EE():
         return self.client.set_log_level(params)
 
     def get_log_levels(self):
-        params = {"sort": "subscriber"}
-        m2ee_response = self.client.get_log_settings(params)
-        return m2ee_response.get_feedback()
+        return self.client.get_log_settings({"sort": "subscriber"})
 
     def save_ddl_commands(self, ddl_commands):
         query_file_name = os.path.join(self.config.get_database_dump_path(),

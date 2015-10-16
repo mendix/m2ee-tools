@@ -320,7 +320,7 @@ class CLI(cmd.Cmd, object):
             code.interact(local=locals())
 
     def do_status(self, args):
-        feedback = self.m2ee.client.runtime_status().get_feedback()
+        feedback = self.m2ee.client.runtime_status()
         logger.info("The application process is running, the MxRuntime has "
                     "status: %s" % feedback['status'])
 
@@ -374,15 +374,15 @@ class CLI(cmd.Cmd, object):
                 health_response.display_error()
 
     def do_statistics(self, args):
-        stats = self.m2ee.client.runtime_statistics().get_feedback()
-        stats.update(self.m2ee.client.server_statistics().get_feedback())
+        stats = self.m2ee.client.runtime_statistics()
+        stats.update(self.m2ee.client.server_statistics())
         print(json.dumps(stats, sort_keys=True,
                          indent=4, separators=(',', ': ')))
 
     def do_show_cache_statistics_raw(self, args):
         if self._report_not_implemented(4):
             return
-        stats = self.m2ee.client.cache_statistics().get_feedback()
+        stats = self.m2ee.client.cache_statistics()
         print(json.dumps(stats, sort_keys=True,
                          indent=4, separators=(',', ': ')))
 
@@ -406,7 +406,7 @@ class CLI(cmd.Cmd, object):
 
     def do_about(self, args):
         print('Using m2ee-tools version %s' % m2ee.__version__)
-        feedback = self.m2ee.client.about().get_feedback()
+        feedback = self.m2ee.client.about()
         print("Using %s version %s" % (feedback['name'], feedback['version']))
         print(feedback['copyright'])
         if self.m2ee.config.get_runtime_version() // 2.5:
@@ -520,8 +520,7 @@ class CLI(cmd.Cmd, object):
         if not license_key:
             print("Aborting.")
             return
-        m2eeresp = self.m2ee.client.set_license({'license_key': license_key})
-        m2eeresp.display_error()
+        self.m2ee.client.set_license({'license_key': license_key})
 
     def do_enable_debugger(self, args):
         if self._report_not_implemented(4.3):
@@ -538,51 +537,42 @@ class CLI(cmd.Cmd, object):
                     for x in range(random.randint(20, 30)))
         else:
             debugger_password = args
-        m2eeresp = self.m2ee.client.enable_debugger(
-            {'password': debugger_password})
-        m2eeresp.display_error()
-        if not m2eeresp.has_error():
-            logger.info("The remote debugger is now enabled, the password to "
-                        "use is %s" % debugger_password)
-            logger.info("You can use the remote debugger option in the Mendix "
-                        "Business Modeler to connect to the /debugger/ sub "
-                        "url on your application (e.g. "
-                        "https://app.example.com/debugger/). ")
+        self.m2ee.client.enable_debugger({'password': debugger_password})
+        logger.info("The remote debugger is now enabled, the password to "
+                    "use is %s" % debugger_password)
+        logger.info("You can use the remote debugger option in the Mendix "
+                    "Business Modeler to connect to the /debugger/ sub "
+                    "url on your application (e.g. "
+                    "https://app.example.com/debugger/). ")
 
     def do_disable_debugger(self, args):
         if self._report_not_implemented(4.3):
             return
 
-        m2eeresp = self.m2ee.client.disable_debugger()
-        if not m2eeresp.has_error():
-            logger.info("The remote debugger is now disabled.")
-        else:
-            m2eeresp.display_error()
+        self.m2ee.client.disable_debugger()
+        logger.info("The remote debugger is now disabled.")
 
     def do_show_debugger_status(self, args):
         if self._report_not_implemented(4.3):
             return
 
-        m2eeresp = self.m2ee.client.get_debugger_status()
-        if not m2eeresp.has_error():
-            enabled = m2eeresp.get_feedback()['enabled']
-            connected = m2eeresp.get_feedback()['client_connected']
-            paused = m2eeresp.get_feedback()['number_of_paused_microflows']
+        feedback = self.m2ee.client.get_debugger_status()
+        enabled = feedback['enabled']
+        connected = feedback['client_connected']
+        paused = feedback['number_of_paused_microflows']
 
-            logger.info("The remote debugger is currently %s." %
-                        ("enabled" if enabled else "disabled"))
-            if connected:
-                logger.info("A debugger session is connected.")
-            elif enabled:
-                logger.info("There is no connected debugger session.")
-            if enabled and paused == 0:
-                logger.info("There are no paused microflows.")
-            elif paused == 1:
-                logger.info("There is 1 paused microflow.")
-            elif paused > 1:
-                logger.info("There are %s paused microflows." % paused)
-        else:
-            m2eeresp.display_error()
+        logger.info("The remote debugger is currently %s." %
+                    ("enabled" if enabled else "disabled"))
+        if connected:
+            logger.info("A debugger session is connected.")
+        elif enabled:
+            logger.info("There is no connected debugger session.")
+        if enabled and paused == 0:
+            logger.info("There are no paused microflows.")
+        elif paused == 1:
+            logger.info("There is 1 paused microflow.")
+        elif paused > 1:
+            logger.info("There are %s paused microflows." % paused)
 
     def do_who(self, args):
         if args:
@@ -752,12 +742,12 @@ class CLI(cmd.Cmd, object):
 
     def _set_log_level(self, subscriber, node, level):
         level = level.upper()
-        response = self.m2ee.set_log_level(subscriber, node, level)
-        if response.has_error():
-            response.display_error()
-            print("Remember, all parameters are case sensitive")
-        else:
+        try:
+            self.m2ee.set_log_level(subscriber, node, level)
             logger.info("Loglevel for %s set to %s" % (node, level))
+        except m2ee.client.M2EEAdminException as e:
+            print("Remember, all parameters are case sensitive")
+            raise e
 
     def _report_not_implemented(self, avail_since):
         runtime_version = self.m2ee.config.get_runtime_version()
@@ -786,26 +776,20 @@ class CLI(cmd.Cmd, object):
     def do_show_current_runtime_requests(self, args):
         if self._report_not_implemented(('2.5.8', 3.1)):
             return
-        m2eeresp = self.m2ee.client.get_current_runtime_requests()
-        m2eeresp.display_error()
-        if not m2eeresp.has_error():
-            feedback = m2eeresp.get_feedback()
-            if not feedback:
-                logger.info("There are no currently running runtime requests.")
-            else:
-                print("Current running Runtime Requests:")
-                print(yaml.safe_dump(feedback))
+        feedback = self.m2ee.client.get_current_runtime_requests()
+        if len(feedback) == 0:
+            logger.info("There are no currently running runtime requests.")
+        else:
+            print("Current running Runtime Requests:")
+            print(yaml.safe_dump(feedback))
 
     def do_show_all_thread_stack_traces(self, args):
         if self._report_not_implemented(3.2):
             return
-        m2eeresp = self.m2ee.client.get_all_thread_stack_traces()
-        m2eeresp.display_error()
-        if not m2eeresp.has_error():
-            feedback = m2eeresp.get_feedback()
-            print("Current JVM Thread Stacktraces:")
-            print(json.dumps(feedback, sort_keys=True,
-                             indent=4, separators=(',', ': ')))
+        feedback = self.m2ee.client.get_all_thread_stack_traces()
+        print("Current JVM Thread Stacktraces:")
+        print(json.dumps(feedback, sort_keys=True,
+                         indent=4, separators=(',', ': ')))
 
     def do_interrupt_request(self, args):
         if (self._report_not_implemented(('2.5.8', 3.1))
@@ -816,15 +800,12 @@ class CLI(cmd.Cmd, object):
             logger.error("Use show_current_runtime_requests to view currently "
                          "running requests")
             return
-        m2eeresp = self.m2ee.client.interrupt_request({"request_id": args})
-        m2eeresp.display_error()
-        if not m2eeresp.has_error():
-            feedback = m2eeresp.get_feedback()
-            if feedback["result"] is False:
-                logger.error("A request with ID %s was not found" % args)
-            else:
-                logger.info("An attempt to cancel the running action was "
-                            "made.")
+        feedback = self.m2ee.client.interrupt_request({"request_id": args})
+        if feedback["result"] is False:
+            logger.error("A request with ID %s was not found" % args)
+        else:
+            logger.info("An attempt to cancel the running action was "
+                        "made.")
 
     def do_exit(self, args):
         return -1
@@ -896,14 +877,10 @@ class CLI(cmd.Cmd, object):
         limit = {}
         if limitint is not None:
             limit = {"limit": limitint}
-        m2eeresp = self.m2ee.client.get_logged_in_user_names(limit)
-        m2eeresp.display_error()
-        if not m2eeresp.has_error():
-            feedback = m2eeresp.get_feedback()
-            logger.info("Logged in users: (%s) %s" %
-                        (feedback['count'], feedback['users']))
-            return feedback['count']
-        return 0
+        feedback = self.m2ee.client.get_logged_in_user_names(limit)
+        logger.info("Logged in users: (%s) %s" %
+                    (feedback['count'], feedback['users']))
+        return feedback['count']
 
     def precmd(self, line):
         self.m2ee.reload_config_if_changed()
