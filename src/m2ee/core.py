@@ -69,10 +69,9 @@ class M2EE():
         return (pid_alive, m2ee_alive)
 
     def start_appcontainer(self):
-        if not self.config.all_systems_are_go():
-            logger.error("Cannot start MxRuntime due to previous critical "
-                         "errors.")
-            return False
+        if not self.config.all_systems_are_go():  # TODO: Exception later
+            raise M2EEException(
+                "Cannot start MxRuntime due to previous critical errors.")
 
         version = self.config.get_runtime_version()
 
@@ -86,24 +85,15 @@ class M2EE():
         (pid_alive, m2ee_alive) = self.check_alive()
         if not pid_alive and not m2ee_alive:
             logger.info("Trying to start the MxRuntime...")
-            if not self.runner.start():
-                return False
+            if not self.runner.start():  # TODO: runner should raise Exception
+                raise M2EEException("Failed to start MxRuntime process")
         elif not m2ee_alive:
-            return False
+            raise M2EEException("An MxRuntime process is already running but"
+                                "the Admin API is not available")
 
-        # check if Appcontainer startup went OK
-        m2eeresponse = self.client.runtime_status()
-        if m2eeresponse.has_error():
-            m2eeresponse.display_error()
-            return False
-
-        # check status, if it's created or starting, go on, else stop
-        m2eeresponse = self.client.runtime_status()
-        status = m2eeresponse.get_feedback()['status']
+        status = self.client.runtime_status()['status']
         if status not in ['feut', 'created', 'starting']:
-            logger.error("Cannot start MxRuntime when it has status %s" %
-                         status)
-            return False
+            raise M2EEException("Cannot start MxRuntime when it has status %s" % status)
         logger.debug("MxRuntime status: %s" % status)
 
         # go do startup sequence
@@ -114,11 +104,10 @@ class M2EE():
 
         if version < 5 and not hybrid:
             self._send_jetty_config()
-            return True
         elif version < 5 and hybrid:
             self._send_jetty_config()
             self._connect_xmpp()
-            response = self.client.create_runtime({
+            self.client.create_runtime({
                 "runtime_path":
                 os.path.join(self.config.get_runtime_path(), 'runtime'),
                 "port": self.config.get_runtime_port(),
@@ -126,20 +115,14 @@ class M2EE():
                 "use_blocking_connector":
                 self.config.get_runtime_blocking_connector(),
             })
-            response.display_error()
-            return not response.has_error()
         elif version >= 5:
-            response = self.client.update_appcontainer_configuration({
+            self.client.update_appcontainer_configuration({
                 "runtime_port": self.config.get_runtime_port(),
                 "runtime_listen_addresses":
                 self.config.get_runtime_listen_addresses(),
                 "runtime_jetty_options": self.config.get_jetty_options()
             })
-            response.display_error()
             self._connect_xmpp()
-            return not response.has_error()
-
-        return False
 
     def start_runtime(self, params):
         startresponse = self.client.start(params)
@@ -189,47 +172,27 @@ class M2EE():
         return True
 
     def _configure_logging(self):
-        # try configure logging
-        # catch:
-        # - logsubscriber already exists -> ignore
-        #   (TODO:functions to restart logging when config is changed?)
-        # - logging already started -> ignore
         logger.debug("Setting up logging...")
         logging_config = self.config.get_logging_config()
         if len(logging_config) == 0:
             logger.warn("No logging settings found, this is probably not what "
                         "you want.")
-        else:
-            for log_subscriber in logging_config:
-                m2eeresponse = self.client.create_log_subscriber(
-                    log_subscriber)
-                result = m2eeresponse.get_result()
-                if result == 3:  # logsubscriber name exists
-                    pass
-                elif result != 0:
-                    m2eeresponse.display_error()
-            self.client.start_logging()
+            return
+        for log_subscriber in logging_config:
+            self.client.create_log_subscriber(log_subscriber)
+        self.client.start_logging()
 
     def _send_jetty_config(self):
-        # send jetty configuration
         jetty_opts = self.config.get_jetty_options()
         if jetty_opts:
             logger.debug("Sending Jetty configuration...")
-            m2eeresponse = self.client.set_jetty_options(jetty_opts)
-            result = m2eeresponse.get_result()
-            if result != 0:
-                logger.error("Setting Jetty options failed: %s" %
-                             m2eeresponse.get_cause())
+            self.client.set_jetty_options(jetty_opts)
 
     def _send_mime_types(self):
         mime_types = self.config.get_mimetypes()
         if mime_types:
             logger.debug("Sending mime types...")
-            m2eeresponse = self.client.add_mime_type(mime_types)
-            result = m2eeresponse.get_result()
-            if result != 0:
-                logger.error("Setting mime types failed: %s" %
-                             m2eeresponse.get_cause())
+            self.client.add_mime_type(mime_types)
 
     def send_runtime_config(self, database_password=None):
         # send runtime configuration
@@ -316,7 +279,7 @@ class M2EE():
     def _connect_xmpp(self):
         xmpp_credentials = self.config.get_xmpp_credentials()
         if xmpp_credentials:
-            self.client.connect_xmpp(xmpp_credentials).display_error()
+            self.client.connect_xmpp(xmpp_credentials)
 
     def download_and_unpack_runtime(self, version):
         url = self.config.get_runtime_download_url(version)

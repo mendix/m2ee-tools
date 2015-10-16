@@ -9,8 +9,8 @@ import os
 import signal
 import errno
 from time import sleep
-
 from log import logger
+from client import M2EEAdminException
 
 
 class M2EERunner:
@@ -178,7 +178,10 @@ class M2EERunner:
                          "now." % os.getpid())
             os._exit(1)
         logger.trace("Calling CloseStdIO...")
-        self._client.close_stdio().display_error()
+        try:
+            self._client.close_stdio()
+        except M2EEAdminException as e:
+            logger.error("Failed to close stdio, ignoring: %s" % e)
         logger.trace("[%s] Exiting intermediate process..." % os.getpid())
         os._exit(0)
 

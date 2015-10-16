@@ -128,8 +128,7 @@ class CLI(cmd.Cmd, object):
                         "download_runtime command.")
             return
 
-        if not self.m2ee.start_appcontainer():
-            return
+        self.m2ee.start_appcontainer()
 
         database_password = None
         if not self.m2ee.config.has_database_password():
