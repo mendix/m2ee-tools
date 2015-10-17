@@ -904,6 +904,8 @@ class CLI(cmd.Cmd, object):
             logger.error(e)
         except m2ee.client.M2EEAdminHTTPException as e:
             logger.error(e)
+        except m2ee.exceptions.M2EEException as e:
+            logger.error(e)
 
     # if the emptyline function is not defined, Cmd will automagically
     # repeat the previous command given, and that's not what we want
