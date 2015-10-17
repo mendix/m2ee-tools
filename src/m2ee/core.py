@@ -88,8 +88,8 @@ class M2EE():
             if not self.runner.start():  # TODO: runner should raise Exception
                 raise M2EEException("Failed to start MxRuntime process")
         elif not m2ee_alive:
-            raise M2EEException("An MxRuntime process is already running but"
-                                "the Admin API is not available")
+            raise M2EEException("An MxRuntime process is already running but the Admin API is "
+                                "not available. You could try doing a stop or restart.")
 
         status = self.client.runtime_status()['status']
         if status not in ['feut', 'created', 'starting']:
