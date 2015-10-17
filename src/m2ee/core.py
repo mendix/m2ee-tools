@@ -125,11 +125,8 @@ class M2EE():
             self._connect_xmpp()
 
     def start_runtime(self, params):
-        startresponse = self.client.start(params)
-        result = startresponse.get_result()
-        if result == client_errno.SUCCESS:
-            logger.info("The MxRuntime is fully started now.")
-        return startresponse
+        self.client.start(params)
+        logger.info("The MxRuntime is fully started now.")
 
     def stop(self, timeout=10):
         if self.runner.check_pid():
@@ -201,6 +198,7 @@ class M2EE():
         # XXX: fix mxruntime to report all errors and warnings in adminaction
         # feedback instead of stopping to process input
         # if errors, abort.
+        logger.debug("Sending configuration...")
 
         config = copy.deepcopy(self.config.get_runtime_config())
         if database_password:
@@ -227,28 +225,11 @@ class M2EE():
                 config[option] = ','.join(config[option])
 
         logger.debug("Sending MxRuntime configuration...")
-        m2eeresponse = self.client.update_configuration(config)
-        result = m2eeresponse.get_result()
-        if result == 1:
-            logger.error("Sending configuration failed: %s" %
-                         m2eeresponse.get_cause())
-            logger.error("You'll have to fix the configuration and run start "
-                         "again...")
-            return False
+        self.client.update_configuration(config)
 
-        # if running 2.5.x we send the MicroflowConstants via
-        # update_custom_configuration
         if custom_config_25:
             logger.debug("Sending 2.5.x custom configuration...")
-            m2eeresponse = self.client.update_custom_configuration(
-                custom_config_25)
-            result = m2eeresponse.get_result()
-            if result == 1:
-                logger.error("Sending custom configuration failed: %s" %
-                             m2eeresponse.get_cause())
-                return False
-
-        return True
+            self.client.update_custom_configuration(custom_config_25)
 
     def set_log_level(self, subscriber, node, level):
         params = {"subscriber": subscriber, "node": node, "level": level}
