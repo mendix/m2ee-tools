@@ -248,11 +248,8 @@ class M2EE():
         fd.close()
 
     def unpack(self, mda_name):
-        if util.unpack(self.config, mda_name):
-            self.reload_config()
-        else:
-            return False
-
+        util.unpack(self.config, mda_name)
+        self.reload_config()
         post_unpack_hook = self.config.get_post_unpack_hook()
         if post_unpack_hook:
             util.run_post_unpack_hook(post_unpack_hook)

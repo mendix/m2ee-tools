@@ -11,6 +11,7 @@ import subprocess
 import socket
 import httplib
 from log import logger
+from m2ee.exceptions import M2EEException
 
 try:
     import readline
@@ -33,8 +34,7 @@ def unpack(config, mda_name):
 
     mda_file_name = os.path.join(config.get_model_upload_path(), mda_name)
     if not os.path.isfile(mda_file_name):
-        logger.error("file %s does not exist" % mda_file_name)
-        return False
+        raise M2EEException("File %s does not exist." % mda_file_name)
 
     logger.debug("Testing archive...")
     cmd = ("unzip", "-tqq", mda_file_name)
@@ -45,23 +45,20 @@ def unpack(config, mda_name):
                                 stderr=subprocess.PIPE)
         (stdout, stderr) = proc.communicate()
 
+        logger.trace("stdout: %s" % stdout)
+        logger.trace("stderr: %s" % stderr)
         if proc.returncode != 0:
-            logger.error("An error occured while testing archive "
-                         "consistency:")
-            logger.error("stdout: %s" % stdout)
-            logger.error("stderr: %s" % stderr)
-            return False
-        else:
-            logger.trace("stdout: %s" % stdout)
-            logger.trace("stderr: %s" % stderr)
+            raise M2EEException("\n".join([
+                "An error occured while testing archive consistency:",
+                "stdout: %s" % stdout,
+                "stderr: %s" % stderr,
+            ]))
     except OSError, ose:
         import errno
         if ose.errno == errno.ENOENT:
-            logger.error("The unzip program could not be found: %s" %
-                         ose.strerror)
+            raise M2EEException("The unzip program could not be found", ose)
         else:
-            logger.error("An error occured while executing unzip: %s" % ose)
-        return False
+            raise M2EEException("An error occured while executing unzip: %s " % ose, ose)
 
     logger.debug("Removing everything in model/ and web/ locations...")
     # TODO: error handling. removing model/ and web/ itself should not be
@@ -78,18 +75,17 @@ def unpack(config, mda_name):
                             stderr=subprocess.PIPE)
     (stdout, stderr) = proc.communicate()
 
+    logger.trace("stdout: %s" % stdout)
+    logger.trace("stderr: %s" % stderr)
     if proc.returncode != 0:
-        logger.error("An error occured while extracting archive:")
-        logger.error("stdout: %s" % stdout)
-        logger.error("stderr: %s" % stderr)
-        return False
-    else:
-        logger.trace("stdout: %s" % stdout)
-        logger.trace("stderr: %s" % stderr)
+        raise M2EEException("\n".join([
+            "An error occured while extracting archive:",
+            "stdout: %s" % stdout,
+            "stderr: %s" % stderr,
+        ]))
 
     # XXX: reset permissions on web/ model/ to be sure after executing this
     # function
-    return True
 
 
 def fix_mxclientsystem_symlink(config):
