@@ -346,9 +346,8 @@ class CLI(cmd.Cmd, object):
     def do_check_health(self, args):
         if self._report_not_implemented('2.5.4'):
             return
-        health_response = self.m2ee.client.check_health()
-        if not health_response.has_error():
-            feedback = health_response.get_feedback()
+        try:
+            feedback = self.m2ee.client.check_health()
             if feedback['health'] == 'healthy':
                 logger.info("Health check microflow says the application is "
                             "healthy.")
@@ -361,17 +360,17 @@ class CLI(cmd.Cmd, object):
             else:
                 logger.error("Unexpected health check status: %s" %
                              feedback['health'])
-        else:
+        except m2ee.client.M2EEAdminException as e:
             runtime_version = self.m2ee.config.get_runtime_version()
-            if (health_response.get_result() == 3
-                    and runtime_version // ('2.5.4', '2.5.5')):
+            if e.result == 3 and runtime_version // ('2.5.4', '2.5.5'):
+                # Error 3 is: HEALTH_MICROFLOW_EXECUTION_FAILED
                 # Because of an incomplete implementation, in Mendix 2.5.4 or
                 # 2.5.5 this means that the runtime is health-check
                 # capable, but no health check microflow is defined.
                 logger.info("Health check microflow is probably not "
                             "configured, no health information available.")
             else:
-                health_response.display_error()
+                raise e
 
     def do_statistics(self, args):
         stats = self.m2ee.client.runtime_statistics()
