@@ -11,6 +11,7 @@ import errno
 from time import sleep
 from log import logger
 from client import M2EEAdminException
+from m2ee.exceptions import M2EEException
 
 
 class M2EERunner:
@@ -95,7 +96,7 @@ class M2EERunner:
     def start(self, timeout=60, step=0.25):
         if self.check_pid():
             logger.error("The application process is already started!")
-            return False
+            return
 
         env = self._config.get_java_env()
         cmd = self._config.get_java_cmd()
@@ -109,15 +110,13 @@ class M2EERunner:
                              "exit..." % os.getpid())
                 # prevent zombie process
                 (waitpid, result) = os.waitpid(pid, 0)
-                if result == 0:
-                    logger.debug("The JVM process has been started.")
-                    return True
-                logger.error("Starting the JVM process did not succeed...")
-                return False
+                if result != 0:
+                    raise M2EEException("Starting the JVM process did not succeed...")
+                logger.debug("The JVM process has been started.")
+                return
         except OSError, e:
-            logger.error("Forking subprocess failed: %d (%s)\n" %
-                         (e.errno, e.strerror))
-            return
+            raise M2EEException("Forking subprocess failed: %d (%s)\n" %
+                                (e.errno, e.strerror))
         logger.trace("[%s] Now in intermediate forked process..." %
                      os.getpid())
         # decouple from parent environment

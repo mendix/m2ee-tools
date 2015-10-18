@@ -86,8 +86,7 @@ class M2EE():
         (pid_alive, m2ee_alive) = self.check_alive()
         if not pid_alive and not m2ee_alive:
             logger.info("Trying to start the MxRuntime...")
-            if not self.runner.start():  # TODO: runner should raise Exception
-                raise M2EEException("Failed to start MxRuntime process")
+            self.runner.start()
         elif not m2ee_alive:
             raise M2EEException("An MxRuntime process is already running but the Admin API is "
                                 "not available. You could try doing a stop or restart.")
