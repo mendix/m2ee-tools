@@ -823,39 +823,24 @@ class CLI(cmd.Cmd, object):
 
     def do_download_runtime(self, args):
         if args:
-            try:
-                mxversion = m2ee.version.MXVersion(args)
-            except Exception:
-                logger.error("The provided runtime version string is not a "
-                             "valid Mendix Runtime version number. Try using "
-                             "the format x.y.z, e.g. 4.7.1.")
-                return
+            mxversion = m2ee.version.MXVersion(args)
         else:
             mxversion = self.m2ee.config.get_runtime_version()
 
-        if not mxversion:
+        if mxversion is None:
             logger.info("You did not specify a Mendix Runtime version to "
                         "download, and no current unpacked application "
                         "model is available to determine the version from. "
                         "Specify a version number or use unpack first.")
             return
 
-        version = str(mxversion)
-
-        if self.m2ee.config.lookup_in_mxjar_repo(version):
+        if self.m2ee.config.lookup_in_mxjar_repo(str(mxversion)):
             logger.info("The Mendix Runtime for version %s is already "
                         "installed. If you want to download another Runtime "
                         "version, specify the version number as argument to "
-                        "download_runtime." % version)
+                        "download_runtime." % mxversion)
             return
-
-        if not self.m2ee.config.get_first_writable_mxjar_repo():
-            logger.error("None of the locations specified in the mxjar_repo "
-                         "configuration option are writable by the current "
-                         "user account.")
-            return
-
-        self.m2ee.download_and_unpack_runtime(version)
+        self.m2ee.download_and_unpack_runtime(mxversion)
 
     def _cleanup_logging(self):
         # atexit

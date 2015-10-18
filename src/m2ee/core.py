@@ -11,6 +11,7 @@ import copy
 from config import M2EEConfig
 from client import M2EEClient, M2EEAdminNotAvailable
 from runner import M2EERunner
+from version import MXVersion
 from log import logger
 from m2ee.exceptions import M2EEException
 
@@ -260,9 +261,12 @@ class M2EE():
             self.client.connect_xmpp(xmpp_credentials)
 
     def download_and_unpack_runtime(self, version):
-        url = self.config.get_runtime_download_url(version)
+        mxversion = MXVersion(version)
+        url = self.config.get_runtime_download_url(mxversion)
         path = self.config.get_first_writable_mxjar_repo()
-        if util.download_and_unpack_runtime(url, path):
-            self.reload_config()
-        else:
-            return False
+        if path is None:
+            raise M2EEException("None of the locations specified in the mxjar_repo "
+                                "configuration option are writable by the current "
+                                "user account.")
+        util.download_and_unpack_runtime(url, path)
+        self.reload_config()
