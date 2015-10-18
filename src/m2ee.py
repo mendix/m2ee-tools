@@ -273,8 +273,7 @@ class CLI(cmd.Cmd, object):
         return ''.join(newpasswd_list)
 
     def do_create_admin_user(self, args=None):
-        (pid_alive, m2ee_alive) = self.m2ee.check_alive()
-        if not m2ee_alive:
+        if not self.m2ee.client.ping():
             logger.warn("The application process needs to be running to "
                         "create a user object in the application.")
             return
@@ -288,8 +287,7 @@ class CLI(cmd.Cmd, object):
             self.m2ee.client.create_admin_user({"password": newpw1})
 
     def do_update_admin_user(self, args=None):
-        (pid_alive, m2ee_alive) = self.m2ee.check_alive()
-        if not m2ee_alive:
+        if not self.m2ee.client.ping():
             logger.warn("The application process needs to be running to "
                         "change user objects in the application.")
             return
