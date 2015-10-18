@@ -788,8 +788,7 @@ class CLI(cmd.Cmd, object):
                          indent=4, separators=(',', ': ')))
 
     def do_interrupt_request(self, args):
-        if (self._report_not_implemented(('2.5.8', 3.1))
-                or self._report_not_running()):
+        if self._report_not_implemented(('2.5.8', 3.1)):
             return
         if args == "":
             logger.error("This function needs a request id as parameter")
