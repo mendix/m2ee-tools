@@ -335,33 +335,17 @@ class CLI(cmd.Cmd, object):
         print("\n".join(critlist))
 
     def do_check_health(self, args):
-        if self._report_not_implemented('2.5.4'):
-            return
-        try:
-            feedback = self.m2ee.client.check_health()
-            if feedback['health'] == 'healthy':
-                logger.info("Health check microflow says the application is "
-                            "healthy.")
-            elif feedback['health'] == 'sick':
-                logger.warning("Health check microflow says the application "
-                               "is sick: %s" % feedback['diagnosis'])
-            elif feedback['health'] == 'unknown':
-                logger.info("Health check microflow is not configured, no "
-                            "health information available.")
-            else:
-                logger.error("Unexpected health check status: %s" %
-                             feedback['health'])
-        except m2ee.client.M2EEAdminException as e:
-            runtime_version = self.m2ee.config.get_runtime_version()
-            if e.result == 3 and runtime_version // ('2.5.4', '2.5.5'):
-                # Error 3 is: HEALTH_MICROFLOW_EXECUTION_FAILED
-                # Because of an incomplete implementation, in Mendix 2.5.4 or
-                # 2.5.5 this means that the runtime is health-check
-                # capable, but no health check microflow is defined.
-                logger.info("Health check microflow is probably not "
-                            "configured, no health information available.")
-            else:
-                raise e
+        feedback = self.m2ee.client.check_health()
+        if feedback['health'] == 'healthy':
+            logger.info("Health check microflow says the application is healthy.")
+        elif feedback['health'] == 'sick':
+            logger.warning("Health check microflow says the application "
+                           "is sick: %s" % feedback['diagnosis'])
+        elif feedback['health'] == 'unknown':
+            logger.info("Health check microflow is not configured, no "
+                        "health information available.")
+        else:
+            logger.error("Unexpected health check status: %s" % feedback['health'])
 
     def do_statistics(self, args):
         stats = self.m2ee.client.runtime_statistics()
@@ -370,8 +354,6 @@ class CLI(cmd.Cmd, object):
                          indent=4, separators=(',', ': ')))
 
     def do_show_cache_statistics_raw(self, args):
-        if self._report_not_implemented(4):
-            return
         stats = self.m2ee.client.cache_statistics()
         print(json.dumps(stats, sort_keys=True,
                          indent=4, separators=(',', ': ')))
@@ -409,8 +391,6 @@ class CLI(cmd.Cmd, object):
                 print('Model version: %s' % feedback['model_version'])
 
     def do_show_license_information(self, args):
-        if self._report_not_implemented(3):
-            return
         feedback = self.m2ee.client.get_license_information()
         if 'license' in feedback:
             logger.debug(yaml.safe_dump(feedback['license'],
@@ -480,11 +460,11 @@ class CLI(cmd.Cmd, object):
                            else '')))
 
     def do_activate_license(self, args):
-        if self._report_not_implemented(3):
-            return
+        self.m2ee.client.require_action("set_license")
         print("The command activate_license will set the license key used in "
               "this application.")
-        if self.m2ee.config.get_runtime_version() < 4.1:
+        runtime_version = m2ee.version.MXVersion(self.m2ee.client.about()['version'])
+        if runtime_version < 4.1:
             print("Mendix Runtime versions before 4.1 do not check the "
                   "submitted license key for validity, so incorrect input "
                   "will un-license your Mendix application without warning! "
@@ -510,9 +490,7 @@ class CLI(cmd.Cmd, object):
         self.m2ee.client.set_license({'license_key': license_key})
 
     def do_enable_debugger(self, args):
-        if self._report_not_implemented(4.3):
-            return
-
+        self.m2ee.client.require_action("enable_debugger")
         if not args:
             debugger_password = raw_input(
                 "Please enter the password to be used for remote debugger "
@@ -533,16 +511,10 @@ class CLI(cmd.Cmd, object):
                     "https://app.example.com/debugger/). ")
 
     def do_disable_debugger(self, args):
-        if self._report_not_implemented(4.3):
-            return
-
         self.m2ee.client.disable_debugger()
         logger.info("The remote debugger is now disabled.")
 
     def do_show_debugger_status(self, args):
-        if self._report_not_implemented(4.3):
-            return
-
         feedback = self.m2ee.client.get_debugger_status()
         enabled = feedback['enabled']
         connected = feedback['client_connected']
@@ -736,33 +708,7 @@ class CLI(cmd.Cmd, object):
             print("Remember, all parameters are case sensitive")
             raise e
 
-    def _report_not_implemented(self, avail_since):
-        runtime_version = self.m2ee.config.get_runtime_version()
-        if runtime_version is None:
-            return False  # DUNNO
-        if not runtime_version >= avail_since:
-            logger.error("This action is not available in the Mendix Runtime "
-                         "version you are currently using.")
-            if isinstance(avail_since, tuple):
-                if len(avail_since) > 2:
-                    implemented_in = (
-                        '%s, %s and %s' %
-                        (
-                            ', '.join(map(str, avail_since[:-2])),
-                            avail_since[-2], avail_since[-1]
-                        )
-                    )
-                else:
-                    implemented_in = '%s and %s' % avail_since
-            else:
-                implemented_in = avail_since
-            logger.error("It was implemented in Mendix %s" % implemented_in)
-            return True
-        return False
-
     def do_show_current_runtime_requests(self, args):
-        if self._report_not_implemented(('2.5.8', 3.1)):
-            return
         feedback = self.m2ee.client.get_current_runtime_requests()
         if len(feedback) == 0:
             logger.info("There are no currently running runtime requests.")
@@ -771,16 +717,12 @@ class CLI(cmd.Cmd, object):
             print(yaml.safe_dump(feedback))
 
     def do_show_all_thread_stack_traces(self, args):
-        if self._report_not_implemented(3.2):
-            return
         feedback = self.m2ee.client.get_all_thread_stack_traces()
         print("Current JVM Thread Stacktraces:")
         print(json.dumps(feedback, sort_keys=True,
                          indent=4, separators=(',', ': ')))
 
     def do_interrupt_request(self, args):
-        if self._report_not_implemented(('2.5.8', 3.1)):
-            return
         if args == "":
             logger.error("This function needs a request id as parameter")
             logger.error("Use show_current_runtime_requests to view currently "

@@ -101,13 +101,7 @@ def check_health(client):
         else:
             return (STATE_WARNING, "Unexpected health check status: %s" % feedback['health'])
     except M2EEAdminException as e:
-        if (e.result == 3 and
-                e.cause == "java.lang.IllegalArgumentException: Action should not be null"):
-            # Because of an incomplete implementation, in Mendix 2.5.4 or
-            # 2.5.5 this means that the runtime is health-check
-            # capable, but no health check microflow is defined.
-            return (STATE_UNKNOWN, "Health check not available, health could not be determined")
-        elif e.result == e.ERR_ACTION_NOT_FOUND:
+        if e.result == e.ERR_ACTION_NOT_FOUND:
             return (STATE_UNKNOWN, "Health check not available, health could not be determined")
         else:
             return (STATE_CRITICAL, "Health check failed unexpectedly: %s" % e)

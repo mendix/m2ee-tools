@@ -8,6 +8,7 @@
 from base64 import b64encode
 import socket
 from log import logger
+from version import MXVersion
 
 try:
     import httplib2
@@ -82,6 +83,29 @@ class M2EEClient:
         if params is not None:
             myparams.update(params)
         return self.request("echo", myparams, timeout)
+
+    def require_action(self, action):
+        try:
+            feedback = self.get_admin_action_info()
+            implemented = action in feedback['action_info']
+        except M2EEAdminException as e:
+            if e.result == M2EEAdminException.ERR_ACTION_NOT_FOUND:
+                if action in M2EEAdminException.implemented_in:
+                    implemented_in = M2EEAdminException.implemented_in[action]
+                    runtime_version = MXVersion(self.about()['version'])
+                    implemented = runtime_version >= implemented_in
+                else:
+                    implemented = True
+            else:
+                raise
+        if implemented is False:
+            raise M2EEAdminException(
+                action,
+                {"result": M2EEAdminException.ERR_ACTION_NOT_FOUND}
+            )
+
+    def get_admin_action_info(self):
+        return self.request("get_admin_action_info")
 
     def get_critical_log_messages(self):
         echo_feedback = self.echo()
@@ -199,7 +223,18 @@ class M2EEClient:
         return self.request("get_log_settings", params)
 
     def check_health(self, params=None):
-        return self.request("check_health", params)
+        try:
+            return self.request("check_health", params)
+        except M2EEAdminException as e:
+            runtime_version = MXVersion(self.about()['version'])
+            if e.result == 3 and runtime_version // ('2.5.4', '2.5.5'):
+                # Error 3 is: HEALTH_MICROFLOW_EXECUTION_FAILED
+                # Because of an incomplete implementation, in Mendix 2.5.4 or
+                # 2.5.5 this means that the runtime is health-check
+                # capable, but no health check microflow is defined.
+                # Find a way or fake one! Yolo...
+                return {"health": "unknown"}
+            raise
 
     def get_current_runtime_requests(self):
         return self.request("get_current_runtime_requests")
@@ -256,6 +291,20 @@ class M2EEAdminException(Exception):
     ERR_READ_REQUEST = -6
     ERR_WRITE_REQUEST = -7
 
+    implemented_in = {
+        "get_admin_action_info": '3',
+        "check_health": '2.5.4',
+        "cache_statistics": '4',
+        "get_license_information": '3',
+        "set_license": '3',
+        "enable_debugger": '4.3',
+        "disable_debugger": '4.3',
+        "get_debugger_status": '4.3',
+        "get_current_runtime_requests": ('2.5.8', '3.1'),
+        "interrupt_request": ('2.5.8', '3.1'),
+        "get_all_thread_stack_traces": '3.2',
+    }
+
     def __init__(self, action, json):
         self.action = action
         self.json = json
@@ -266,8 +315,28 @@ class M2EEAdminException(Exception):
         self.stacktrace = json.get('stacktrace', None)
 
     def __str__(self):
-        error = "Executing %s did not succeed: result: %s, message: %s" % (
-            self.action, self.result, self.message)
-        if self.cause is not None:
-            error = "%s, caused by: %s" % (error, self.cause)
-        return error
+        if ((self.result == M2EEAdminException.ERR_ACTION_NOT_FOUND
+             and self.action in M2EEAdminException.implemented_in)):
+            avail_since = M2EEAdminException.implemented_in[self.action]
+            if isinstance(avail_since, tuple):
+                if len(avail_since) > 2:
+                    implemented_in_msg = (
+                        '%s, %s and %s' %
+                        (
+                            ', '.join(map(str, avail_since[:-2])),
+                            avail_since[-2], avail_since[-1]
+                        )
+                    )
+                else:
+                    implemented_in_msg = '%s and %s' % avail_since
+            else:
+                implemented_in_msg = avail_since
+            return ("This action is not available in the Mendix Runtime "
+                    "version you are currently using. It was implemented "
+                    "in Mendix %s" % implemented_in_msg)
+        else:
+            error = "Executing %s did not succeed: result: %s, message: %s" % (
+                self.action, self.result, self.message)
+            if self.cause is not None:
+                error = "%s, caused by: %s" % (error, self.cause)
+            return error
