@@ -67,14 +67,7 @@ class CLI(cmd.Cmd, object):
         self._start()
 
     def _stop(self):
-        (pid_alive, m2ee_alive) = self.m2ee.check_alive()
-        if not pid_alive and not m2ee_alive:
-            logger.info("Nothing to stop, the application is not running.")
-            return True
-
         logger.debug("Trying to stop the application.")
-        stopped = False
-
         stopped = self.m2ee.stop()
         if stopped:
             return True

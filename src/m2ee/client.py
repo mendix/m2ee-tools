@@ -111,13 +111,15 @@ class M2EEClient:
         return []
 
     def shutdown(self, timeout=5):
-        # currently, the exception thrown is a feature, because the shutdown
-        # action gets interrupted while executing
+        # Currently, the exception thrown is a feature, because the shutdown
+        # action gets interrupted while executing. Even if an internal error
+        # occurs in the runtime / appcontainer there's no point in trying to
+        # handle it, if it would show up here, since there's an unforgiving
+        # System.exit(0); in the finally clause of the shutdown action. ;-)
         try:
             self.request("shutdown", timeout=timeout)
         except Exception:
-            return True
-        return False
+            pass
 
     def close_stdio(self):
         return self.request("close_stdio")

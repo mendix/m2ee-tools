@@ -129,17 +129,23 @@ class M2EE():
         logger.info("The MxRuntime is fully started now.")
 
     def stop(self, timeout=10):
-        if self.runner.check_pid():
+        if self.client.ping():
             logger.info("Waiting for the application to shutdown...")
             stopped = self.runner.stop(timeout)
             if stopped:
                 logger.info("The application has been stopped successfully.")
                 return True
-            logger.warn("The application did not shutdown by itself...")
-            return False
+            else:
+                logger.warn("The application did not shutdown by itself...")
+                return False
         else:
-            self.runner.cleanup_pid()
-        return True
+            if self.runner.check_pid():
+                logger.warn("Admin API not available, so not able to use shutdown action.")
+                return False
+            else:
+                logger.info("Nothing to stop, the application process is not running.")
+                self.runner.cleanup_pid()
+                return True
 
     def terminate(self, timeout=10):
         if self.runner.check_pid():
