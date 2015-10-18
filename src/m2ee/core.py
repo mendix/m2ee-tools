@@ -9,7 +9,7 @@ import time
 import copy
 
 from config import M2EEConfig
-from client import M2EEClient, M2EEAdminNotAvailable
+from client import M2EEClient
 from runner import M2EERunner
 from version import MXVersion
 from log import logger
@@ -47,11 +47,7 @@ class M2EE():
 
     def check_alive(self):
         pid_alive = self.runner.check_pid()
-        try:
-            self.client.echo()
-            m2ee_alive = True
-        except M2EEAdminNotAvailable:
-            m2ee_alive = False
+        m2ee_alive = self.client.ping()
 
         if pid_alive and not m2ee_alive:
             logger.error("The application process seems to be running "
