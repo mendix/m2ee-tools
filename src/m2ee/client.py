@@ -36,7 +36,8 @@ class M2EEClient:
         self._url = url
         self._headers = {
             'Content-Type': 'application/json',
-            'X-M2EE-Authentication': b64encode(password)
+            'X-M2EE-Authentication': b64encode(password),
+            'Connection': 'close',
         }
 
     def request(self, action, params=None, timeout=None):
