@@ -27,12 +27,16 @@ def dumpdb(config, name=None):
     logger.info("Writing database dump to %s" % db_dump_file_name)
     cmd = (config.get_pg_dump_binary(), "-O", "-x", "-F", "c")
     logger.trace("Executing %s" % str(cmd))
-    proc = subprocess.Popen(cmd, env=env, stdout=open(db_dump_file_name, 'w+'),
-                            stderr=subprocess.PIPE)
-    (_, stderr) = proc.communicate()
+    try:
+        proc = subprocess.Popen(cmd, env=env, stdout=open(db_dump_file_name, 'w+'),
+                                stderr=subprocess.PIPE)
+        (_, stderr) = proc.communicate()
 
-    if stderr != '':
-        raise M2EEException("An error occured while calling pg_dump: %s" % stderr.strip())
+        if stderr != '':
+            raise M2EEException("An error occured while creating database dump: %s" %
+                                stderr.strip())
+    except OSError as e:
+        raise M2EEException("Database dump failed, cmd: %s" % cmd, e)
 
 
 def restoredb(config, dump_name):
@@ -46,12 +50,16 @@ def restoredb(config, dump_name):
     cmd = (config.get_pg_restore_binary(), "-d", env['PGDATABASE'],
            "-O", "-n", "public", "-x", db_dump_file_name)
     logger.trace("Executing %s" % str(cmd))
-    proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-    (stdout, stderr) = proc.communicate()
+    try:
+        proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        (stdout, stderr) = proc.communicate()
 
-    if stderr != '':
-        raise M2EEException("An error occured while calling pg_restore: %s " % stderr.strip())
+        if stderr != '':
+            raise M2EEException("An error occured while doing database restore: %s " %
+                                stderr.strip())
+    except OSError as e:
+        raise M2EEException("Database restore failed, cmd: %s" % cmd, e)
 
 
 def emptydb(config):
@@ -68,22 +76,28 @@ def emptydb(config):
         "('pg_catalog', 'pg_toast') AND pg_catalog.pg_table_is_visible(c.oid)"
     )
     logger.trace("Executing %s, creating pipe for stdout,stderr" % str(cmd))
-    proc1 = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-    (stdout, stderr) = proc1.communicate()
+    try:
+        proc1 = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+        (stdout, stderr) = proc1.communicate()
 
-    if stderr != '':
-        raise M2EEException("An error occured while calling psql: %s" % stderr.strip())
+        if stderr != '':
+            raise M2EEException("An error occured while emptying database: %s" % stderr.strip())
+    except OSError as e:
+        raise M2EEException("Emptying database failed, cmd: %s" % cmd, e)
 
     stdin = stdout
     cmd = (config.get_psql_binary(),)
     logger.trace("Piping stdout,stderr to %s" % str(cmd))
-    proc2 = subprocess.Popen(cmd, env=env, stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    (stdout, stderr) = proc2.communicate(stdin)
+    try:
+        proc2 = subprocess.Popen(cmd, env=env, stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (stdout, stderr) = proc2.communicate(stdin)
 
-    if stderr != '':
-        raise M2EEException("An error occured while calling psql: %s" % stderr.strip())
+        if stderr != '':
+            raise M2EEException("An error occured while calling psql: %s" % stderr.strip())
+    except OSError as e:
+        raise M2EEException("Emptying database failed, cmd: %s" % cmd, e)
 
     logger.info("Removing all sequences...")
     # get list of drop sequence commands
@@ -96,22 +110,28 @@ def emptydb(config):
         "pg_catalog.pg_table_is_visible(c.oid)"
     )
     logger.trace("Executing %s, creating pipe for stdout,stderr" % str(cmd))
-    proc1 = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-    (stdout, stderr) = proc1.communicate()
+    try:
+        proc1 = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+        (stdout, stderr) = proc1.communicate()
 
-    if stderr != '':
-        raise M2EEException("An error occured while calling psql: %s" % stderr.strip())
+        if stderr != '':
+            raise M2EEException("An error occured while calling psql: %s" % stderr.strip())
+    except OSError as e:
+        raise M2EEException("Emptying database failed, cmd: %s" % cmd, e)
 
     stdin = stdout
     cmd = (config.get_psql_binary(),)
     logger.trace("Piping stdout,stderr to %s" % str(cmd))
-    proc2 = subprocess.Popen(cmd, env=env, stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    (stdout, stderr) = proc2.communicate(stdin)
+    try:
+        proc2 = subprocess.Popen(cmd, env=env, stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (stdout, stderr) = proc2.communicate(stdin)
 
-    if stderr != '':
-        raise M2EEException("An error occured while calling psql: %s" % stderr.strip())
+        if stderr != '':
+            raise M2EEException("An error occured while calling psql: %s" % stderr.strip())
+    except OSError as e:
+        raise M2EEException("Emptying database failed, cmd: %s" % cmd, e)
 
 
 def psql(config):
@@ -119,4 +139,7 @@ def psql(config):
     env.update(config.get_pg_environment())
     cmd = (config.get_psql_binary(),)
     logger.trace("Executing %s" % str(cmd))
-    subprocess.call(cmd, env=env)
+    try:
+        subprocess.call(cmd, env=env)
+    except OSError as e:
+        raise M2EEException("An error occured while calling psql, cmd: %s" % cmd, e)
