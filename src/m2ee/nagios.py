@@ -5,6 +5,8 @@
 # http://www.mendix.com/
 #
 
+import datetime
+import time
 from m2ee.client import M2EEAdminException, M2EEAdminNotAvailable
 from m2ee.log import logger
 
@@ -37,6 +39,14 @@ def check(runner, client):
         message = "%s; %s" % (message, critical_log_message)
         if state != STATE_CRITICAL:
             state = critical_log_state
+
+    (license_state, license_message) = check_license(client)
+    logger.trace("check_license: %s, %s" % (license_state, license_message))
+
+    if license_state in (STATE_WARNING, STATE_CRITICAL):
+        message = "%s; %s" % (message, license_message)
+        if state != STATE_CRITICAL:
+            state = license_state
 
     print message
     if loglines is not None:
@@ -126,3 +136,37 @@ def check_critical_logs(client):
     except M2EEAdminNotAvailable as e:
         return (STATE_UNKNOWN,
                 "Admin API not available, critical log messages could not be checked", None)
+
+
+def check_license(client):
+    try:
+        feedback = client.get_license_information()
+        expiry = feedback['license'].get('ExpirationDate', None)
+        if expiry is None:
+            return(STATE_OK, "License has no expiry date")
+        expiry = expiry / 1000
+        now = time.time()
+        expires_in_days = int((expiry - now) / 86400) + 1
+        if expires_in_days == 1:
+            expires_in_days_txt = "within a day"
+        else:
+            expires_in_days_txt = "within %s days" % expires_in_days
+        warning = 30 * 86400
+        critical = 7 * 86400
+        expiry_txt = ("License expires at %s" %
+                      datetime.datetime.fromtimestamp(expiry)
+                      .strftime("%a, %d %b %Y %H:%M:%S %z")
+                      .rstrip())
+        if now + critical > expiry:
+            return(STATE_CRITICAL, "%s (%s)" % (expiry_txt, expires_in_days_txt))
+        elif now + warning > expiry:
+            return(STATE_WARNING, "%s (%s)" % (expiry_txt, expires_in_days_txt))
+        else:
+            return(STATE_OK, expiry_txt)
+    except M2EEAdminException as e:
+        if e.result == M2EEAdminException.ERR_ACTION_NOT_FOUND:
+            return (STATE_UNKNOWN, "No license info available")
+        else:
+            return (STATE_CRITICAL, "Checking license expiration failed unexpectedly: %s" % e)
+    except M2EEAdminNotAvailable as e:
+        return (STATE_UNKNOWN, "Admin API not available, license expiration could now be checked")
