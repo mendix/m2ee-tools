@@ -571,6 +571,11 @@ class CLI(cmd.Cmd, object):
             pgutil.dumpdb(self.m2ee.config)
 
     def do_restoredb(self, args):
+        if not self.m2ee.config.allow_destroy_db():
+            logger.error("Refusing to do a destructive database operation "
+                         "because the allow_destroy_db configuration option "
+                         "is set to false.")
+            return
         if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
             return
@@ -602,6 +607,11 @@ class CLI(cmd.Cmd, object):
                 f.endswith(".backup")]
 
     def do_emptydb(self, args):
+        if not self.m2ee.config.allow_destroy_db():
+            logger.error("Refusing to do a destructive database operation "
+                         "because the allow_destroy_db configuration option "
+                         "is set to false.")
+            return
         if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")
             return

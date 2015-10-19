@@ -10,10 +10,10 @@ import subprocess
 import time
 
 from log import logger
+from m2ee.exceptions import M2EEException
 
 
 def dumpdb(config, name=None):
-
     env = os.environ.copy()
     env.update(config.get_pg_environment())
 
@@ -27,28 +27,21 @@ def dumpdb(config, name=None):
     logger.info("Writing database dump to %s" % db_dump_file_name)
     cmd = (config.get_pg_dump_binary(), "-O", "-x", "-F", "c")
     logger.trace("Executing %s" % str(cmd))
-    proc = subprocess.Popen(cmd, env=env, stdout=open(db_dump_file_name, 'w+'))
-    proc.communicate()
+    proc = subprocess.Popen(cmd, env=env, stdout=open(db_dump_file_name, 'w+'),
+                            stderr=subprocess.PIPE)
+    (_, stderr) = proc.communicate()
+
+    if stderr != '':
+        raise M2EEException("An error occured while calling pg_dump: %s" % stderr.strip())
 
 
 def restoredb(config, dump_name):
-
-    if not config.allow_destroy_db():
-        logger.error("Refusing to do a destructive database operation "
-                     "because the allow_destroy_db configuration option "
-                     "is set to false.")
-        return False
-
     env = os.environ.copy()
     env.update(config.get_pg_environment())
 
     db_dump_file_name = os.path.join(
         config.get_database_dump_path(), dump_name
     )
-    if not os.path.isfile(db_dump_file_name):
-        logger.error("file %s does not exist: " % db_dump_file_name)
-        return False
-
     logger.debug("Restoring %s" % db_dump_file_name)
     cmd = (config.get_pg_restore_binary(), "-d", env['PGDATABASE'],
            "-O", "-n", "public", "-x", db_dump_file_name)
@@ -58,20 +51,10 @@ def restoredb(config, dump_name):
     (stdout, stderr) = proc.communicate()
 
     if stderr != '':
-        logger.error("An error occured while calling pg_restore: %s " % stderr)
-        return False
-
-    return True
+        raise M2EEException("An error occured while calling pg_restore: %s " % stderr.strip())
 
 
 def emptydb(config):
-
-    if not config.allow_destroy_db():
-        logger.error("Refusing to do a destructive database operation "
-                     "because the allow_destroy_db configuration option "
-                     "is set to false.")
-        return False
-
     env = os.environ.copy()
     env.update(config.get_pg_environment())
 
@@ -90,8 +73,7 @@ def emptydb(config):
     (stdout, stderr) = proc1.communicate()
 
     if stderr != '':
-        logger.error("An error occured while calling psql: %s" % stderr)
-        return False
+        raise M2EEException("An error occured while calling psql: %s" % stderr.strip())
 
     stdin = stdout
     cmd = (config.get_psql_binary(),)
@@ -101,8 +83,7 @@ def emptydb(config):
     (stdout, stderr) = proc2.communicate(stdin)
 
     if stderr != '':
-        logger.error("An error occured while calling psql: %s" % stderr)
-        return False
+        raise M2EEException("An error occured while calling psql: %s" % stderr.strip())
 
     logger.info("Removing all sequences...")
     # get list of drop sequence commands
@@ -120,8 +101,7 @@ def emptydb(config):
     (stdout, stderr) = proc1.communicate()
 
     if stderr != '':
-        logger.error("An error occured while calling psql: %s" % stderr)
-        return False
+        raise M2EEException("An error occured while calling psql: %s" % stderr.strip())
 
     stdin = stdout
     cmd = (config.get_psql_binary(),)
@@ -131,10 +111,7 @@ def emptydb(config):
     (stdout, stderr) = proc2.communicate(stdin)
 
     if stderr != '':
-        logger.error("An error occured while calling psql: %s" % stderr)
-        return False
-
-    return True
+        raise M2EEException("An error occured while calling psql: %s" % stderr.strip())
 
 
 def psql(config):
