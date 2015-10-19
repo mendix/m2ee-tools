@@ -6,6 +6,7 @@
 #
 
 from m2ee.client import M2EEAdminException, M2EEAdminNotAvailable
+from m2ee.log import logger
 
 STATE_OK = 0
 STATE_WARNING = 1
@@ -16,16 +17,21 @@ STATE_DEPENDENT = 4
 
 def check(runner, client):
     (process_state, process_message) = check_process(runner, client)
-    (health_state, health_message) = check_health(client)
-    (critical_log_state, critical_log_message, loglines) = check_critical_logs(client)
+    logger.trace("check_process: %s, %s" % (process_state, process_message))
 
     state = process_state
     message = process_message
+
+    (health_state, health_message) = check_health(client)
+    logger.trace("check_health: %s, %s" % (health_state, health_message))
 
     if health_state in (STATE_WARNING, STATE_CRITICAL):
         message = "%s; %s" % (message, health_message)
         if state != STATE_CRITICAL:
             state = health_state
+
+    (critical_log_state, critical_log_message, loglines) = check_critical_logs(client)
+    logger.trace("check_critical_logs: %s, %s" % (critical_log_state, critical_log_message))
 
     if critical_log_state in (STATE_WARNING, STATE_CRITICAL):
         message = "%s; %s" % (message, critical_log_message)
