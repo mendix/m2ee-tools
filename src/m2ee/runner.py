@@ -9,8 +9,9 @@ import os
 import signal
 import errno
 from time import sleep
-
 from log import logger
+from client import M2EEAdminException
+from m2ee.exceptions import M2EEException
 
 
 class M2EERunner:
@@ -52,17 +53,19 @@ class M2EERunner:
             os.unlink(pidfile)
 
     def get_pid(self):
-        if not self._pid:
+        if self._pid is None:
             self._read_pidfile()
         return self._pid
 
     def check_pid(self, pid=None):
         if pid is None:
             pid = self.get_pid()
-        if not pid:
+        if pid is None:
+            logger.trace("No pid available.")
             return False
         try:
             os.kill(pid, 0)  # doesn't actually kill process
+            logger.trace("pid %s is alive!" % pid)
             return True
         except OSError:
             logger.trace("No process with pid %s, or not ours." % pid)
@@ -93,7 +96,7 @@ class M2EERunner:
     def start(self, timeout=60, step=0.25):
         if self.check_pid():
             logger.error("The application process is already started!")
-            return False
+            return
 
         env = self._config.get_java_env()
         cmd = self._config.get_java_cmd()
@@ -107,15 +110,13 @@ class M2EERunner:
                              "exit..." % os.getpid())
                 # prevent zombie process
                 (waitpid, result) = os.waitpid(pid, 0)
-                if result == 0:
-                    logger.debug("The JVM process has been started.")
-                    return True
-                logger.error("Starting the JVM process did not succeed...")
-                return False
+                if result != 0:
+                    raise M2EEException("Starting the JVM process did not succeed...")
+                logger.debug("The JVM process has been started.")
+                return
         except OSError, e:
-            logger.error("Forking subprocess failed: %d (%s)\n" %
-                         (e.errno, e.strerror))
-            return
+            raise M2EEException("Forking subprocess failed: %d (%s)\n" %
+                                (e.errno, e.strerror))
         logger.trace("[%s] Now in intermediate forked process..." %
                      os.getpid())
         # decouple from parent environment
@@ -176,7 +177,10 @@ class M2EERunner:
                          "now." % os.getpid())
             os._exit(1)
         logger.trace("Calling CloseStdIO...")
-        self._client.close_stdio().display_error()
+        try:
+            self._client.close_stdio()
+        except M2EEAdminException as e:
+            logger.error("Failed to close stdio, ignoring: %s" % e)
         logger.trace("[%s] Exiting intermediate process..." % os.getpid())
         os._exit(0)
 

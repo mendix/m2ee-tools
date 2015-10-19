@@ -8,6 +8,7 @@
 from base64 import b64encode
 import socket
 from log import logger
+from version import MXVersion
 
 try:
     import httplib2
@@ -36,7 +37,8 @@ class M2EEClient:
         self._url = url
         self._headers = {
             'Content-Type': 'application/json',
-            'X-M2EE-Authentication': b64encode(password)
+            'X-M2EE-Authentication': b64encode(password),
+            'Connection': 'close',
         }
 
     def request(self, action, params=None, timeout=None):
@@ -44,42 +46,69 @@ class M2EEClient:
         if params:
             body["params"] = params
         body = json.dumps(body)
-        h = httplib2.Http(timeout=timeout)  # httplib does not like os.fork
-        logger.trace("M2EE request body: %s" % body)
-        (response_headers, response_body) = h.request(self._url, "POST", body,
-                                                      headers=self._headers)
-        if (response_headers['status'] == "200"):
+        try:
+            h = httplib2.Http(timeout=timeout)  # httplib does not like os.fork
+            logger.trace("M2EE request body: %s" % body)
+            (response_headers, response_body) = h.request(self._url, "POST", body,
+                                                          headers=self._headers)
             logger.trace("M2EE response: %s" % response_body)
-            return M2EEResponse(action, json.loads(response_body))
-        else:
-            logger.error("non-200 http status code: %s %s" %
-                         (response_headers, response_body))
+            if (response_headers['status'] != "200"):
+                raise M2EEAdminHTTPException("Non OK http status code: %s %s" %
+                                             (response_headers, response_body))
+            response = json.loads(response_body)
+            if response['result'] != 0:
+                raise M2EEAdminException(action, response)
+            return response.get('feedback', {})
+        except AttributeError, e:
+            # httplib 0.6 throws this in case of a connection refused :-|
+            if str(e) == "'NoneType' object has no attribute 'makefile'":
+                message = "Admin API not available for requests."
+                logger.trace("%s (%s: %s)" % (message, type(e), e))
+                raise M2EEAdminNotAvailable(message)
+            raise e
+        except (socket.error, socket.timeout), e:
+            message = "Admin API not available for requests: (%s: %s)" % (type(e), e)
+            logger.trace(message)
+            raise M2EEAdminNotAvailable(message)
 
     def ping(self, timeout=5):
         try:
-            response = self.request("echo", {"echo": "ping"}, timeout)
-            if response.get_result() == 0:
-                return True
-        except AttributeError, e:
-            # httplib 0.6 throws AttributeError: 'NoneType' object has no
-            # attribute 'makefile' in case of a connection refused :-|
-            logger.trace("Got %s: %s" % (type(e), e))
-        except (socket.error, socket.timeout), e:
-            logger.trace("Got %s: %s" % (type(e), e))
-        except Exception, e:
-            logger.error("Got %s: %s" % (type(e), e))
-            import traceback
-            logger.error(traceback.format_exc())
-        return False
+            self.echo(timeout=timeout)
+            return True
+        except (M2EEAdminException, M2EEAdminHTTPException, M2EEAdminNotAvailable):
+            return False
 
-    def echo(self, params=None):
+    def echo(self, params=None, timeout=5):
         myparams = {"echo": "ping"}
         if params is not None:
             myparams.update(params)
-        return self.request("echo", myparams)
+        return self.request("echo", myparams, timeout)
+
+    def require_action(self, action):
+        try:
+            feedback = self.get_admin_action_info()
+            implemented = action in feedback['action_info']
+        except M2EEAdminException as e:
+            if e.result == M2EEAdminException.ERR_ACTION_NOT_FOUND:
+                if action in M2EEAdminException.implemented_in:
+                    implemented_in = M2EEAdminException.implemented_in[action]
+                    runtime_version = MXVersion(self.about()['version'])
+                    implemented = runtime_version >= implemented_in
+                else:
+                    implemented = True
+            else:
+                raise
+        if implemented is False:
+            raise M2EEAdminException(
+                action,
+                {"result": M2EEAdminException.ERR_ACTION_NOT_FOUND}
+            )
+
+    def get_admin_action_info(self):
+        return self.request("get_admin_action_info")
 
     def get_critical_log_messages(self):
-        echo_feedback = self.echo().get_feedback()
+        echo_feedback = self.echo()
         if echo_feedback['echo'] != "pong":
             errors = echo_feedback['errors']
             # default to 3.0 format [{"message":"Hello,
@@ -106,13 +135,15 @@ class M2EEClient:
         return []
 
     def shutdown(self, timeout=5):
-        # currently, the exception thrown is a feature, because the shutdown
-        # action gets interrupted while executing
+        # Currently, the exception thrown is a feature, because the shutdown
+        # action gets interrupted while executing. Even if an internal error
+        # occurs in the runtime / appcontainer there's no point in trying to
+        # handle it, if it would show up here, since there's an unforgiving
+        # System.exit(0); in the finally clause of the shutdown action. ;-)
         try:
             self.request("shutdown", timeout=timeout)
         except Exception:
-            return True
-        return False
+            pass
 
     def close_stdio(self):
         return self.request("close_stdio")
@@ -192,7 +223,18 @@ class M2EEClient:
         return self.request("get_log_settings", params)
 
     def check_health(self, params=None):
-        return self.request("check_health", params)
+        try:
+            return self.request("check_health", params)
+        except M2EEAdminException as e:
+            runtime_version = MXVersion(self.about()['version'])
+            if e.result == 3 and runtime_version // ('2.5.4', '2.5.5'):
+                # Error 3 is: HEALTH_MICROFLOW_EXECUTION_FAILED
+                # Because of an incomplete implementation, in Mendix 2.5.4 or
+                # 2.5.5 this means that the runtime is health-check
+                # capable, but no health check microflow is defined.
+                # Find a way or fake one! Yolo...
+                return {"health": "unknown"}
+            raise
 
     def get_current_runtime_requests(self):
         return self.request("get_current_runtime_requests")
@@ -231,7 +273,15 @@ class M2EEClient:
         return self.request("cache_statistics")
 
 
-class M2EEResponse:
+class M2EEAdminHTTPException(Exception):
+    pass
+
+
+class M2EEAdminNotAvailable(Exception):
+    pass
+
+
+class M2EEAdminException(Exception):
 
     ERR_REQUEST_NULL = -1
     ERR_CONTENT_TYPE = -2
@@ -241,45 +291,52 @@ class M2EEResponse:
     ERR_READ_REQUEST = -6
     ERR_WRITE_REQUEST = -7
 
+    implemented_in = {
+        "get_admin_action_info": '3',
+        "check_health": '2.5.4',
+        "cache_statistics": '4',
+        "get_license_information": '3',
+        "set_license": '3',
+        "enable_debugger": '4.3',
+        "disable_debugger": '4.3',
+        "get_debugger_status": '4.3',
+        "get_current_runtime_requests": ('2.5.8', '3.1'),
+        "interrupt_request": ('2.5.8', '3.1'),
+        "get_all_thread_stack_traces": '3.2',
+    }
+
     def __init__(self, action, json):
-        self._action = action
-        self._json = json
-        self._result = self._json['result']
-        self._feedback = self._json.get('feedback', {})
-        self._message = self._json.get('message', None)
-        self._cause = self._json.get('cause', None)
-        self._stacktrace = self._json.get('stacktrace', None)
-
-    def get_result(self):
-        return self._result
-
-    def get_feedback(self):
-        return self._feedback
-
-    def get_message(self):
-        return self._message
-
-    def get_cause(self):
-        return self._cause
-
-    def get_stacktrace(self):
-        return self._stacktrace
-
-    def has_error(self):
-        return self._result != 0
-
-    def display_error(self):
-        if self.has_error():
-            logger.error(self.get_error())
-            if self._stacktrace:
-                logger.debug(self._stacktrace)
-
-    def get_error(self):
-        error = "Executing %s did not succeed: result: %s, message: %s" % (
-            self._action, self._json['result'], self._json['message'])
-        if self._json.get('cause', None) is not None:
-            error = "%s, caused by: %s" % (error, self._json['cause'])
-        return error
+        self.action = action
+        self.json = json
+        self.result = json['result']
+        self.feedback = json.get('feedback', {})
+        self.message = json.get('message', None)
+        self.cause = json.get('cause', None)
+        self.stacktrace = json.get('stacktrace', None)
 
     def __str__(self):
-        return str({"action": self._action, "json": self._json})
+        if ((self.result == M2EEAdminException.ERR_ACTION_NOT_FOUND
+             and self.action in M2EEAdminException.implemented_in)):
+            avail_since = M2EEAdminException.implemented_in[self.action]
+            if isinstance(avail_since, tuple):
+                if len(avail_since) > 2:
+                    implemented_in_msg = (
+                        '%s, %s and %s' %
+                        (
+                            ', '.join(map(str, avail_since[:-2])),
+                            avail_since[-2], avail_since[-1]
+                        )
+                    )
+                else:
+                    implemented_in_msg = '%s and %s' % avail_since
+            else:
+                implemented_in_msg = avail_since
+            return ("This action is not available in the Mendix Runtime "
+                    "version you are currently using. It was implemented "
+                    "in Mendix %s" % implemented_in_msg)
+        else:
+            error = "Executing %s did not succeed: result: %s, message: %s" % (
+                self.action, self.result, self.message)
+            if self.cause is not None:
+                error = "%s, caused by: %s" % (error, self.cause)
+            return error

@@ -4,9 +4,7 @@ m2ee-tools
 [ ] refactor error handling, use exceptions instead of true/false etc
 
 backlog
-[ ] refactor nagios plugin to combine check results instead of stopping at the first failure
 [ ] API stabilize m2ee-tools so we can release 1.0
-[ ] nagios: alert when license limits are (almost) reached
 [ ] add command to set logMinDurationQuery (ms) via update_configuration m2ee api
 [ ] possibility to use units (ms,s,h,d,w,y) for time length values
 [ ] man m2ee.yaml instead of lots of documentation in the example file itself

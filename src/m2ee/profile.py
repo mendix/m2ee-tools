@@ -34,15 +34,12 @@ class M2EEProfiler(cmd.Cmd):
         flush_interval = self.get_flush_interval(args.split())
 
         self.last_args = "%s %s" % (minimum_duration_to_log, flush_interval)
-        response = self.m2ee_client.start_profiler(minimum_duration_to_log,
-                                                   flush_interval)
-        if response is not None:
-            self.print_response(response.get_feedback())
+        feedback = self.m2ee_client.start_profiler(minimum_duration_to_log, flush_interval)
+        self.print_response(feedback)
 
     def do_stop(self, args):
-        response = self.m2ee_client.stop_profiler()
-        if response is not None:
-            self.print_response(response.get_feedback())
+        feedback = self.m2ee_client.stop_profiler()
+        self.print_response(feedback)
 
     def do_clear(self, args):
         self.do_stop(None)
@@ -65,15 +62,12 @@ class M2EEProfiler(cmd.Cmd):
         pass
 
     def do_get(self, args=None):
-        response = self.m2ee_client.get_profiler_logs()
-        if response is not None:
-            print_logs(response.get_feedback())
-            self.logs_cache = response.get_feedback()
+        feedback = self.m2ee_client.get_profiler_logs()
+        print_logs(feedback)
+        self.logs_cache = feedback
 
     def do_csv(self, args):
-        response = self.m2ee_client.get_profiler_logs()
-        if response is not None:
-            to_csv(response.get_feedback())
+        to_csv(self.m2ee_client.get_profiler_logs())
 
     def do_cache(self, args=None):
         if hasattr(self, 'logs_cache'):
@@ -162,7 +156,7 @@ if __name__ == '__main__':
 
         out = open(filename, "w")
         out.write(format_as_csv(
-            profiler.m2ee_client.get_profiler_logs().get_feedback()))
+            profiler.m2ee_client.get_profiler_logs()))
         out.close()
     else:
         profiler.cmdloop()

@@ -15,6 +15,7 @@ import copy
 from log import logger
 from collections import defaultdict
 from version import MXVersion
+from m2ee.exceptions import M2EEException
 
 # Use json if available. If not (python 2.5) we need to import the simplejson
 # module instead, which has to be available.
@@ -358,9 +359,8 @@ class M2EEConfig:
         felix_config_file = self.get_felix_config_file()
         felix_config_path = os.path.dirname(felix_config_file)
         if not os.access(felix_config_path, os.W_OK):
-            logger.critical("felix_config_file is not in a writable "
-                            "location: %s" % felix_config_path)
-            return False
+            raise M2EEException("felix_config_file is not in a writable location: %s" %
+                                felix_config_path)
 
         project_bundles_path = os.path.join(
             self._conf['m2ee']['app_base'], 'model', 'bundles'
@@ -380,9 +380,7 @@ class M2EEConfig:
                 input_file = open(felix_template_file)
                 template = input_file.read()
             except IOError, e:
-                logger.error("felix configuration template could not be "
-                             "read: %s", e)
-                return False
+                raise M2EEException("felix configuration template could not be read: %s", e)
             try:
                 output_file = open(felix_config_file, 'w')
                 render = template.format(
@@ -392,14 +390,10 @@ class M2EEConfig:
                 )
                 output_file.write(render)
             except IOError, e:
-                logger.error("felix configuration file could not be "
-                             "written: %s", e)
-                return False
+                raise M2EEException("felix configuration file could not be written: %s", e)
         else:
-            logger.error("felix configuration template is not a readable "
-                         "file: %s" % felix_template_file)
-            return False
-        return True
+            raise M2EEException("felix configuration template is not a readable file: %s" %
+                                felix_template_file)
 
     def get_app_name(self):
         return self._conf['m2ee']['app_name']
