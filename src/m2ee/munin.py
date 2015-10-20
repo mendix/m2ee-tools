@@ -151,8 +151,8 @@ def get_last_known_good_or_fake_stats(config_cache):
 def get_stats_from_runtime(client, config):
     stats = {}
     logger.debug("trying to fetch runtime/server statistics")
-    stats.update(client.runtime_statistics())
-    stats.update(client.server_statistics())
+    stats.update(client.runtime_statistics(timeout=5))
+    stats.update(client.server_statistics(timeout=5))
     if type(stats['requests']) == list:
         # convert back to normal, whraagh
         bork = {}
