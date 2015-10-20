@@ -121,6 +121,12 @@ def print_values(m2ee, name):
 
 
 def get_stats(action, client, config):
+    # place to store last known good statistics result to be used for munin
+    # config when the app is down or b0rked
+    options = config.get_munin_options()
+    config_cache = options.get('config_cache',
+                               os.path.join(config.get_default_dotm2ee_directory(),
+                                            'munin-cache.json'))
     stats = None
     try:
         stats = get_stats_from_runtime(client, config)
@@ -128,17 +134,11 @@ def get_stats(action, client, config):
     except (M2EEAdminException, M2EEAdminNotAvailable) as e:
         logger.error(e)
         if action == 'config':
-            return get_last_known_good_or_fake_stats(config)
+            return get_last_known_good_or_fake_stats(config_cache)
     return stats
 
 
-def get_last_known_good_or_fake_stats(config):
-    # place to store last known good statistics result to be used for munin
-    # config when the app is down or b0rked
-    options = config.get_munin_options()
-    config_cache = options.get('config_cache',
-                               os.path.join(config.get_default_dotm2ee_directory(),
-                                            'munin-cache.json'))
+def get_last_known_good_or_fake_stats(config_cache):
     stats = read_stats_from_last_known_good_stats_cache(config_cache)
     if stats is not None:
         logger.debug("Reusing last known statistics.")
