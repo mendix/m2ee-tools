@@ -1,3 +1,9 @@
+m2ee-tools (0.5.11.1-1~mxbp70+1) wheezy-backports; urgency=low
+
+  * Rebuild for Wheezy
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Mon, 16 Nov 2015 14:58:41 +0100
+
 m2ee-tools (0.5.11.1-1) unstable; urgency=low
 
   * Fix Mendix 6 compatibility
