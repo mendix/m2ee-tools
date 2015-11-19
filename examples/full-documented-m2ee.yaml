@@ -195,11 +195,16 @@ m2ee:
  # browser connections from unnecessarily occupying JVM threads.
  #
  # There might be uses cases in which not using runtime_blocking_connector is
- # better, e.g. when using custom request handlers and long polling, but these
- # are very specific edge cases.
+ # better, e.g. when using custom request handlers and long polling, e.g. when
+ # using websockets.
  #
- # default: true
- runtime_blocking_connector: true
+ # However, there are also reports of bugs in the BlockingChannelConnector that
+ # cause connections to the Runtime being closed by Jetty while waiting for a
+ # response after issuing a HTTP request. Because of this, this option is set
+ # to false by default.
+ #
+ # default: false
+ runtime_blocking_connector: false
 
  # By default, the Mendix Runtime is started using an emptied environment map
  # for security reasons. There may be situations in which it is desired to keep
