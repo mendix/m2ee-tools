@@ -1,8 +1,9 @@
-m2ee-tools (0.5.11.1-1~mxbp70+1) wheezy-backports; urgency=low
+m2ee-tools (0.5.11.2-1) unstable; urgency=low
 
-  * Rebuild for Wheezy
+  * Disable runtime_blocking_connector by default, it's buggy and closes
+    connections that are waiting for a response.
 
- -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Mon, 16 Nov 2015 14:58:41 +0100
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Thu, 19 Nov 2015 13:36:26 +0100
 
 m2ee-tools (0.5.11.1-1) unstable; urgency=low
 
