@@ -221,7 +221,7 @@ class M2EEClient:
             return self.request("set_log_level", params)
         except M2EEAdminException:
             runtime_version = MXVersion(self.about()['version'])
-            if runtime_version < 6 and params["nodes"] is not None:
+            if runtime_version < 6 and "nodes" in params:
                 raise ValueError("API only available from Mendix 6 onwards")
             raise
 

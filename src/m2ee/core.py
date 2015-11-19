@@ -180,7 +180,7 @@ class M2EE():
         for log_subscriber in logging_config:
             if log_subscriber["name"] != "*":
                 self.client.create_log_subscriber(log_subscriber)
-            if log_subscriber["nodes"] is not None:
+            if "nodes" in log_subscriber:
                 self.set_log_levels(log_subscriber["name"],
                                     log_subscriber["nodes"], force=True)
         self.client.start_logging()
