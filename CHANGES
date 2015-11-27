@@ -1,3 +1,7 @@
+m2ee-tools 0.5.11.2, 19 Nov 2015
+  * Disable runtime_blocking_connector by default, it's buggy and closes connections
+    that are waiting for a response.
+
 m2ee-tools 0.5.11.1, 9 Nov 2015
   * Fix Mendix 6 compatibility
 
