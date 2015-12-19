@@ -151,11 +151,11 @@ class M2EEClient:
     def runtime_status(self):
         return self.request("runtime_status")
 
-    def runtime_statistics(self):
-        return self.request("runtime_statistics")
+    def runtime_statistics(self, timeout=None):
+        return self.request("runtime_statistics", timeout=timeout)
 
-    def server_statistics(self):
-        return self.request("server_statistics")
+    def server_statistics(self, timeout=None):
+        return self.request("server_statistics", timeout=timeout)
 
     def create_log_subscriber(self, params):
         return self.request("create_log_subscriber", params)
