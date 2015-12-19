@@ -8,6 +8,9 @@ class M2EEException(Exception):
 
     ERR_UNKNOWN = 0x0001
 
+    # 0x01xx configuration errors
+    ERR_INVALID_OSGI_CONFIG = 0x0100
+
     def __init__(self, message, cause=None, errno=1):
         self.message = message
         self.cause = cause

@@ -360,7 +360,8 @@ class M2EEConfig:
         felix_config_path = os.path.dirname(felix_config_file)
         if not os.access(felix_config_path, os.W_OK):
             raise M2EEException("felix_config_file is not in a writable location: %s" %
-                                felix_config_path)
+                                felix_config_path,
+                                errno=M2EEException.ERR_INVALID_OSGI_CONFIG)
 
         project_bundles_path = os.path.join(
             self._conf['m2ee']['app_base'], 'model', 'bundles'
