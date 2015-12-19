@@ -481,13 +481,14 @@ class M2EEConfig:
         env.update({
             'M2EE_ADMIN_PORT': str(self._conf['m2ee']['admin_port']),
             'M2EE_ADMIN_PASS': str(self._conf['m2ee']['admin_pass']),
-            # only has effect with Mendix >= 4.3, but include anyway as
-            # it does not break earlier versions
-            'M2EE_ADMIN_LISTEN_ADDRESSES': str(
-                self._conf['m2ee']['admin_listen_addresses']),
-            'M2EE_RUNTIME_LISTEN_ADDRESSES': str(
-                self._conf['m2ee']['runtime_listen_addresses']),
         })
+        if self.runtime_version >= 4.3:
+            env.update({
+                'M2EE_ADMIN_LISTEN_ADDRESSES': str(
+                    self._conf['m2ee']['admin_listen_addresses']),
+                'M2EE_RUNTIME_LISTEN_ADDRESSES': str(
+                    self._conf['m2ee']['runtime_listen_addresses']),
+            })
 
         # only add RUNTIME environment variables when using default
         # appcontainer from runtime distro
