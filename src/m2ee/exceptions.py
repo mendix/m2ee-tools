@@ -5,11 +5,17 @@
 
 
 class M2EEException(Exception):
-    def __init__(self, message, cause=None):
+
+    ERR_UNKNOWN = 0x0001
+
+    def __init__(self, message, cause=None, errno=1):
         self.message = message
         self.cause = cause
+        self.errno = errno
 
     def __str__(self):
+        strlist = [self.message]
         if self.cause is not None:
-            return "%s, caused by: %s" % (self.message, self.cause)
-        return self.message
+            strlist.append("caused by: %s" % self.cause)
+        strlist.append("errno: %s" % hex(self.errno))
+        return ', '.join(strlist)
