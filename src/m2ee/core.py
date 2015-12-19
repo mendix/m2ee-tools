@@ -66,6 +66,14 @@ class M2EE():
         return (pid_alive, m2ee_alive)
 
     def start_appcontainer(self):
+        logger.debug("Checking if the runtime is already alive...")
+        (pid_alive, m2ee_alive) = self.check_alive()
+        if pid_alive is True or m2ee_alive is True:
+            raise M2EEException("There's already a MxRuntime process running, aborting start. "
+                                "If the application is not functional, or failed to start "
+                                "earlier, try stop or restart first.",
+                                errno=M2EEException.ERR_START_ALREADY_RUNNING)
+
         if not self.config.all_systems_are_go():  # TODO: Exception later
             raise M2EEException("Cannot start MxRuntime due to previous critical errors.",
                                 errno=M2EEException.ERR_MISSING_CONFIG)
@@ -78,19 +86,9 @@ class M2EE():
         if self.config.get_symlink_mxclientsystem():
             util.fix_mxclientsystem_symlink(self.config)
 
-        logger.debug("Checking if the runtime is already alive...")
-        (pid_alive, m2ee_alive) = self.check_alive()
-        if not pid_alive and not m2ee_alive:
-            logger.info("Trying to start the MxRuntime...")
-            self.runner.start()
-        elif not m2ee_alive:
-            raise M2EEException("An MxRuntime process is already running but the Admin API is "
-                                "not available. You could try doing a stop or restart.")
-
-        status = self.client.runtime_status()['status']
-        if status not in ['feut', 'created', 'starting']:
-            raise M2EEException("Cannot start MxRuntime when it has status %s" % status)
-        logger.debug("MxRuntime status: %s" % status)
+        logger.info("Trying to start the MxRuntime...")
+        self.runner.start()
+        logger.debug("MxRuntime status: %s" % self.client.runtime_status()['status'])
 
         # go do startup sequence
         self._configure_logging()
@@ -121,7 +119,9 @@ class M2EE():
             self._connect_xmpp()
 
     def start_runtime(self, params):
+        logger.debug("MxRuntime status: %s" % self.client.runtime_status()['status'])
         self.client.start(params)
+        logger.debug("MxRuntime status: %s" % self.client.runtime_status()['status'])
         logger.info("The MxRuntime is fully started now.")
 
     def stop(self, timeout=10):
