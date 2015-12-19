@@ -33,17 +33,11 @@ except ImportError:
 
 class M2EEConfig:
 
-    def __init__(self, load_default_files=True, yaml_files=None, config=None):
-        _yaml_files = []
-        if load_default_files:
-            _yaml_files.extend(find_yaml_files())
-        if yaml_files:
-            _yaml_files.extend(yaml_files)
+    def __init__(self, yaml_files=None):
+        if yaml_files is None:
+            yaml_files = find_yaml_files()
 
-        self._mtimes, self._conf = read_yaml_files(_yaml_files)
-
-        if config:
-            self._conf = merge_config(self._conf, config)
+        self._mtimes, self._conf = read_yaml_files(yaml_files)
 
         self._all_systems_are_go = True
 

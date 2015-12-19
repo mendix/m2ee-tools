@@ -45,10 +45,7 @@ class CLI(cmd.Cmd, object):
     def __init__(self, yaml_files=None, yolo_mode=False):
         logger.debug('Using m2ee-tools version %s' % m2ee.__version__)
         cmd.Cmd.__init__(self)
-        if yaml_files:
-            self.m2ee = M2EE(yamlfiles=yaml_files, load_default_files=False)
-        else:
-            self.m2ee = M2EE()
+        self.m2ee = M2EE(yaml_files=yaml_files)
         self.yolo_mode = yolo_mode
         self.onecmd('status')
         self.prompt_username = pwd.getpwuid(os.getuid())[0]
