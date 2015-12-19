@@ -10,6 +10,7 @@ class M2EEException(Exception):
 
     # 0x01xx configuration errors
     ERR_INVALID_OSGI_CONFIG = 0x0100
+    ERR_MISSING_CONFIG = 0x0101
 
     def __init__(self, message, cause=None, errno=1):
         self.message = message

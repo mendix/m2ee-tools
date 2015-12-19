@@ -67,8 +67,8 @@ class M2EE():
 
     def start_appcontainer(self):
         if not self.config.all_systems_are_go():  # TODO: Exception later
-            raise M2EEException(
-                "Cannot start MxRuntime due to previous critical errors.")
+            raise M2EEException("Cannot start MxRuntime due to previous critical errors.",
+                                errno=M2EEException.ERR_MISSING_CONFIG)
 
         version = self.config.get_runtime_version()
 
