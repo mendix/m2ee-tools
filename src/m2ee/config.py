@@ -360,7 +360,8 @@ class M2EEConfig:
         felix_config_path = os.path.dirname(felix_config_file)
         if not os.access(felix_config_path, os.W_OK):
             raise M2EEException("felix_config_file is not in a writable location: %s" %
-                                felix_config_path)
+                                felix_config_path,
+                                errno=M2EEException.ERR_INVALID_OSGI_CONFIG)
 
         project_bundles_path = os.path.join(
             self._conf['m2ee']['app_base'], 'model', 'bundles'
@@ -480,13 +481,14 @@ class M2EEConfig:
         env.update({
             'M2EE_ADMIN_PORT': str(self._conf['m2ee']['admin_port']),
             'M2EE_ADMIN_PASS': str(self._conf['m2ee']['admin_pass']),
-            # only has effect with Mendix >= 4.3, but include anyway as
-            # it does not break earlier versions
-            'M2EE_ADMIN_LISTEN_ADDRESSES': str(
-                self._conf['m2ee']['admin_listen_addresses']),
-            'M2EE_RUNTIME_LISTEN_ADDRESSES': str(
-                self._conf['m2ee']['runtime_listen_addresses']),
         })
+        if self.runtime_version >= 4.3:
+            env.update({
+                'M2EE_ADMIN_LISTEN_ADDRESSES': str(
+                    self._conf['m2ee']['admin_listen_addresses']),
+                'M2EE_RUNTIME_LISTEN_ADDRESSES': str(
+                    self._conf['m2ee']['runtime_listen_addresses']),
+            })
 
         # only add RUNTIME environment variables when using default
         # appcontainer from runtime distro
