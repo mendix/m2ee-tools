@@ -4,6 +4,5 @@ import pgutil  # noqa
 import nagios  # noqa
 import munin  # noqa
 import version  # noqa
-from profile import M2EEProfiler  # noqa
 
 __version__ = 'UNRELEASED'

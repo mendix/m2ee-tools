@@ -20,7 +20,7 @@ import subprocess
 import sys
 import yaml
 
-from m2ee import pgutil, M2EE, M2EEProfiler, logger, client_errno
+from m2ee import pgutil, M2EE, logger, client_errno
 import m2ee
 
 if not sys.stdout.isatty():
@@ -731,15 +731,6 @@ class CLI(cmd.Cmd, object):
         print("exit")
         return -1
 
-    def do_profiler(self, args):
-        print("The profiler module in this program is experimental "
-              "functionality and should not be used in production "
-              "environments. Incorrect use of the profiler can cause out of "
-              "memory errors on applications that handle a lot of requests.")
-        answer = raw_input("Start profiler? (y/N): ")
-        if answer == 'y':
-            M2EEProfiler(self.m2ee.client).cmdloop()
-
     def do_download_runtime(self, args):
         if args:
             mxversion = m2ee.version.MXVersion(args)
@@ -849,7 +840,6 @@ Available commands:
             print("""Advanced commands:
  statistics - show all application statistics that can be used for monitoring
  show_all_thread_stack_traces - show all low-level JVM threads with stack trace
- profiler - start the profiler (experimental)
  check_health - manually execute health check
  enable_debugger - enable remote debugger API
  disable_debugger - disable remote debugger API

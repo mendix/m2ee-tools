@@ -187,23 +187,6 @@ class M2EEClient:
     def about(self):
         return self.request("about")
 
-    def get_profiler_logs(self):
-        return self.request("get_profiler_logs")
-
-    def start_profiler(self, minimum_duration_to_log=None,
-                       flush_interval=None):
-        params = {}
-        if minimum_duration_to_log is not None:
-            params["minimum_duration_to_log"] = minimum_duration_to_log
-
-        if flush_interval is not None:
-            params["flush_interval"] = flush_interval
-
-        return self.request("start_profiler", params)
-
-    def stop_profiler(self):
-        return self.request("stop_profiler")
-
     def set_log_level(self, params):
         return self.request("set_log_level", params)
 
