@@ -546,6 +546,10 @@ class CLI(cmd.Cmd, object):
     def do_dump_config(self, args):
         self.m2ee.config.dump()
 
+    def do_set_database_password(self, args):
+        password = getpass.getpass("Database password: ")
+        self.m2ee.config.set_database_password(password)
+
     def do_psql(self, args):
         if not self.m2ee.config.is_using_postgresql():
             logger.error("Only PostgreSQL databases are supported right now.")

@@ -326,6 +326,11 @@ class M2EEConfig:
              and os.path.isdir(magic_runtimes))):
             self._conf['mxnode']['mxjar_repo'].insert(0, magic_runtimes)
 
+        if 'DatabasePassword' not in self._conf['mxruntime']:
+            logger.warn("There is no database password present in the configuration. Either add "
+                        "it to the configuration, or use the set_database_password command to "
+                        "set it before trying to start the application!")
+
     def fix_permissions(self):
         basepath = self._conf['m2ee']['app_base']
         for directory, mode in {
@@ -872,6 +877,9 @@ class M2EEConfig:
             logger.info('Constants defined but not needed by application:')
             for constant in obsolete:
                 logger.info('- %s' % constant)
+
+    def set_database_password(self, password):
+        self._conf['mxruntime']['DatabasePassword'] = password
 
 
 def find_yaml_files():
