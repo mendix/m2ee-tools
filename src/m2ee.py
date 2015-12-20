@@ -120,14 +120,8 @@ class CLI(cmd.Cmd, object):
 
         self.m2ee.start_appcontainer()
 
-        database_password = None
-        if not self.m2ee.config.has_database_password():
-            database_password = getpass.getpass(
-                "Database password not configured, "
-                "please provide now:"
-            )
         try:
-            self.m2ee.send_runtime_config(database_password)
+            self.m2ee.send_runtime_config()
         except m2ee.client.M2EEAdminException as e:
             logger.error("Sending configuration failed: %s" % e.cause)
             logger.error("You'll have to fix the configuration and run start again...")

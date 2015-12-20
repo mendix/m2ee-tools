@@ -185,7 +185,7 @@ class M2EE():
             logger.debug("Sending mime types...")
             self.client.add_mime_type(mime_types)
 
-    def send_runtime_config(self, database_password=None):
+    def send_runtime_config(self):
         # send runtime configuration
         # catch and report:
         # - configuration errors (X is not a file etc)
@@ -195,9 +195,6 @@ class M2EE():
         logger.debug("Sending configuration...")
 
         config = copy.deepcopy(self.config.get_runtime_config())
-        if database_password:
-            config['DatabasePassword'] = database_password
-
         custom_config_25 = None
         if self.config.get_runtime_version() // '2.5':
             custom_config_25 = config.pop('MicroflowConstants', None)

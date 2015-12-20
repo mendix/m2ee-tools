@@ -848,9 +848,6 @@ class M2EEConfig:
     def get_runtime_path(self):
         return self._runtime_path
 
-    def has_database_password(self):
-        return 'DatabasePassword' in self._conf['mxruntime']
-
     def _warn_constants(self):
         if 'Constants' not in self._model_metadata:
             return
