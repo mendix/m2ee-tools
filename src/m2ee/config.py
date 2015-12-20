@@ -37,7 +37,7 @@ class M2EEConfig:
         if yaml_files is None:
             yaml_files = find_yaml_files()
 
-        self._mtimes, self._conf = read_yaml_files(yaml_files)
+        self._conf, self._mtimes = read_yaml_files(yaml_files)
 
         self._all_systems_are_go = True
 
@@ -893,39 +893,29 @@ def read_yaml_files(yaml_files):
     yaml_mtimes = {}
 
     for yaml_file in yaml_files:
-        additional_config = load_config(yaml_file)
-        config = merge_config(config, additional_config)
-        yaml_mtimes[yaml_file] = os.stat(yaml_file)[8]
+        config, yaml_mtimes = load_yaml_file(yaml_file, config, yaml_mtimes)
 
     if 'include' in config:
         include = config['include']
         if isinstance(include, list):
             for include_file in include:
-                additional_config = load_config(include_file)
-                config = merge_config(config, additional_config)
-                yaml_mtimes[yaml_file] = os.stat(include_file)[8]
+                config, yaml_mtimes = load_yaml_file(include_file, config, yaml_mtimes)
         else:
             logger.error("include present in config, but not a list, ignoring!")
 
-    return (yaml_mtimes, config)
+    return (config, yaml_mtimes)
 
 
-def load_config(yaml_file):
+def load_yaml_file(yaml_file, config, yaml_mtimes):
     logger.debug("Loading configuration from %s" % yaml_file)
-    fd = None
     try:
-        fd = open(yaml_file)
-    except Exception, e:
-        logger.error("Error reading configuration file %s, ignoring..." %
-                     yaml_file)
-        return
-
-    try:
-        return yaml.load(fd)
-    except Exception, e:
-        logger.error("Error parsing configuration file %s: %s" %
-                     (yaml_file, e))
-        return
+        with open(yaml_file) as fd:
+            additional_config = yaml.load(fd)
+            config = merge_config(config, additional_config)
+            yaml_mtimes[yaml_file] = os.stat(yaml_file)[8]
+    except Exception:
+        logger.error("Error reading configuration file %s, ignoring..." % yaml_file)
+    return (config, yaml_mtimes)
 
 
 def merge_config(initial_config, additional_config):
