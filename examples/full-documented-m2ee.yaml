@@ -751,3 +751,15 @@ mxruntime:
  #
  # default: P(roduction)
  #DTAPMode: P
+
+# By specifying file names in the include section, additional configuration
+# will be read from those files, and will be deep-merged into the already read
+# configuration.
+#
+# Including configuration is not recursive. It's done only once.
+#
+# When specifying multiple configuration files on the command line using -c,
+# the includes from all of those configuration files will be handled.
+include:
+ - /path/to/additional/configuration.yaml
+ - /please/also/consider/this.yaml

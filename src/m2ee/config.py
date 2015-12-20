@@ -903,6 +903,16 @@ def read_yaml_files(yaml_files):
         config = merge_config(config, additional_config)
         yaml_mtimes[yaml_file] = os.stat(yaml_file)[8]
 
+    if 'include' in config:
+        include = config['include']
+        if isinstance(include, list):
+            for include_file in include:
+                additional_config = load_config(include_file)
+                config = merge_config(config, additional_config)
+                yaml_mtimes[yaml_file] = os.stat(include_file)[8]
+        else:
+            logger.error("include present in config, but not a list, ignoring!")
+
     return (yaml_mtimes, config)
 
 
