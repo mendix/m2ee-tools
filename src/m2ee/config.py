@@ -331,6 +331,9 @@ class M2EEConfig:
                         "it to the configuration, or use the set_database_password command to "
                         "set it before trying to start the application!")
 
+        if len(self._conf['logging']) == 0:
+            logger.warn("No logging settings found, this is probably not what you want.")
+
     def fix_permissions(self):
         basepath = self._conf['m2ee']['app_base']
         for directory, mode in {

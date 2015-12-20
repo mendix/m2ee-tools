@@ -165,10 +165,6 @@ class M2EE():
     def _configure_logging(self):
         logger.debug("Setting up logging...")
         logging_config = self.config.get_logging_config()
-        if len(logging_config) == 0:
-            logger.warn("No logging settings found, this is probably not what "
-                        "you want.")
-            return
         for log_subscriber in logging_config:
             self.client.create_log_subscriber(log_subscriber)
         self.client.start_logging()
