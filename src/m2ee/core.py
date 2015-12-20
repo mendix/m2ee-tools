@@ -20,12 +20,8 @@ import util
 
 class M2EE():
 
-    def __init__(self, yamlfiles=None, config=None, load_default_files=True):
-        self._initial_config = {
-            'load_default_files': load_default_files,
-            'yamlfiles': yamlfiles,
-            'config': config,
-        }
+    def __init__(self, yaml_files=None):
+        self._yaml_files = yaml_files
         self.reload_config()
         self._logproc = None
 
@@ -35,11 +31,7 @@ class M2EE():
             self.reload_config()
 
     def reload_config(self):
-        self.config = M2EEConfig(
-            load_default_files=self._initial_config['load_default_files'],
-            yaml_files=self._initial_config['yamlfiles'],
-            config=self._initial_config['config'],
-        )
+        self.config = M2EEConfig(yaml_files=self._yaml_files)
         self.client = M2EEClient(
             'http://127.0.0.1:%s/' % self.config.get_admin_port(),
             self.config.get_admin_pass())
