@@ -5,25 +5,13 @@
 # http://www.mendix.com/
 #
 
+import json
 import os
 import string
 
 from m2ee.log import logger
 from m2ee.client import M2EEAdminException, M2EEAdminNotAvailable
 import smaps
-
-# Use json if available. If not (python 2.5) we need to import the simplejson
-# module instead, which has to be available.
-try:
-    import json
-except ImportError:
-    try:
-        import simplejson as json
-    except ImportError, ie:
-        logger.critical("Failed to import json as well as simplejson. If "
-                        "using python 2.5, you need to provide the simplejson "
-                        "module in your python library path.")
-        raise
 
 default_stats = {
     "languages": ["en_US"],

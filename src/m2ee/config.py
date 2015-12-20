@@ -5,6 +5,7 @@
 # http://www.mendix.com/
 #
 
+import json
 import yaml
 import os
 import sys
@@ -15,19 +16,6 @@ from log import logger
 from collections import defaultdict
 from version import MXVersion
 from m2ee.exceptions import M2EEException
-
-# Use json if available. If not (python 2.5) we need to import the simplejson
-# module instead, which has to be available.
-try:
-    import json
-except ImportError:
-    try:
-        import simplejson as json
-    except ImportError, ie:
-        logger.critical("Failed to import json as well as simplejson. If "
-                        "using python 2.5, you need to provide the simplejson "
-                        "module in your python library path.")
-        raise
 
 
 class M2EEConfig:

@@ -6,6 +6,7 @@
 #
 
 from base64 import b64encode
+import json
 import socket
 from log import logger
 from version import MXVersion
@@ -16,19 +17,6 @@ except ImportError:
     logger.critical("Failed to import httplib2. This module is needed by "
                     "m2ee. Please povide it on the python library path")
     raise
-
-# Use json if available. If not (python 2.5) we need to import
-# the simplejson module instead, which has to be available.
-try:
-    import json
-except ImportError:
-    try:
-        import simplejson as json
-    except ImportError, ie:
-        logger.critical("Failed to import json as well as simplejson. If "
-                        "using python 2.5, you need to provide the simplejson "
-                        "module in your python library path.")
-        raise
 
 
 class M2EEClient:
