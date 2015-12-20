@@ -141,9 +141,6 @@ class CLI(cmd.Cmd, object):
                     answer = self._ask_user_whether_to_create_db()
                     if answer == 'a':
                         abort = True
-                    elif (self.m2ee.config.get_runtime_version() // 2.5 and
-                          answer == 'c'):
-                        params["autocreatedb"] = True
                 elif e.result == client_errno.start_INVALID_DB_STRUCTURE:
                     answer = self._handle_ddl_commands()
                     if answer == 'a':
@@ -182,9 +179,9 @@ class CLI(cmd.Cmd, object):
                     logger.error("Automatic Database creation is disabled in "
                                  "Acceptance and Production mode!")
                     answer = None
-                elif self.m2ee.config.get_runtime_version() >= 3:
+                else:
                     # If in Development/Test, call execute_ddl_commands,
-                    # because since 3.0, this tries to create a database and
+                    # this tries to create a database and
                     # immediately executes initial ddl commands
                     self.m2ee.client.execute_ddl_commands()
             else:
@@ -372,11 +369,6 @@ class CLI(cmd.Cmd, object):
         feedback = self.m2ee.client.about()
         print("Using %s version %s" % (feedback['name'], feedback['version']))
         print(feedback['copyright'])
-        if self.m2ee.config.get_runtime_version() // 2.5:
-            if 'company' in feedback:
-                print('Project company name is %s' % feedback['company'])
-            if 'partner' in feedback:
-                print('Project partner name is %s' % feedback['partner'])
         if self.m2ee.config.get_runtime_version() >= 4.4:
             if 'model_version' in feedback:
                 print('Model version: %s' % feedback['model_version'])

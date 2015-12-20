@@ -182,18 +182,9 @@ class M2EE():
             self.client.add_mime_type(mime_types)
 
     def send_runtime_config(self):
-        # send runtime configuration
-        # catch and report:
-        # - configuration errors (X is not a file etc)
-        # XXX: fix mxruntime to report all errors and warnings in adminaction
-        # feedback instead of stopping to process input
-        # if errors, abort.
         logger.debug("Sending configuration...")
 
         config = copy.deepcopy(self.config.get_runtime_config())
-        custom_config_25 = None
-        if self.config.get_runtime_version() // '2.5':
-            custom_config_25 = config.pop('MicroflowConstants', None)
 
         # convert MyScheduledEvents from list to dumb comma separated string if
         # needed:
@@ -213,10 +204,6 @@ class M2EE():
 
         logger.debug("Sending MxRuntime configuration...")
         self.client.update_configuration(config)
-
-        if custom_config_25:
-            logger.debug("Sending 2.5.x custom configuration...")
-            self.client.update_custom_configuration(custom_config_25)
 
     def set_log_level(self, subscriber, node, level):
         params = {"subscriber": subscriber, "node": node, "level": level}

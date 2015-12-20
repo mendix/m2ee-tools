@@ -724,9 +724,6 @@ mxruntime:
  # every request the browser client issues (and that's a lot of times).
  PersistentSessions: False
 
- # License key file (2.5.x only, for 3.x+ use the activate_license m2ee command)
- #KeyFile: /path/to/some/place/key.mx
-
  # DTAPMode is an old setting that specifies in which DTAP (Development, Test,
  # Acceptance, Production) step the application is running. The Mendix Runtime
  # will behave differently when using Development/Test setting than in

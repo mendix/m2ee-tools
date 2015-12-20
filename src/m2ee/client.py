@@ -223,18 +223,7 @@ class M2EEClient:
         return self.request("get_log_settings", params)
 
     def check_health(self, params=None):
-        try:
-            return self.request("check_health", params)
-        except M2EEAdminException as e:
-            runtime_version = MXVersion(self.about()['version'])
-            if e.result == 3 and runtime_version // ('2.5.4', '2.5.5'):
-                # Error 3 is: HEALTH_MICROFLOW_EXECUTION_FAILED
-                # Because of an incomplete implementation, in Mendix 2.5.4 or
-                # 2.5.5 this means that the runtime is health-check
-                # capable, but no health check microflow is defined.
-                # Find a way or fake one! Yolo...
-                return {"health": "unknown"}
-            raise
+        return self.request("check_health", params)
 
     def get_current_runtime_requests(self):
         return self.request("get_current_runtime_requests")

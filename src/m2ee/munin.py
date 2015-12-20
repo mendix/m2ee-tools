@@ -249,44 +249,6 @@ def print_connectionbus_values(name, stats):
 
 
 def print_sessions_config(name, stats, graph_total_named_users):
-    if type(stats['sessions']) != dict:
-        print_sessions_pre254_config(name, stats)
-    else:
-        print_sessions_since254_config(name, stats, graph_total_named_users)
-
-
-def print_sessions_values(name, stats, graph_total_named_users):
-    if type(stats['sessions']) != dict:
-        print_sessions_pre254_values(name, stats)
-    else:
-        print_sessions_since254_values(name, stats, graph_total_named_users)
-
-
-def print_sessions_pre254_config(name, stats):
-    """
-    concurrent user sessions for mxruntime < 2.5.4
-    named_user_sessions counts names as well as anonymous sessions
-    !! you stil need to rename the rrd files in /var/lib/munin/ !!
-    """
-    print("multigraph mxruntime_sessions_%s" % name)
-    print("graph_args --base 1000 -l 0")
-    print("graph_vlabel Concurrent user sessions")
-    print("graph_title %s - MxRuntime Users" % name)
-    print("graph_category Mendix")
-    print("graph_info This graph shows the amount of concurrent user sessions")
-    print("named_user_sessions.label concurrent user sessions")
-    print("named_user_sessions.draw LINE1")
-    print("named_user_sessions.info amount of concurrent user sessions")
-    print("")
-
-
-def print_sessions_pre254_values(name, stats):
-    print("multigraph mxruntime_sessions_%s" % name)
-    print("named_user_sessions.value %s" % stats['sessions'])
-    print("")
-
-
-def print_sessions_since254_config(name, stats, graph_total_named_users):
     print("multigraph mxruntime_sessions_%s" % name)
     print("graph_args --base 1000 -l 0")
     print("graph_vlabel Concurrent user sessions")
@@ -306,7 +268,7 @@ def print_sessions_since254_config(name, stats, graph_total_named_users):
     print("")
 
 
-def print_sessions_since254_values(name, stats, graph_total_named_users):
+def print_sessions_values(name, stats, graph_total_named_users):
     print("multigraph mxruntime_sessions_%s" % name)
     if graph_total_named_users:
         print("named_users.value %s" % stats['sessions']['named_users'])

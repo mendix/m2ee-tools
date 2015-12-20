@@ -9,7 +9,6 @@ import yaml
 import os
 import sys
 import pwd
-import re
 import copy
 
 from log import logger
@@ -53,8 +52,6 @@ class M2EEConfig:
         self._appcontainer_version = self._conf['m2ee'].get(
             'appcontainer_version', None)
 
-        # >= 3.0: application information (e.g. runtime version)
-        # if this file does not exist (i.e. < 3.0) try_load_json returns {}
         self._model_metadata = self._try_load_json(
             os.path.join(
                 self._conf['m2ee']['app_base'],
@@ -127,17 +124,13 @@ class M2EEConfig:
 
     def _merge_microflow_constants(self):
         """
-        3.0: config.json "contains the configuration settings of the active
+        config.json "contains the configuration settings of the active
         configuration (in the Modeler) at the time of deployment." It also
         contains default values for microflow constants. D/T configuration is
         not stored in the mdp anymore, so for D/T we need to insert it into
         the configuration we read from yaml (yay!)
         { "Configuration": { "key": "value", ... }, "Constants": {
-        "Module.Constant": "value", ... } } also... move the custom section
-        into the MicroflowConstants runtime config option where 3.0 now
-        expects them to be! yay... (when running 2.5, the MicroflowConstants
-        part of runtime config will be sent using the old
-        update_custom_configuration m2ee api call. Fun!
+        "Module.Constant": "value", ... } }
         """
 
         logger.debug("Merging microflow constants configuration...")
@@ -161,14 +154,7 @@ class M2EEConfig:
                          "config.json: %s" %
                          (self.get_dtap_mode(), config_json_constants))
             merge_constants.update(config_json_constants)
-        # custom yaml section can override defaults
-        yaml_custom = self._conf.get('custom', {})
-        if yaml_custom:
-            logger.trace("Using constants from custom config section: %s" %
-                         yaml_custom)
-            merge_constants.update(yaml_custom)
-        # 'MicroflowConstants' from runtime yaml section can override
-        # default/custom
+        # 'MicroflowConstants' from runtime yaml section can override defaults
         yaml_mxruntime_mfconstants = (
             self._conf['mxruntime'].get('MicroflowConstants', {}))
         if yaml_mxruntime_mfconstants:
@@ -333,6 +319,10 @@ class M2EEConfig:
 
         if len(self._conf['logging']) == 0:
             logger.warn("No logging settings found, this is probably not what you want.")
+
+        if 'custom' in self._conf:
+            logger.warn("Old 'custom' section found in configuration. Move the contents "
+                        "to the MicroflowConstants section now!")
 
     def fix_permissions(self):
         basepath = self._conf['m2ee']['app_base']
@@ -697,8 +687,6 @@ class M2EEConfig:
         return self._classpath
 
     def _get_appcontainer_mainclass(self):
-        if self.runtime_version // 2.5:
-            return "com.mendix.m2ee.server.M2EE"
         if self.runtime_version // 3 or self.runtime_version // 4:
             if self.use_hybrid_appcontainer():
                 return "com.mendix.m2ee.AppContainer"
@@ -792,54 +780,12 @@ class M2EEConfig:
                          self._conf['m2ee']['runtime_version'])
             return MXVersion(self._conf['m2ee']['runtime_version'])
 
-        # 3.0 has runtime version in metadata.json
-        if 'RuntimeVersion' in self._model_metadata:
-            logger.debug("MxRuntime version listed in model metadata: %s" %
-                         self._model_metadata['RuntimeVersion'])
-            return MXVersion(self._model_metadata['RuntimeVersion'])
-
-        # else, 2.5: try to read from model.mdp using sqlite
-        import sqlite3
-        model_mdp = os.path.join(
-            self._conf['m2ee']['app_base'],
-            'model',
-            'model.mdp'
-        )
-        if not os.path.isfile(model_mdp):
-            logger.debug("Mendix 2.5? No, %s is not a file! Giving up now..." %
-                         model_mdp)
-            return None
-        version = None
-        try:
-            conn = sqlite3.connect(model_mdp)
-            c = conn.cursor()
-            c.execute('SELECT _ProductVersion FROM _MetaData LIMIT 1;')
-            version = c.fetchone()[0]
-            c.close()
-            conn.close()
-        except sqlite3.Error, e:
-            logger.error("An error occured while trying to read mendix "
-                         "version number from model.mdp: %s" % e)
+        if 'RuntimeVersion' not in self._model_metadata:
             return None
 
-        # hack: force convert sqlite string to ascii, this prevents syslog from
-        # stumbling over it because a BOM will appear which messes up syslog
-        # <U+FEFF><183>m2ee: (bofht) DEBUG - MxRuntime version listed in
-        # application model file: 2.5.3 also see
-        # http://en.wikipedia.org/wiki/Byte_order_mark
-        version = version.encode('ascii', 'ignore')
-        # TODO: is this only syslog cosmetics, or does splitting syslog into
-        # files based on progname break here? needs a bit of testing...
-
-        if not re.match(r'^[\w.-]+$', version):
-            logger.error("Invalid version number in model.mdp: %s (not a "
-                         "release build?)" % version)
-            return None
-
-        logger.debug("MxRuntime version listed in application model file: %s" %
-                     version)
-
-        return MXVersion(version)
+        logger.debug("MxRuntime version listed in model metadata: %s" %
+                     self._model_metadata['RuntimeVersion'])
+        return MXVersion(self._model_metadata['RuntimeVersion'])
 
     def lookup_in_mxjar_repo(self, dirname):
         logger.debug("Searching for %s in mxjar repo locations..." % dirname)
