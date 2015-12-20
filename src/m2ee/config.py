@@ -879,18 +879,12 @@ class M2EEConfig:
 
 def find_yaml_files():
     yaml_files = []
-    # don't add deprecated m2eerc-file if yaml is present
-    # (if both exist, probably one is a symlink to the other...)
     if os.path.isfile("/etc/m2ee/m2ee.yaml"):
         yaml_files.append("/etc/m2ee/m2ee.yaml")
-    elif os.path.isfile("/etc/m2ee/m2eerc"):
-        yaml_files.append("/etc/m2ee/m2eerc")
 
     homedir = pwd.getpwuid(os.getuid())[5]
     if os.path.isfile(os.path.join(homedir, ".m2ee/m2ee.yaml")):
         yaml_files.append(os.path.join(homedir, ".m2ee/m2ee.yaml"))
-    elif os.path.isfile(os.path.join(homedir, ".m2eerc")):
-        yaml_files.append(os.path.join(homedir, ".m2eerc"))
     return yaml_files
 
 
