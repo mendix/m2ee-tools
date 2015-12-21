@@ -761,16 +761,8 @@ class M2EEConfig:
 
     def _lookup_runtime_version(self):
         logger.debug("Determining runtime version to be used...")
-
-        # force to a specific version
-        if self._conf['m2ee'].get('runtime_version', None):
-            logger.debug("Runtime version forced to %s in configuration" %
-                         self._conf['m2ee']['runtime_version'])
-            return MXVersion(self._conf['m2ee']['runtime_version'])
-
         if 'RuntimeVersion' not in self._model_metadata:
             return None
-
         logger.debug("MxRuntime version listed in model metadata: %s" %
                      self._model_metadata['RuntimeVersion'])
         return MXVersion(self._model_metadata['RuntimeVersion'])
