@@ -24,14 +24,14 @@ Step 1: Install the current public key manually, using https to download it:
     # wget -q -O - https://packages.mendix.com/mendix-debian-archive-key.asc | apt-key add -
     OK
 
-Step 2: Install the `debian-mendix-keyring` package from the Mendix repository. Installing this package makes sure that you will automatically receive new public keys when Mendix does a key-rollover to a new key.
+Step 2: Install the `debian-mendix-archive-keyring` package from the Mendix repository. Installing this package makes sure that you will automatically receive new public keys when Mendix does a key-rollover to a new key.
 
-    # apt-get install debian-mendix-keyring
+    # apt-get install debian-mendix-archive-keyring
     Reading package lists... Done
     Building dependency tree
     Reading state information... Done
     The following NEW packages will be installed:
-      debian-mendix-keyring
+      debian-mendix-archive-keyring
     0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded.
     Need to get 6,472 B of archives.
     After this operation, 53.2 kB of additional disk space will be used.
