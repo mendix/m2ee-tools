@@ -11,6 +11,8 @@ This page describes installation instructions for Debian and RHEL/Centos in case
 
 ## Deployment Tools for Debian
 
+(scroll down for RHEL / Centos based instructions)
+
 The deployment tools, written in python are available in a public apt repository. When using Debian Jessie this repository can be added to your apt sources as follows:
 
     deb http://packages.mendix.com/platform/debian/ jessie main contrib non-free
@@ -57,18 +59,6 @@ Now you can install m2ee-tools:
     Do you want to continue [Y/n]?
     [...]
 
-## Deployment Tools for RHEL / Centos
-
-An RPM-version of the deployment tools package can be found at [https://packages.mendix.com/platform/rpm/](https://packages.mendix.com/platform/rpm/)
-
-This package has dependencies on a few small python libraries, of which part of them aren't available in the base distribution of RedHat / Centos. During development and testing the following packages were used from EPEL:
-
- * [PyYAML-3.10-3.el6.x86_64](http://dl.fedoraproject.org/pub/epel/6/x86_64/repoview/PyYAML.html)
- * [libyaml-0.1.3-1.el6.x86_64](http://dl.fedoraproject.org/pub/epel/6/x86_64/repoview/libyaml.html)
- * [python-httplib2-0.7.4-6.el6.noarch](http://dl.fedoraproject.org/pub/epel/6/x86_64/repoview/python-httplib2.html)
-
-If slightly newer packages than these ones are available at EPEL, don't hesitate to use them.
-
 ## Oracle Java JRE or OpenJDK JRE on Debian
 
 In order to run the mendix server, you also need the Oracle Java JRE or the OpenJDK JRE (supported when using Mendix 4.2.0+). Which Java JRE to use depends on the version of the Mendix Business Modeler you're using to create the application that needs to run on your new server.
@@ -76,8 +66,9 @@ In order to run the mendix server, you also need the Oracle Java JRE or the Open
  * Mendix 3 and 4.0 use JRE 6
  * From Mendix 4.1 on it can use either JRE 6 or 7. Using 7 is recommended.
  * Mendix 5 requires using JRE 7
+ * Mendix 6 needs JRE 8
 
-When using Debian, the OpenJDK JRE is provided by the [openjdk-7-jre-headless](https://packages.debian.org/openjdk-7-jre-headless) package.
+When using Debian, the OpenJDK JRE is provided by the [openjdk-7-jre-headless](https://packages.debian.org/openjdk-7-jre-headless) or [openjdk-8-jre-headless](https://packages.debian.org/openjdk-8-jre-headless) package.
 
 Thanks to Oracle, OS Distributions cannot any longer redistribute the Oracle JRE. If you want to use the Oracle JVM, use java-package to create Debian packages of the Oracle JVM yourself. NEVER directly install the self-extracting .bin installer from Oracle on a Debian system. See the [Java](http://wiki.debian.org/Java) and [JavaPackage](http://wiki.debian.org/JavaPackage) pages in the Debian Wiki for more information.
 
@@ -85,6 +76,19 @@ If you have multiple JRE packages installed, make sure you have the preferred on
 Oracle JRE or OpenJDK JRE on RHEL / Centos
 
 The Oracle JRE is available as rpm at Oracle, and the OpenJDK JRE seems to be available in the default repositories, installable using yum.
+
+## Deployment Tools for RHEL / Centos
+
+An RPM-version of the deployment tools package can be found at [https://packages.mendix.com/platform/rpm/](https://packages.mendix.com/platform/rpm/)
+
+If you want to use this location as a little additional yum repository, you can use the following configuration:
+
+    [mendix]
+    name=Mendix
+    baseurl="https://packages.mendix.com/platform/rpm/"
+    gpgcheck=0
+
+This package has dependencies on a few small python libraries, of which part of them (yaml and httplib2) aren't available in the base distribution of RedHat / Centos. You can get them from EPEL.
 
 ## System-wide configuration of m2ee-tools
 
