@@ -26,7 +26,17 @@ Step 1: Install the current public key manually, using https to download it:
     # wget -q -O - https://packages.mendix.com/mendix-debian-archive-key.asc | apt-key add -
     OK
 
-Step 2: Install the `debian-mendix-archive-keyring` package from the Mendix repository. Installing this package makes sure that you will automatically receive new public keys when Mendix does a key-rollover to a new key.
+Step 2: Fetch the package lists. This should succeed without any GPG verification error now.
+
+    # apt-get update
+    [...]
+    Get:1 http://packages.mendix.com jessie InRelease [10.9 kB]
+    Get:2 http://packages.mendix.com jessie/main amd64 Packages [1,556 B]
+    Get:3 http://packages.mendix.com jessie/contrib amd64 Packages [20 B]
+    Get:4 http://packages.mendix.com jessie/non-free amd64 Packages [20 B]
+    [...]
+
+Step 3: Install the `debian-mendix-archive-keyring` package from the Mendix repository. Installing this package makes sure that you will automatically receive new public keys when Mendix does a key-rollover to a new key.
 
     # apt-get install debian-mendix-archive-keyring
     Reading package lists... Done
