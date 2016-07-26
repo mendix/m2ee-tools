@@ -1,3 +1,11 @@
+m2ee-tools 0.5.11.3, 26 Jul 2016
+================================
+
+Previous m2ee versions showed incorrect values for JVM graphs for the following
+Mendix versions when using Java 8: (>=6 && < 6.6) || (>=5.18 && <= 5.21.5)
+
+The MemoryPoolMXBean values show up in a different order when running Java 8.
+
 m2ee-tools 0.5.11.2, 19 Nov 2015
 ================================
 
