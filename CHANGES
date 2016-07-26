@@ -1,3 +1,7 @@
+m2ee-tools 0.5.11.3, 26 Jul 2016
+  * Fix incorrect JVM graph values for Mx <6.6, <5.21.5, MemoryPoolMXBean values
+    show up in a different order when running Java 8.
+
 m2ee-tools 0.5.11.2, 19 Nov 2015
   * Disable runtime_blocking_connector by default, it's buggy and closes connections
     that are waiting for a response.
