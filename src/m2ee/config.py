@@ -521,6 +521,16 @@ class M2EEConfig:
             else:
                 logger.warn("javaopts option in m2ee section in configuration "
                             "is not a list")
+        if self.runtime_version >= 7:
+            cmd.extend([
+                '-DMX_INSTALL_PATH=%s' % self._runtime_path,
+                '-jar',
+                os.path.join(
+                    self._runtime_path,
+                    'runtime/launcher/runtimelauncher.jar'
+                ),
+                self.get_app_base(),
+            ])
         if self._classpath:
             cmd.extend(['-cp', self._classpath])
 
