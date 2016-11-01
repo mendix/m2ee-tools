@@ -107,6 +107,8 @@ class M2EEConfig:
             logger.debug("Building classpath to run hybrid appcontainer from "
                          "source.")
             classpath = self._setup_classpath_from_source()
+        elif self.runtime_version >= 7:
+            logger.debug('Mendix 7 uses runtime-launcher.jar, no classpath')
         elif self.use_hybrid_appcontainer() and self.runtime_version < 5:
             logger.debug("Hybrid appcontainer from jars does not need a "
                          "classpath.")
@@ -521,6 +523,16 @@ class M2EEConfig:
             else:
                 logger.warn("javaopts option in m2ee section in configuration "
                             "is not a list")
+        if self.runtime_version >= 7:
+            cmd.extend([
+                '-DMX_INSTALL_PATH=%s' % self._runtime_path,
+                '-jar',
+                os.path.join(
+                    self._runtime_path,
+                    'runtime/launcher/runtimelauncher.jar'
+                ),
+                self.get_app_base(),
+            ])
         if self._classpath:
             cmd.extend(['-cp', self._classpath])
 
@@ -705,7 +717,7 @@ class M2EEConfig:
             if self.use_hybrid_appcontainer():
                 return "com.mendix.m2ee.AppContainer"
             return "com.mendix.m2ee.server.HttpAdminAppContainer"
-        if self.runtime_version >= 5:
+        if self.runtime_version >= 5 and self.runtime_version < 7:
             return "org.apache.felix.main.Main"
 
         raise Exception("Trying to determine appcontainer main class for "
@@ -748,7 +760,7 @@ class M2EEConfig:
                 os.path.join(self._runtime_path, 'runtime', '*'),
                 os.path.join(self._runtime_path, 'runtime', 'lib', '*'),
             ])
-        elif self.runtime_version >= 5:
+        elif self.runtime_version >= 5 and self.runtime_version < 7:
             classpath.extend([
                 os.path.join(self._runtime_path, 'runtime', 'felix', 'bin',
                              'felix.jar'),
