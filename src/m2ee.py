@@ -274,14 +274,25 @@ class CLI(cmd.Cmd, object):
             logger.warn("The application process needs to be running to "
                         "create a user object in the application.")
             return
-        print("This option will create an administrative user account, using "
-              "the preset username and user role settings.")
-        newpw1 = getpass.getpass("Type new password for this user: ")
-        newpw2 = getpass.getpass("Type new password for this user again: ")
-        if newpw1 != newpw2:
-            print("The passwords are not equal!")
+
+        if self.yolo_mode:
+            if args is None:
+                logger.warn("The administrative user account creation requires "
+                            "password as argument")
+                return
+            print("This option will create an administrative user account "
+                  "in non interactive mode.")
+            newpw1 = args
         else:
-            self.m2ee.client.create_admin_user({"password": newpw1})
+            print("This option will create an administrative user account, using "
+                  "the preset username and user role settings.")
+            newpw1 = getpass.getpass("Type new password for this user: ")
+            newpw2 = getpass.getpass("Type new password for this user again: ")
+            if newpw1 != newpw2:
+                print("The passwords are not equal!")
+                return
+
+        self.m2ee.client.create_admin_user({"username": username, "password": newpw1})
 
     def do_update_admin_user(self, args=None):
         if not self.m2ee.client.ping():
