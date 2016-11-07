@@ -265,18 +265,6 @@ m2ee:
     "/opt/dirty/*"
  ]
 
- # Using runtime_version, a specific runtime version can be forced to be used
- # when starting the Mendix Runtime. By default, the version of the Mendix
- # software used when creating an application using the Mendix Business Modeler
- # is read from the deployment files, based on which the same Runtime
- # distribution is started.
- #
- # You should never need to use this option. Even urgent hotfixes or security
- # updates should be coordinated with the project team using the Modeler.
- #
- # default: autodetected version from deployment files
- runtime_version: x.y.z
-
  # If symlink_mxclientsystem is set to true, try to symlink web/mxclientsystem
  # to the mxclientsystem directory of the runtime distribution currently in use.
  # This is useful for fixed web server configuration that followes symlinks, so
@@ -723,9 +711,6 @@ mxruntime:
  # this will cause an extra database update to happen on the session store for
  # every request the browser client issues (and that's a lot of times).
  PersistentSessions: False
-
- # License key file (2.5.x only, for 3.x+ use the activate_license m2ee command)
- #KeyFile: /path/to/some/place/key.mx
 
  # DTAPMode is an old setting that specifies in which DTAP (Development, Test,
  # Acceptance, Production) step the application is running. The Mendix Runtime

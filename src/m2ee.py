@@ -10,6 +10,7 @@ import atexit
 import cmd
 import datetime
 import getpass
+import json
 import os
 import pwd
 import random
@@ -19,20 +20,8 @@ import subprocess
 import sys
 import yaml
 
-from m2ee import pgutil, M2EE, M2EEProfiler, logger, client_errno
+from m2ee import pgutil, M2EE, logger, client_errno
 import m2ee
-
-# Use json if available. If not (python 2.5) we need to import the simplejson
-# module instead, which has to be available.
-try:
-    import json
-except ImportError:
-    try:
-        import simplejson as json
-    except ImportError, ie:
-        logger.critical("Failed to import json as well as simplejson. If "
-                        "using python 2.5, you need to provide the simplejson "
-                        "module in your python library path.")
 
 if not sys.stdout.isatty():
     import codecs
@@ -120,14 +109,8 @@ class CLI(cmd.Cmd, object):
 
         self.m2ee.start_appcontainer()
 
-        database_password = None
-        if not self.m2ee.config.has_database_password():
-            database_password = getpass.getpass(
-                "Database password not configured, "
-                "please provide now:"
-            )
         try:
-            self.m2ee.send_runtime_config(database_password)
+            self.m2ee.send_runtime_config()
         except m2ee.client.M2EEAdminException as e:
             logger.error("Sending configuration failed: %s" % e.cause)
             logger.error("You'll have to fix the configuration and run start again...")
@@ -147,9 +130,6 @@ class CLI(cmd.Cmd, object):
                     answer = self._ask_user_whether_to_create_db()
                     if answer == 'a':
                         abort = True
-                    elif (self.m2ee.config.get_runtime_version() // 2.5 and
-                          answer == 'c'):
-                        params["autocreatedb"] = True
                 elif e.result == client_errno.start_INVALID_DB_STRUCTURE:
                     answer = self._handle_ddl_commands()
                     if answer == 'a':
@@ -188,9 +168,9 @@ class CLI(cmd.Cmd, object):
                     logger.error("Automatic Database creation is disabled in "
                                  "Acceptance and Production mode!")
                     answer = None
-                elif self.m2ee.config.get_runtime_version() >= 3:
+                else:
                     # If in Development/Test, call execute_ddl_commands,
-                    # because since 3.0, this tries to create a database and
+                    # this tries to create a database and
                     # immediately executes initial ddl commands
                     self.m2ee.client.execute_ddl_commands()
             else:
@@ -378,11 +358,6 @@ class CLI(cmd.Cmd, object):
         feedback = self.m2ee.client.about()
         print("Using %s version %s" % (feedback['name'], feedback['version']))
         print(feedback['copyright'])
-        if self.m2ee.config.get_runtime_version() // 2.5:
-            if 'company' in feedback:
-                print('Project company name is %s' % feedback['company'])
-            if 'partner' in feedback:
-                print('Project partner name is %s' % feedback['partner'])
         if self.m2ee.config.get_runtime_version() >= 4.4:
             if 'model_version' in feedback:
                 print('Model version: %s' % feedback['model_version'])
@@ -551,6 +526,10 @@ class CLI(cmd.Cmd, object):
 
     def do_dump_config(self, args):
         self.m2ee.config.dump()
+
+    def do_set_database_password(self, args):
+        password = getpass.getpass("Database password: ")
+        self.m2ee.config.set_database_password(password)
 
     def do_psql(self, args):
         if not self.m2ee.config.is_using_postgresql():
@@ -752,15 +731,6 @@ class CLI(cmd.Cmd, object):
         print("exit")
         return -1
 
-    def do_profiler(self, args):
-        print("The profiler module in this program is experimental "
-              "functionality and should not be used in production "
-              "environments. Incorrect use of the profiler can cause out of "
-              "memory errors on applications that handle a lot of requests.")
-        answer = raw_input("Start profiler? (y/N): ")
-        if answer == 'y':
-            M2EEProfiler(self.m2ee.client).cmdloop()
-
     def do_download_runtime(self, args):
         if args:
             mxversion = m2ee.version.MXVersion(args)
@@ -870,7 +840,6 @@ Available commands:
             print("""Advanced commands:
  statistics - show all application statistics that can be used for monitoring
  show_all_thread_stack_traces - show all low-level JVM threads with stack trace
- profiler - start the profiler (experimental)
  check_health - manually execute health check
  enable_debugger - enable remote debugger API
  disable_debugger - disable remote debugger API

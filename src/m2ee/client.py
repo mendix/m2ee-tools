@@ -6,6 +6,7 @@
 #
 
 from base64 import b64encode
+import json
 import socket
 from log import logger
 from version import MXVersion
@@ -16,19 +17,6 @@ except ImportError:
     logger.critical("Failed to import httplib2. This module is needed by "
                     "m2ee. Please povide it on the python library path")
     raise
-
-# Use json if available. If not (python 2.5) we need to import
-# the simplejson module instead, which has to be available.
-try:
-    import json
-except ImportError:
-    try:
-        import simplejson as json
-    except ImportError, ie:
-        logger.critical("Failed to import json as well as simplejson. If "
-                        "using python 2.5, you need to provide the simplejson "
-                        "module in your python library path.")
-        raise
 
 
 class M2EEClient:
@@ -199,23 +187,6 @@ class M2EEClient:
     def about(self):
         return self.request("about")
 
-    def get_profiler_logs(self):
-        return self.request("get_profiler_logs")
-
-    def start_profiler(self, minimum_duration_to_log=None,
-                       flush_interval=None):
-        params = {}
-        if minimum_duration_to_log is not None:
-            params["minimum_duration_to_log"] = minimum_duration_to_log
-
-        if flush_interval is not None:
-            params["flush_interval"] = flush_interval
-
-        return self.request("start_profiler", params)
-
-    def stop_profiler(self):
-        return self.request("stop_profiler")
-
     def set_log_level(self, params):
         return self.request("set_log_level", params)
 
@@ -223,18 +194,7 @@ class M2EEClient:
         return self.request("get_log_settings", params)
 
     def check_health(self, params=None):
-        try:
-            return self.request("check_health", params)
-        except M2EEAdminException as e:
-            runtime_version = MXVersion(self.about()['version'])
-            if e.result == 3 and runtime_version // ('2.5.4', '2.5.5'):
-                # Error 3 is: HEALTH_MICROFLOW_EXECUTION_FAILED
-                # Because of an incomplete implementation, in Mendix 2.5.4 or
-                # 2.5.5 this means that the runtime is health-check
-                # capable, but no health check microflow is defined.
-                # Find a way or fake one! Yolo...
-                return {"health": "unknown"}
-            raise
+        return self.request("check_health", params)
 
     def get_current_runtime_requests(self):
         return self.request("get_current_runtime_requests")

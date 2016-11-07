@@ -165,10 +165,6 @@ class M2EE():
     def _configure_logging(self):
         logger.debug("Setting up logging...")
         logging_config = self.config.get_logging_config()
-        if len(logging_config) == 0:
-            logger.warn("No logging settings found, this is probably not what "
-                        "you want.")
-            return
         for log_subscriber in logging_config:
             self.client.create_log_subscriber(log_subscriber)
         self.client.start_logging()
@@ -185,22 +181,10 @@ class M2EE():
             logger.debug("Sending mime types...")
             self.client.add_mime_type(mime_types)
 
-    def send_runtime_config(self, database_password=None):
-        # send runtime configuration
-        # catch and report:
-        # - configuration errors (X is not a file etc)
-        # XXX: fix mxruntime to report all errors and warnings in adminaction
-        # feedback instead of stopping to process input
-        # if errors, abort.
+    def send_runtime_config(self):
         logger.debug("Sending configuration...")
 
         config = copy.deepcopy(self.config.get_runtime_config())
-        if database_password:
-            config['DatabasePassword'] = database_password
-
-        custom_config_25 = None
-        if self.config.get_runtime_version() // '2.5':
-            custom_config_25 = config.pop('MicroflowConstants', None)
 
         # convert MyScheduledEvents from list to dumb comma separated string if
         # needed:
@@ -220,10 +204,6 @@ class M2EE():
 
         logger.debug("Sending MxRuntime configuration...")
         self.client.update_configuration(config)
-
-        if custom_config_25:
-            logger.debug("Sending 2.5.x custom configuration...")
-            self.client.update_custom_configuration(custom_config_25)
 
     def set_log_level(self, subscriber, node, level):
         params = {"subscriber": subscriber, "node": node, "level": level}
