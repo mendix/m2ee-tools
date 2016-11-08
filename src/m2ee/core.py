@@ -72,7 +72,7 @@ class M2EE():
 
         version = self.config.get_runtime_version()
 
-        if version >= 5:
+        if version // 5 or version // 6:
             self.config.write_felix_config()
 
         if self.config.get_symlink_mxclientsystem():
