@@ -806,6 +806,14 @@ class CLI(cmd.Cmd, object):
     def emptyline(self):
         pass
 
+    def completenames(self, text, *ignored):
+        do_text = "do_%s" % text
+        suggestions = [a[3:] for a in self.get_names() if a.startswith(do_text)]
+        if len(suggestions) == 1 \
+                and "complete_%s" % suggestions[0] in self.get_names():
+            suggestions[0] = "%s " % suggestions[0]
+        return suggestions
+
     def do_help(self, args):
         print("""Welcome to m2ee, the Mendix Runtime helper tools.
 
