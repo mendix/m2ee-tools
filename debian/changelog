@@ -1,3 +1,9 @@
+m2ee-tools (0.5.11.4-1) unstable; urgency=medium
+
+  * Preliminary Mendix 7 compatibility
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Thu, 10 Nov 2016 13:40:55 +0100
+
 m2ee-tools (0.5.11.3-1) unstable; urgency=low
 
   * Fix incorrect JVM graph values for Mx <6.6, <5.21.5, MemoryPoolMXBean
