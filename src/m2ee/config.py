@@ -87,8 +87,8 @@ class M2EEConfig:
                                 "download_runtime command." %
                                 str(self.runtime_version))
                     self._all_systems_are_go = False
-
-        self._setup_classpath()
+        if self.runtime_version < 7:
+            self._setup_classpath()
 
         if self._runtime_path and 'RuntimePath' not in self._conf['mxruntime']:
             runtimePath = os.path.join(self._runtime_path, 'runtime')
@@ -506,6 +506,9 @@ class M2EEConfig:
             env['M2EE_MONITORING_PASS'] = str(
                 self._conf['m2ee']['monitoring_pass'])
 
+        if self.runtime_version >= 7:
+            env['MX_INSTALL_PATH'] = self._runtime_path
+
         return env
 
     def get_java_cmd(self):
@@ -521,7 +524,13 @@ class M2EEConfig:
             else:
                 logger.warn("javaopts option in m2ee section in configuration "
                             "is not a list")
-        if self._classpath:
+        if self.runtime_version >= 7:
+            cmd.extend([
+                '-jar',
+                os.path.join(self._runtime_path, 'runtime/launcher/runtimelauncher.jar'),
+                self.get_app_base(),
+            ])
+        elif self._classpath:
             cmd.extend(['-cp', self._classpath])
 
             if self.runtime_version >= 5:
@@ -705,7 +714,7 @@ class M2EEConfig:
             if self.use_hybrid_appcontainer():
                 return "com.mendix.m2ee.AppContainer"
             return "com.mendix.m2ee.server.HttpAdminAppContainer"
-        if self.runtime_version >= 5:
+        if self.runtime_version // 5 or self.runtime_version // 6:
             return "org.apache.felix.main.Main"
 
         raise Exception("Trying to determine appcontainer main class for "
@@ -748,13 +757,16 @@ class M2EEConfig:
                 os.path.join(self._runtime_path, 'runtime', '*'),
                 os.path.join(self._runtime_path, 'runtime', 'lib', '*'),
             ])
-        elif self.runtime_version >= 5:
+        elif self.runtime_version // 5 or self.runtime_version // 6:
             classpath.extend([
                 os.path.join(self._runtime_path, 'runtime', 'felix', 'bin',
                              'felix.jar'),
                 os.path.join(self._runtime_path, 'runtime', 'lib',
                              'com.mendix.xml-apis-1.4.1.jar')
             ])
+        else:
+            raise Exception("Trying to determine runtime classpath for runtime version %s. "
+                            "Please report this as a bug." % self.runtime_version)
 
         return classpath
 

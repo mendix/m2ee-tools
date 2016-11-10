@@ -1,8 +1,8 @@
-m2ee-tools (0.5.11.3-1~mxbp70+1) wheezy-backports; urgency=low
+m2ee-tools (0.5.11.4-1) unstable; urgency=medium
 
-  * Rebuild for Wheezy
+  * Preliminary Mendix 7 compatibility
 
- -- Daniel van Dorp <daniel.van.dorp@mendix.com>  Tue, 26 Jul 2016 15:19:04 +0200
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Thu, 10 Nov 2016 13:40:55 +0100
 
 m2ee-tools (0.5.11.3-1) unstable; urgency=low
 
