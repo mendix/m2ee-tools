@@ -1,3 +1,9 @@
+m2ee-tools (0.5.11.4-1~mx7u1) wheezy; urgency=medium
+
+  * Rebuild for Wheezy
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Thu, 10 Nov 2016 14:54:27 +0100
+
 m2ee-tools (0.5.11.4-1) unstable; urgency=medium
 
   * Preliminary Mendix 7 compatibility
