@@ -6,24 +6,8 @@
 #
 
 import logging
-import logging.handlers
 import sys
 
-# register trace logging possibility
-LOG_TRACE = 5
-logging.addLevelName(LOG_TRACE, 'TRACE')
-
-
-# subclass Logger to provide trace convenience method
-class M2EELogger(logging.Logger):
-
-    def __init__(self, name=None):
-        logging.Logger.__init__(self, name)
-
-    def trace(self, msg, *args, **kwargs):
-        self.log(LOG_TRACE, msg, *args, **kwargs)
-
-logging.setLoggerClass(M2EELogger)
 logger = logging.getLogger("m2ee")
 # level will be set at startup
 
