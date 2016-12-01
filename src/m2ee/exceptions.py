@@ -6,24 +6,24 @@
 
 class M2EEException(Exception):
 
-    ERR_UNKNOWN = 0x0001
+    ERR_UNKNOWN = 1
 
-    # 0x01xx configuration errors
-    ERR_INVALID_OSGI_CONFIG = 0x0100
-    ERR_MISSING_CONFIG = 0x0101
+    # configuration errors
+    ERR_INVALID_OSGI_CONFIG = 2
+    ERR_MISSING_CONFIG = 3
 
-    # 0x02xx start/stop errors
-    ERR_START_ALREADY_RUNNING = 0x0200
-    ERR_JVM_BINARY_NOT_FOUND = 0x0201
-    ERR_JVM_FORKEXEC = 0x0202
-    ERR_JVM_TIMEOUT = 0x0203
-    ERR_JVM_UNKNOWN = 0x0204
-    # AppContainer startup errors, 0x0220 + exit code
-    ERR_APPCONTAINER_EXIT_ZERO = 0x0220
-    ERR_APPCONTAINER_UNKNOWN_ERROR = 0x0221
-    ERR_APPCONTAINER_ADMIN_PORT_IN_USE = 0x0222
-    ERR_APPCONTAINER_RUNTIME_PORT_IN_USE = 0x0223
-    ERR_APPCONTAINER_INVALID_JDK_VERSION = 0x0224
+    # start/stop errors
+    ERR_START_ALREADY_RUNNING = 4
+    ERR_JVM_BINARY_NOT_FOUND = 5
+    ERR_JVM_FORKEXEC = 6
+    ERR_JVM_TIMEOUT = 7
+    ERR_JVM_UNKNOWN = 8
+    # AppContainer startup errors
+    ERR_APPCONTAINER_EXIT_ZERO = 9
+    ERR_APPCONTAINER_UNKNOWN_ERROR = 10
+    ERR_APPCONTAINER_ADMIN_PORT_IN_USE = 11
+    ERR_APPCONTAINER_RUNTIME_PORT_IN_USE = 12
+    ERR_APPCONTAINER_INVALID_JDK_VERSION = 13
 
     def __init__(self, message, cause=None, errno=1):
         self.message = message
