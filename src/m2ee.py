@@ -868,7 +868,8 @@ Extra commands you probably don't need:
         if args != 'expert':
             print("Use help expert to show expert and debugging commands")
 
-if __name__ == '__main__':
+
+def main():
     from optparse import OptionParser
     parser = OptionParser()
     parser.add_option(
@@ -924,3 +925,7 @@ if __name__ == '__main__':
         cli.onecmd(' '.join(args))
     else:
         cli.cmdloop_handle_ctrl_c()
+
+
+if __name__ == '__main__':
+    main()
