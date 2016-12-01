@@ -11,6 +11,8 @@ import cmd
 import datetime
 import getpass
 import json
+import logging
+logger = logging
 import os
 import pwd
 import random
@@ -20,7 +22,7 @@ import subprocess
 import sys
 import yaml
 
-from m2ee import pgutil, M2EE, logger, client_errno
+from m2ee import pgutil, M2EE, client_errno
 import m2ee
 
 if not sys.stdout.isatty():
@@ -869,6 +871,38 @@ Extra commands you probably don't need:
             print("Use help expert to show expert and debugging commands")
 
 
+def start_console_logging(level):
+    logger = logging.getLogger()
+    logger.setLevel(level)
+    consolelogformatter = logging.Formatter("%(levelname)s: %(message)s")
+
+    class M2EELogFilter(logging.Filter):
+        def __init__(self, level, ge):
+            self.level = level
+            # log levels greater than and equal to (True), or below (False)
+            self.ge = ge
+
+        def filter(self, record):
+            if self.ge:
+                return record.levelno >= self.level
+            return record.levelno < self.level
+
+    # log everything below ERROR to to stdout
+    stdoutlog = logging.StreamHandler(sys.stdout)
+    stdoutlog.setFormatter(consolelogformatter)
+    stdoutfilter = M2EELogFilter(logging.ERROR, False)
+    stdoutlog.addFilter(stdoutfilter)
+
+    # log everything that's ERROR and more serious to stderr
+    stderrlog = logging.StreamHandler(sys.stderr)
+    stderrlog.setFormatter(consolelogformatter)
+    stderrfilter = M2EELogFilter(logging.ERROR, True)
+    stderrlog.addFilter(stderrfilter)
+
+    logger.addHandler(stdoutlog)
+    logger.addHandler(stderrlog)
+
+
 def main():
     from optparse import OptionParser
     parser = OptionParser()
@@ -914,7 +948,7 @@ def main():
         verbosity = 100
     if verbosity < 5:
         verbosity = 5
-    logger.setLevel(verbosity)
+    start_console_logging(verbosity)
 
     cli = CLI(
         yaml_files=options.yaml_files,

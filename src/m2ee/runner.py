@@ -4,14 +4,16 @@
 # http://www.mendix.com/
 #
 
+import logging
 import subprocess
 import os
 import signal
 import errno
 from time import sleep
-from log import logger
 from client import M2EEAdminException
 from m2ee.exceptions import M2EEException
+
+logger = logging.getLogger(__name__)
 
 
 class M2EERunner:

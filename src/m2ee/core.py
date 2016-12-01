@@ -3,6 +3,7 @@
 # http://www.mendix.com/
 #
 
+import logging
 import os
 import codecs
 import time
@@ -12,10 +13,11 @@ from config import M2EEConfig
 from client import M2EEClient
 from runner import M2EERunner
 from version import MXVersion
-from log import logger
 from m2ee.exceptions import M2EEException
 
 import util
+
+logger = logging.getLogger(__name__)
 
 
 class M2EE():

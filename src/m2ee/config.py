@@ -6,16 +6,18 @@
 #
 
 import json
+import logging
 import yaml
 import os
 import sys
 import pwd
 import copy
 
-from log import logger
 from collections import defaultdict
 from version import MXVersion
 from m2ee.exceptions import M2EEException
+
+logger = logging.getLogger(__name__)
 
 
 class M2EEConfig:

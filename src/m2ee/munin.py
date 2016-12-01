@@ -6,12 +6,13 @@
 #
 
 import json
+import logging
 import os
 import string
-
-from m2ee.log import logger
 from m2ee.client import M2EEAdminException, M2EEAdminNotAvailable
 import smaps
+
+logger = logging.getLogger(__name__)
 
 default_stats = {
     "languages": ["en_US"],

@@ -6,12 +6,14 @@
 #
 
 import os
+import logging
 import shutil
 import subprocess
 import socket
 import httplib
-from log import logger
 from m2ee.exceptions import M2EEException
+
+logger = logging.getLogger(__name__)
 
 try:
     import readline

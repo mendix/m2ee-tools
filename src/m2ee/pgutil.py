@@ -5,12 +5,13 @@
 # http://www.mendix.com/
 #
 
+import logging
 import os
 import subprocess
 import time
-
-from log import logger
 from m2ee.exceptions import M2EEException
+
+logger = logging.getLogger(__name__)
 
 
 def dumpdb(config, name=None):

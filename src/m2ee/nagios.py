@@ -6,9 +6,11 @@
 #
 
 import datetime
+import logging
 import time
 from m2ee.client import M2EEAdminException, M2EEAdminNotAvailable
-from m2ee.log import logger
+
+logger = logging.getLogger(__name__)
 
 STATE_OK = 0
 STATE_WARNING = 1

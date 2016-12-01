@@ -20,7 +20,6 @@ import logging
 if not hasattr(logging, 'trace'):
     monkeypatch_logging()
 
-from log import logger  # noqa
 from core import M2EE  # noqa
 import pgutil  # noqa
 import nagios  # noqa

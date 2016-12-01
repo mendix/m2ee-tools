@@ -7,9 +7,11 @@
 
 from base64 import b64encode
 import json
+import logging
 import socket
-from log import logger
 from version import MXVersion
+
+logger = logging.getLogger(__name__)
 
 try:
     import httplib2
