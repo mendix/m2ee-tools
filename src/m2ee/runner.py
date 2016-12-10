@@ -161,10 +161,10 @@ class M2EERunner:
         os.setsid()
         os.umask(0022)
 
-        logger.debug("Environment to be used when starting the JVM: %s" %
+        logger.trace("Environment to be used when starting the JVM: %s" %
                      ' '.join(["%s='%s'" % (k, v)
                                for k, v in env.iteritems()]))
-        logger.debug("Command line to be used when starting the JVM: %s" %
+        logger.trace("Command line to be used when starting the JVM: %s" %
                      ' '.join(cmd))
 
         # start java subprocess (second fork)

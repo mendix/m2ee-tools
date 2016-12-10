@@ -74,7 +74,7 @@ class M2EEConfig:
 
         if self._runtime_path and 'RuntimePath' not in self._conf['mxruntime']:
             runtimePath = os.path.join(self._runtime_path, 'runtime')
-            logger.debug("Setting RuntimePath runtime config option to %s"
+            logger.trace("Setting RuntimePath runtime config option to %s"
                          % runtimePath)
             self._conf['mxruntime']['RuntimePath'] = runtimePath
 
@@ -108,7 +108,7 @@ class M2EEConfig:
 
         self._classpath = ":".join(classpath)
         if self._classpath:
-            logger.debug("Using classpath: %s" % self._classpath)
+            logger.trace("Using classpath: %s" % self._classpath)
         else:
             logger.debug("No classpath will be used")
 
@@ -168,7 +168,7 @@ class M2EEConfig:
         logger.trace("Replacing 'MicroflowConstants' with constants we just "
                      "figured out: %s" % merge_constants)
         # the merged result will be put back into self._conf['mxruntime']
-        logger.debug("Merged runtime configuration: %s" % merge_config)
+        logger.trace("Merged runtime configuration: %s" % merge_config)
         return merge_config
 
     def _try_load_json(self, jsonfile):
