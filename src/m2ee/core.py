@@ -184,8 +184,6 @@ class M2EE():
             self.client.add_mime_type(mime_types)
 
     def send_runtime_config(self):
-        logger.debug("Sending configuration...")
-
         config = copy.deepcopy(self.config.get_runtime_config())
 
         # convert MyScheduledEvents from list to dumb comma separated string if
