@@ -20,13 +20,13 @@ STATE_DEPENDENT = 4
 
 
 def check(runner, client):
-    (process_state, process_message) = check_process(runner, client)
+    process_state, process_message = check_process(runner, client)
     logger.trace("check_process: %s, %s" % (process_state, process_message))
 
     state = process_state
     message = process_message
 
-    (health_state, health_message) = check_health(client)
+    health_state, health_message = check_health(client)
     logger.trace("check_health: %s, %s" % (health_state, health_message))
 
     if health_state in (STATE_WARNING, STATE_CRITICAL):
@@ -34,7 +34,7 @@ def check(runner, client):
         if state != STATE_CRITICAL:
             state = health_state
 
-    (critical_log_state, critical_log_message, loglines) = check_critical_logs(client)
+    critical_log_state, critical_log_message, loglines = check_critical_logs(client)
     logger.trace("check_critical_logs: %s, %s" % (critical_log_state, critical_log_message))
 
     if critical_log_state in (STATE_WARNING, STATE_CRITICAL):
@@ -42,7 +42,7 @@ def check(runner, client):
         if state != STATE_CRITICAL:
             state = critical_log_state
 
-    (license_state, license_message) = check_license(client)
+    license_state, license_message = check_license(client)
     logger.trace("check_license: %s, %s" % (license_state, license_message))
 
     if license_state in (STATE_WARNING, STATE_CRITICAL):
@@ -63,15 +63,15 @@ def check_process(runner, client):
 
     if m2ee_alive is False:
         if pid is None:
-            return (STATE_OK, "Application is not running.")
+            return STATE_OK, "Application is not running."
         elif pid_alive is True:
-            return (STATE_CRITICAL,
-                    "Application process is running, but Admin API is not available.")
+            return STATE_CRITICAL, \
+                "Application process is running, but Admin API is not available."
         elif pid_alive is False:
-            return (STATE_CRITICAL,
-                    "Application should be running, but the application process has disappeared!")
+            return STATE_CRITICAL, \
+                "Application should be running, but the application process has disappeared!"
         else:
-            return (STATE_CRITICAL, "Plugin code has broken logic!")
+            return STATE_CRITICAL, "Plugin code has broken logic!"
 
     pid_message = ""
     if pid is None:
@@ -110,34 +110,34 @@ def check_health(client):
     try:
         feedback = client.check_health()
         if feedback['health'] == 'healthy':
-            return (STATE_OK, "Healty")
+            return STATE_OK, "Healty"
         elif feedback['health'] == 'sick':
             message = "Health: %s" % feedback['diagnosis']
-            return (STATE_WARNING, message)
+            return STATE_WARNING, message
         elif feedback['health'] == 'unknown':
-            return (STATE_UNKNOWN, "Health check not available, health could not be determined")
+            return STATE_UNKNOWN, "Health check not available, health could not be determined"
         else:
-            return (STATE_WARNING, "Unexpected health check status: %s" % feedback['health'])
+            return STATE_WARNING, "Unexpected health check status: %s" % feedback['health']
     except M2EEAdminException as e:
         if e.result == e.ERR_ACTION_NOT_FOUND:
-            return (STATE_UNKNOWN, "Health check not available, health could not be determined")
+            return STATE_UNKNOWN, "Health check not available, health could not be determined"
         else:
-            return (STATE_CRITICAL, "Health check failed unexpectedly: %s" % e)
+            return STATE_CRITICAL, "Health check failed unexpectedly: %s" % e
     except M2EEAdminNotAvailable as e:
-        return (STATE_UNKNOWN, "Admin API not available, health could not be determined")
+        return STATE_UNKNOWN, "Admin API not available, health could not be determined"
 
 
 def check_critical_logs(client):
     try:
         errors = client.get_critical_log_messages()
         if len(errors) != 0:
-            return (STATE_CRITICAL, "%d critical error(s) were logged" % len(errors), errors)
-        return (STATE_OK, "No critical log messages", None)
+            return STATE_CRITICAL, "%d critical error(s) were logged" % len(errors), errors
+        return STATE_OK, "No critical log messages", None
     except M2EEAdminException as e:
-        return (STATE_CRITICAL, "Checking critical log messages failed unexpectedly: %s" % e, None)
+        return STATE_CRITICAL, "Checking critical log messages failed unexpectedly: %s" % e, None
     except M2EEAdminNotAvailable as e:
-        return (STATE_UNKNOWN,
-                "Admin API not available, critical log messages could not be checked", None)
+        return STATE_UNKNOWN, \
+            "Admin API not available, critical log messages could not be checked", None
 
 
 def check_license(client):
@@ -145,7 +145,7 @@ def check_license(client):
         feedback = client.get_license_information()
         expiry = feedback['license'].get('ExpirationDate', None)
         if expiry is None:
-            return(STATE_OK, "License has no expiry date")
+            return STATE_OK, "License has no expiry date"
         expiry = expiry / 1000
         now = time.time()
         expires_in_days = int((expiry - now) / 86400) + 1
@@ -160,15 +160,15 @@ def check_license(client):
                       .strftime("%a, %d %b %Y %H:%M:%S %z")
                       .rstrip())
         if now + critical > expiry:
-            return(STATE_CRITICAL, "%s (%s)" % (expiry_txt, expires_in_days_txt))
+            return STATE_CRITICAL, "%s (%s)" % (expiry_txt, expires_in_days_txt)
         elif now + warning > expiry:
-            return(STATE_WARNING, "%s (%s)" % (expiry_txt, expires_in_days_txt))
+            return STATE_WARNING, "%s (%s)" % (expiry_txt, expires_in_days_txt)
         else:
-            return(STATE_OK, expiry_txt)
+            return STATE_OK, expiry_txt
     except M2EEAdminException as e:
         if e.result == M2EEAdminException.ERR_ACTION_NOT_FOUND:
-            return (STATE_UNKNOWN, "No license info available")
+            return STATE_UNKNOWN, "No license info available"
         else:
-            return (STATE_CRITICAL, "Checking license expiration failed unexpectedly: %s" % e)
+            return STATE_CRITICAL, "Checking license expiration failed unexpectedly: %s" % e
     except M2EEAdminNotAvailable as e:
-        return (STATE_UNKNOWN, "Admin API not available, license expiration could now be checked")
+        return STATE_UNKNOWN, "Admin API not available, license expiration could now be checked"
