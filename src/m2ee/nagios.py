@@ -171,4 +171,4 @@ def check_license(client):
         else:
             return STATE_CRITICAL, "Checking license expiration failed unexpectedly: %s" % e
     except M2EEAdminNotAvailable as e:
-        return STATE_UNKNOWN, "Admin API not available, license expiration could now be checked"
+        return STATE_UNKNOWN, "Admin API not available, license expiration could not be checked"
