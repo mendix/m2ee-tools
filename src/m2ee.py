@@ -734,6 +734,12 @@ class CLI(cmd.Cmd, object):
         return -1
 
     def do_download_runtime(self, args):
+        self._download_runtime(args, wget=False)
+
+    def do__download_runtime_wget(self, args):
+        self._download_runtime(args, wget=True)
+
+    def _download_runtime(self, args, wget=False):
         if args:
             mxversion = m2ee.version.MXVersion(args)
         else:
@@ -752,7 +758,7 @@ class CLI(cmd.Cmd, object):
                         "version, specify the version number as argument to "
                         "download_runtime." % mxversion)
             return
-        self.m2ee.download_and_unpack_runtime(mxversion)
+        self.m2ee.download_and_unpack_runtime(mxversion, wget=wget)
 
     def _cleanup_logging(self):
         # atexit
