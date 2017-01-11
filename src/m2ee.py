@@ -760,6 +760,19 @@ class CLI(cmd.Cmd, object):
             return
         self.m2ee.download_and_unpack_runtime(mxversion, wget=wget)
 
+    def do_cleanup_runtimes(self, args):
+        self.m2ee.cleanup_runtimes_except([])
+
+    def do_cleanup_runtimes_except(self, args):
+        self.m2ee.cleanup_runtimes_except(args.split())
+
+    def complete_cleanup_runtimes_except(self, text, line, begidx, endidx):
+        words = line[:len(line)-len(text)].split()
+        found_versions = self.m2ee.list_installed_runtimes()
+        return ["%s " % version for version in found_versions
+                if version.startswith(text)
+                and version not in words[1:]]
+
     def _cleanup_logging(self):
         # atexit
         if self.m2ee._logproc:
@@ -841,6 +854,10 @@ Available commands:
  show_current_runtime_requests - show action stack of current running requests
  interrupt_request - cancel a running runtime request
  show_license_information - show details about current mendix license key
+ cleanup_runtimes - clean up downloaded Mendix Runtime versions, except the
+     one currently in use
+ cleanup_runtimes_except [<version> <version> ...] - clean up downloaded Mendix
+     Runtime versions, except the one currently in use and other ones specified
  exit, quit, <ctrl>-d - exit m2ee
 """)
 

@@ -14,6 +14,7 @@ import httplib
 import sys
 import tempfile
 from m2ee.exceptions import M2EEException
+from m2ee.version import MXVersion
 
 logger = logging.getLogger(__name__)
 
@@ -140,9 +141,8 @@ def run_post_unpack_hook(post_unpack_hook):
 def download_and_unpack_runtime_curl(version, url, path, **curl_opts):
     check_runtime_download_url(url)
     logger.info("Going to download %s to %s" % (url, path))
-    tempdir = tempfile.mkdtemp(dir=path)
-    fd, temptgz = tempfile.mkstemp(dir=tempdir)
-    os.close(fd)
+    tempdir = tempfile.mkdtemp(prefix='download_runtime_tmp_', dir=path)
+    temptgz = os.path.join(tempdir, 'runtime-%s.tgz' % str(version))
     logger.debug("Download temp file: %s" % temptgz)
     download_with_curl(url, temptgz, **curl_opts)
     logger.info("Extracting runtime archive...")
@@ -244,3 +244,37 @@ def unpack_runtime(version, tempdir, temptgz, runtimes_path):
     if not os.path.isdir(extracted_runtime_dir):
         raise M2EEException("Corrupt runtime archive, version %s not found inside!" % version)
     os.rename(extracted_runtime_dir, os.path.join(runtimes_path, str(version)))
+
+
+def list_installed_runtimes(runtimes_path):
+    found = []
+    for item_present in os.listdir(runtimes_path):
+        try:
+            MXVersion(item_present)
+            found.append(item_present)
+        except:
+            pass
+    return found
+
+
+def cleanup_runtimes_except(versions, runtimes_path):
+    logger.info("Cleaning up old runtimes from %s..." % runtimes_path)
+    keep = set(map(str, versions))
+    items_to_remove = []
+    for item_present in os.listdir(runtimes_path):
+        if item_present in keep:
+            logger.info("Keeping %s" % item_present)
+            continue
+        if item_present.startswith('download_runtime_tmp_'):
+            items_to_remove.append(item_present)
+            continue
+        try:
+            MXVersion(item_present)
+            items_to_remove.append(item_present)
+        except:
+            logger.warning("Ignoring %s for removal, since it doesn't look like a "
+                           "Mendix Runtime version." % item_present)
+    for item_to_remove in items_to_remove:
+        full_path = os.path.join(runtimes_path, item_to_remove)
+        logger.info("Removing %s..." % item_to_remove)
+        shutil.rmtree(full_path, ignore_errors=True)

@@ -246,3 +246,14 @@ class M2EE():
         else:
             util.download_and_unpack_runtime_curl(version, url, path, **curl_opts)
         self.reload_config()
+
+    def list_installed_runtimes(self):
+        runtimes_path = self.config.get_first_writable_mxjar_repo()
+        return util.list_installed_runtimes(runtimes_path)
+
+    def cleanup_runtimes_except(self, versions):
+        current_version = self.config.get_runtime_version()
+        if current_version is not None:
+            versions.append(current_version)
+        runtimes_path = self.config.get_first_writable_mxjar_repo()
+        util.cleanup_runtimes_except(versions, runtimes_path)
