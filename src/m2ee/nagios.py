@@ -143,6 +143,8 @@ def check_critical_logs(client):
 def check_license(client):
     try:
         feedback = client.get_license_information()
+        if 'license' not in feedback:
+            return STATE_OK, "No license activated"
         expiry = feedback['license'].get('ExpirationDate', None)
         if expiry is None:
             return STATE_OK, "License has no expiry date"
