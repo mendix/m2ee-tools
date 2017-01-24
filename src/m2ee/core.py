@@ -112,7 +112,9 @@ class M2EE():
             })
             self._connect_xmpp()
 
-    def start_runtime(self, params):
+    def start_runtime(self, params=None):
+        if params is None:
+            params = {}
         logger.debug("MxRuntime status: %s" % self.client.runtime_status()['status'])
         self.client.start(params)
         logger.debug("MxRuntime status: %s" % self.client.runtime_status()['status'])
