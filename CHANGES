@@ -1,3 +1,21 @@
+m2ee-tools 7.0, 13 Feb 2017
+  * Major rewrite of internal error handling. Boolean return codes have been
+    replaced with proper exception handling.
+  * [e0561c9] Cleanup of nagios plugin messages, to make them more
+    understandable
+  * [cd50662] The built-in nagios plugin now checks license expiry. It's
+    currently hard coded to 30 days for warning and 7 days for critical.
+  * [2af3b3f] Drop Mendix 2.5 compatibility. (now supports at least 3.0)
+  * [aa66cd7] Drop python 2.5 compatibility (2.7 recommended)
+  * [4cd5833] The download runtime command now uses curl and handles incomplete
+    downloads more nicely.
+  * [444cac1] A new interactive command is added, cleanup_runtimes, which
+    removes unused downloaded Mendix Runtime versions.
+  * [b139dd2] During statistics gathering in the munin plugin, the timeout when
+    contacting the Runtime Admin API has been lowered, so that a non-responding
+    application will not cause skipping other plugins that still have to be run
+    on the host.
+
 m2ee-tools 0.5.11.4, 10 Nov 2016
   * Preliminary Mendix 7 compatibility
 
