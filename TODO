@@ -1,7 +1,4 @@
 [ ] add command to display cache_statistics
 [ ] rewrite configuration handling mess
-[ ] API stabilize m2ee-tools so we can release 1.0
-[ ] add command to set logMinDurationQuery (ms) via update_configuration m2ee api
 [ ] possibility to use units (ms,s,h,d,w,y) for time length values
 [ ] man m2ee.yaml instead of lots of documentation in the example file itself
-[ ] munin: graph max license user limits (named/concurrent)
