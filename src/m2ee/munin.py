@@ -5,24 +5,14 @@
 # http://www.mendix.com/
 #
 
+import json
+import logging
 import os
 import string
-
-from m2ee.log import logger
+from m2ee.client import M2EEAdminException, M2EEAdminNotAvailable
 import smaps
 
-# Use json if available. If not (python 2.5) we need to import the simplejson
-# module instead, which has to be available.
-try:
-    import json
-except ImportError:
-    try:
-        import simplejson as json
-    except ImportError, ie:
-        logger.critical("Failed to import json as well as simplejson. If "
-                        "using python 2.5, you need to provide the simplejson "
-                        "module in your python library path.")
-        raise
+logger = logging.getLogger(__name__)
 
 default_stats = {
     "languages": ["en_US"],
@@ -120,13 +110,11 @@ def print_values(m2ee, name):
 
 
 def guess_java_version(client, runtime_version, stats):
-    m2eeresponse = client.about()
-    if not m2eeresponse.has_error():
-        about = m2eeresponse.get_feedback()
-        if 'java_version' in about:
-            java_version = about['java_version']
-            java_major, java_minor, _ = java_version.split('.')
-            return int(java_minor)
+    about = client.about()
+    if 'java_version' in about:
+        java_version = about['java_version']
+        java_major, java_minor, _ = java_version.split('.')
+        return int(java_minor)
     if runtime_version // 6:
         return 8
     if runtime_version // 5:
@@ -144,35 +132,33 @@ def get_stats(action, client, config):
     config_cache = options.get('config_cache',
                                os.path.join(config.get_default_dotm2ee_directory(),
                                             'munin-cache.json'))
-
-    # TODO: even better error/exception handling
     stats = None
     java_version = None
     try:
         stats, java_version = get_stats_from_runtime(client, config)
         write_last_known_good_stats_cache(stats, config_cache)
-    except Exception, e:
+    except (M2EEAdminException, M2EEAdminNotAvailable) as e:
+        logger.error(e)
         if action == 'config':
-            logger.debug("Error fetching runtime/server statstics: %s", e)
-            stats = read_stats_from_last_known_good_stats_cache(config_cache)
-            if stats is None:
-                stats = default_stats
-        else:
-            # assume something bad happened, like
-            # socket.error: [Errno 111] Connection refused
-            logger.error("Error fetching runtime/server statstics: %s", e)
+            return get_last_known_good_or_fake_stats(config_cache), java_version
     return stats, java_version
+
+
+def get_last_known_good_or_fake_stats(config_cache):
+    stats = read_stats_from_last_known_good_stats_cache(config_cache)
+    if stats is not None:
+        logger.debug("Reusing last known statistics.")
+    else:
+        logger.debug("No last known good statistics found, using fake statistics.")
+        stats = default_stats
+    return stats
 
 
 def get_stats_from_runtime(client, config):
     stats = {}
     logger.debug("trying to fetch runtime/server statistics")
-    m2eeresponse = client.runtime_statistics()
-    if not m2eeresponse.has_error():
-        stats.update(m2eeresponse.get_feedback())
-    m2eeresponse = client.server_statistics()
-    if not m2eeresponse.has_error():
-        stats.update(m2eeresponse.get_feedback())
+    stats.update(client.runtime_statistics(timeout=5))
+    stats.update(client.server_statistics(timeout=5))
     if type(stats['requests']) == list:
         # convert back to normal, whraagh
         bork = {}
@@ -182,9 +168,7 @@ def get_stats_from_runtime(client, config):
 
     runtime_version = config.get_runtime_version()
     if runtime_version is not None and runtime_version >= 3.2:
-        m2eeresponse = client.get_all_thread_stack_traces()
-        if not m2eeresponse.has_error():
-            stats['threads'] = len(m2eeresponse.get_feedback())
+        stats['threads'] = len(client.get_all_thread_stack_traces())
 
     java_version = guess_java_version(client, runtime_version, stats)
     if 'memorypools' in stats['memory']:
@@ -296,44 +280,6 @@ def print_connectionbus_values(name, stats):
 
 
 def print_sessions_config(name, stats, graph_total_named_users):
-    if type(stats['sessions']) != dict:
-        print_sessions_pre254_config(name, stats)
-    else:
-        print_sessions_since254_config(name, stats, graph_total_named_users)
-
-
-def print_sessions_values(name, stats, graph_total_named_users):
-    if type(stats['sessions']) != dict:
-        print_sessions_pre254_values(name, stats)
-    else:
-        print_sessions_since254_values(name, stats, graph_total_named_users)
-
-
-def print_sessions_pre254_config(name, stats):
-    """
-    concurrent user sessions for mxruntime < 2.5.4
-    named_user_sessions counts names as well as anonymous sessions
-    !! you stil need to rename the rrd files in /var/lib/munin/ !!
-    """
-    print("multigraph mxruntime_sessions_%s" % name)
-    print("graph_args --base 1000 -l 0")
-    print("graph_vlabel Concurrent user sessions")
-    print("graph_title %s - MxRuntime Users" % name)
-    print("graph_category Mendix")
-    print("graph_info This graph shows the amount of concurrent user sessions")
-    print("named_user_sessions.label concurrent user sessions")
-    print("named_user_sessions.draw LINE1")
-    print("named_user_sessions.info amount of concurrent user sessions")
-    print("")
-
-
-def print_sessions_pre254_values(name, stats):
-    print("multigraph mxruntime_sessions_%s" % name)
-    print("named_user_sessions.value %s" % stats['sessions'])
-    print("")
-
-
-def print_sessions_since254_config(name, stats, graph_total_named_users):
     print("multigraph mxruntime_sessions_%s" % name)
     print("graph_args --base 1000 -l 0")
     print("graph_vlabel Concurrent user sessions")
@@ -353,7 +299,7 @@ def print_sessions_since254_config(name, stats, graph_total_named_users):
     print("")
 
 
-def print_sessions_since254_values(name, stats, graph_total_named_users):
+def print_sessions_values(name, stats, graph_total_named_users):
     print("multigraph mxruntime_sessions_%s" % name)
     if graph_total_named_users:
         print("named_users.value %s" % stats['sessions']['named_users'])
