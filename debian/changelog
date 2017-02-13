@@ -1,3 +1,10 @@
+m2ee-tools (7.0-1) unstable; urgency=medium
+
+  * Major new version, see NEWS, changelog.gz
+  * Revamp debian packaging, use dh-python
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Mon, 13 Feb 2017 17:13:57 +0100
+
 m2ee-tools (0.5.11.4-1) unstable; urgency=medium
 
   * Preliminary Mendix 7 compatibility
