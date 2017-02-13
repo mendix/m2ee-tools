@@ -1,5 +1,5 @@
 Source: m2ee-tools
-Section: misc
+Section: python
 Priority: optional
 Maintainer: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
 Build-Depends: debhelper (>= 9), dh-python, python-all (>= 2.6.6-3~), python-setuptools
