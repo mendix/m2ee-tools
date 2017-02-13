@@ -2,9 +2,15 @@
 import pwd
 import os
 import sys
+import logging
 import m2ee
 
-m2ee.logger.setLevel(51)
+logger = logging.getLogger()
+logger.setLevel(logging.WARNING)
+consolelogformatter = logging.Formatter("%(levelname)s: %(message)s")
+stderrlog = logging.StreamHandler(sys.stderr)
+stderrlog.setFormatter(consolelogformatter)
+logger.addHandler(stderrlog)
 
 try:
     command = sys.argv[1]

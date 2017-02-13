@@ -1,3 +1,22 @@
+m2ee-tools 7.0, 13 Feb 2017
+===========================
+
+The major number in version numbering will follow the major version number of
+the Mendix Runtime releases. So, m2ee-tools 7.x supports starting the Mendix
+Runtime version 7.x, etc.
+
+This release drops support for Mendix 2.5. Earliest compatible version is 3.0.
+
+This release also drops support for using python 2.5, currently limiting
+compatibility to python 2.6 and 2.7. However, a recent python 2.7 is
+recommended and tested extensively.
+
+A new interactive command is added, cleanup_runtimes, which removes unused
+downloaded Mendix Runtime versions.
+
+The built-in nagios plugin now checks license expiry. It's currently hard coded
+to 30 days for warning and 7 days for critical.
+
 m2ee-tools 0.5.11.3, 26 Jul 2016
 ================================
 
