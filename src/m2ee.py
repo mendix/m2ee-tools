@@ -101,12 +101,11 @@ class CLI(cmd.Cmd, object):
         """
 
         if not self.m2ee.config.get_runtime_path():
-            logger.error("It appears that the Mendix Runtime version which "
-                         "has to be used for your application is not present "
-                         "yet.")
-            logger.info("You can try downloading it using the "
-                        "download_runtime command.")
-            return
+            raise m2ee.exceptions.M2EEException(
+                "It appears that the Mendix Runtime version which has to be "
+                "used for your application is not present yet. You can try "
+                "downloading it using the download_runtime command."
+            )
 
         self.m2ee.start_appcontainer(detach=not self.nodetach)
 
