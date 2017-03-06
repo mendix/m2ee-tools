@@ -25,6 +25,8 @@ class M2EEException(Exception):
     ERR_APPCONTAINER_RUNTIME_PORT_IN_USE = 12
     ERR_APPCONTAINER_INVALID_JDK_VERSION = 13
 
+    ERR_DOWNLOAD_FAILED = 20
+
     def __init__(self, message, cause=None, errno=1):
         self.message = message
         self.cause = cause
