@@ -235,7 +235,7 @@ class M2EE():
         if xmpp_credentials:
             self.client.connect_xmpp(xmpp_credentials)
 
-    def download_and_unpack_runtime(self, version, wget=False, **curl_opts):
+    def download_and_unpack_runtime(self, version, wget=False, curl_opts=None):
         mxversion = MXVersion(version)
         url = self.config.get_runtime_download_url(mxversion)
         path = self.config.get_first_writable_mxjar_repo()
@@ -246,7 +246,7 @@ class M2EE():
         if wget is True:
             util.download_and_unpack_runtime_wget(url, path)
         else:
-            util.download_and_unpack_runtime_curl(version, url, path, **curl_opts)
+            util.download_and_unpack_runtime_curl(version, url, path, curl_opts)
         self.reload_config()
 
     def list_installed_runtimes(self):

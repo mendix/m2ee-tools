@@ -138,13 +138,13 @@ def run_post_unpack_hook(post_unpack_hook):
                      post_unpack_hook)
 
 
-def download_and_unpack_runtime_curl(version, url, path, **curl_opts):
+def download_and_unpack_runtime_curl(version, url, path, curl_opts=None):
     check_runtime_download_url(url)
     logger.info("Going to download %s to %s" % (url, path))
     tempdir = tempfile.mkdtemp(prefix='download_runtime_tmp_', dir=path)
     temptgz = os.path.join(tempdir, 'runtime-%s.tgz' % str(version))
     logger.debug("Download temp file: %s" % temptgz)
-    download_with_curl(url, temptgz, **curl_opts)
+    download_with_curl(url, temptgz, curl_opts)
     logger.info("Extracting runtime archive...")
     unpack_runtime(version, tempdir, temptgz, path)
     shutil.rmtree(tempdir, ignore_errors=True)
@@ -188,51 +188,25 @@ def download_and_unpack_runtime_wget(url, path):
     logger.info("Successfully downloaded runtime!")
 
 
-def download_with_curl(url, output, retry=5, cookies=None,
-                       max_time=None, speed_time=None, speed_limit=None,
-                       resume=True):
+def download_with_curl(url, output, curl_opts=None):
     command = ['curl']
-    if cookies is not None:
-        command.extend(['--cookie', '; '.join(cookies)])
     if sys.stderr.isatty():
         command.append('-#')
     else:
         command.append('--silent')
-    if max_time is not None:
-        command.extend(['--max-time', str(max_time)])
-    if speed_time is not None:
-        command.extend(['--speed-time', str(speed_time)])
-    if speed_limit is not None:
-        command.extend(['--speed-limit', str(speed_limit)])
-    if resume is True:
-        command.extend(['--continue-at', '-'])
+    if curl_opts is not None:
+        command.extend([str(opt) for opt in curl_opts])
     command.extend(['--output', output, url])
 
-    done = False
-    attempt = 0
-    while not done:
-        logger.trace("Executing %s" % command)
-        process = subprocess.Popen(command, stdin=subprocess.PIPE,
-                                   stdout=subprocess.PIPE,
-                                   stderr=None if sys.stderr.isatty() else subprocess.PIPE,
-                                   close_fds=True)
-        stdout, stderr = process.communicate()
-        returncode = process.returncode
-        if returncode == 0:
-            done = True
-        elif returncode == 28:
-            got_bytes = os.path.getsize(output)
-            attempt += 1
-            if attempt > retry:
-                raise M2EEException("Failed to download %s, retried %s times, got %s bytes" %
-                                    (url, retry, got_bytes))
-            else:
-                logger.warning("Download %s too slow, at %s bytes after %s seconds,"
-                               " retrying %d/%d" % (url, got_bytes, speed_time, attempt, retry))
-        else:
-            if stderr is not None and len(stderr) > 0:
-                logger.error("Unexpected curl returncode %s, stderr: %s" % (returncode, stderr))
-            raise M2EEException("Failed to download %s, curl returncode %s" % (url, returncode))
+    logger.trace("Executing %s" % command)
+    try:
+        subprocess.check_call(command, stdin=subprocess.PIPE,
+                              stdout=subprocess.PIPE,
+                              stderr=None if sys.stderr.isatty() else subprocess.PIPE,
+                              close_fds=True)
+    except subprocess.CalledProcessError as cpe:
+        raise M2EEException("Failed to download %s, curl returncode %s" % (url, cpe.returncode),
+                            cause=cpe, errno=M2EEException.ERR_DOWNLOAD_FAILED)
 
 
 def unpack_runtime(version, tempdir, temptgz, runtimes_path):
