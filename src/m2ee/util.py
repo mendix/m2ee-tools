@@ -167,27 +167,6 @@ def check_runtime_download_url(url):
     logger.debug("Ok, got HTTP 200")
 
 
-def download_and_unpack_runtime_wget(url, path):
-    check_runtime_download_url(url)
-    p1 = subprocess.Popen([
-        'wget',
-        '-O',
-        '-',
-        url,
-    ], stdout=subprocess.PIPE)
-    p2 = subprocess.Popen([
-        'tar',
-        'xz',
-        '-C',
-        path,
-    ], stdin=p1.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    p1.stdout.close()
-    stdout, stderr = p2.communicate()
-    if p2.returncode != 0:
-        raise M2EEException("Could not download and unpack runtime:\n%s" % stderr)
-    logger.info("Successfully downloaded runtime!")
-
-
 def download_with_curl(url, output, curl_opts=None):
     command = ['curl']
     if sys.stderr.isatty():
