@@ -1,3 +1,11 @@
+m2ee-tools (7.0.1-1) unstable; urgency=medium
+
+  * Remove overengineered download retry handing
+  * Remove deprecated wget download
+  * Elminate httplib2 usage for download
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Mon, 06 Mar 2017 17:20:33 +0100
+
 m2ee-tools (7.0-1) unstable; urgency=medium
 
   * Major new version, see NEWS, changelog.gz
