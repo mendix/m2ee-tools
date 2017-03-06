@@ -1,3 +1,9 @@
+m2ee-tools (7.0.1-1~mx7u1) wheezy; urgency=medium
+
+  * Rebuild for Wheezy
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Mon, 06 Mar 2017 17:23:20 +0100
+
 m2ee-tools (7.0.1-1) unstable; urgency=medium
 
   * Remove overengineered download retry handing
