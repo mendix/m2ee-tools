@@ -9,8 +9,6 @@ import os
 import logging
 import shutil
 import subprocess
-import socket
-import httplib
 import sys
 import tempfile
 from m2ee.exceptions import M2EEException
@@ -26,13 +24,6 @@ try:
     )
 except ImportError:
     pass
-
-try:
-    import httplib2
-except ImportError:
-    logger.critical("Failed to import httplib2. This module is needed by "
-                    "m2ee. Please povide it on the python library path")
-    raise
 
 
 def unpack(config, mda_name):
@@ -138,101 +129,44 @@ def run_post_unpack_hook(post_unpack_hook):
                      post_unpack_hook)
 
 
-def download_and_unpack_runtime_curl(version, url, path, **curl_opts):
-    check_runtime_download_url(url)
+def download_and_unpack_runtime_curl(version, url, path, curl_opts=None):
     logger.info("Going to download %s to %s" % (url, path))
     tempdir = tempfile.mkdtemp(prefix='download_runtime_tmp_', dir=path)
     temptgz = os.path.join(tempdir, 'runtime-%s.tgz' % str(version))
     logger.debug("Download temp file: %s" % temptgz)
-    download_with_curl(url, temptgz, **curl_opts)
+    download_with_curl(url, temptgz, curl_opts)
     logger.info("Extracting runtime archive...")
     unpack_runtime(version, tempdir, temptgz, path)
     shutil.rmtree(tempdir, ignore_errors=True)
     logger.info("Successfully downloaded runtime!")
 
 
-def check_runtime_download_url(url):
-    h = httplib2.Http(timeout=10)
-    logger.debug("Checking for existence of %s via HTTP HEAD" % url)
-    try:
-        (response_headers, response_body) = h.request(url, "HEAD")
-        logger.trace("Response headers: %s" % response_headers)
-    except (httplib2.HttpLib2Error, httplib.HTTPException, socket.error) as e:
-        raise M2EEException("Checking download url %s failed" % url, e)
-    if (response_headers['status'] == '404'):
-        raise M2EEException("The location %s cannot be found." % url)
-    elif (response_headers['status'] != '200'):
-        raise M2EEException("Checking download url %s failed, HTTP status code %s" %
-                            (url, response_headers['status']))
-    logger.debug("Ok, got HTTP 200")
-
-
-def download_and_unpack_runtime_wget(url, path):
-    check_runtime_download_url(url)
-    p1 = subprocess.Popen([
-        'wget',
-        '-O',
-        '-',
-        url,
-    ], stdout=subprocess.PIPE)
-    p2 = subprocess.Popen([
-        'tar',
-        'xz',
-        '-C',
-        path,
-    ], stdin=p1.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    p1.stdout.close()
-    stdout, stderr = p2.communicate()
-    if p2.returncode != 0:
-        raise M2EEException("Could not download and unpack runtime:\n%s" % stderr)
-    logger.info("Successfully downloaded runtime!")
-
-
-def download_with_curl(url, output, retry=5, cookies=None,
-                       max_time=None, speed_time=None, speed_limit=None,
-                       resume=True):
+def download_with_curl(url, output, curl_opts=None):
+    interactive = sys.stderr.isatty()
     command = ['curl']
-    if cookies is not None:
-        command.extend(['--cookie', '; '.join(cookies)])
-    if sys.stderr.isatty():
+    if interactive:
         command.append('-#')
     else:
         command.append('--silent')
-    if max_time is not None:
-        command.extend(['--max-time', str(max_time)])
-    if speed_time is not None:
-        command.extend(['--speed-time', str(speed_time)])
-    if speed_limit is not None:
-        command.extend(['--speed-limit', str(speed_limit)])
-    if resume is True:
-        command.extend(['--continue-at', '-'])
-    command.extend(['--output', output, url])
+    if curl_opts is not None:
+        command.extend([str(opt) for opt in curl_opts])
+    command.extend(['--fail', '--output', output, url])
 
-    done = False
-    attempt = 0
-    while not done:
-        logger.trace("Executing %s" % command)
-        process = subprocess.Popen(command, stdin=subprocess.PIPE,
-                                   stdout=subprocess.PIPE,
-                                   stderr=None if sys.stderr.isatty() else subprocess.PIPE,
-                                   close_fds=True)
-        stdout, stderr = process.communicate()
-        returncode = process.returncode
-        if returncode == 0:
-            done = True
-        elif returncode == 28:
-            got_bytes = os.path.getsize(output)
-            attempt += 1
-            if attempt > retry:
-                raise M2EEException("Failed to download %s, retried %s times, got %s bytes" %
-                                    (url, retry, got_bytes))
-            else:
-                logger.warning("Download %s too slow, at %s bytes after %s seconds,"
-                               " retrying %d/%d" % (url, got_bytes, speed_time, attempt, retry))
+    logger.trace("Executing %s" % command)
+    try:
+        subprocess.check_call(command, stdin=subprocess.PIPE,
+                              stdout=subprocess.PIPE,
+                              stderr=None if sys.stderr.isatty() else subprocess.PIPE,
+                              close_fds=True)
+    except subprocess.CalledProcessError as cpe:
+        if interactive and cpe.returncode == 22:
+            # curl error to stderr is already printed on the screen of the user
+            raise M2EEException("Failed to download %s" % url,
+                                errno=M2EEException.ERR_DOWNLOAD_FAILED)
         else:
-            if stderr is not None and len(stderr) > 0:
-                logger.error("Unexpected curl returncode %s, stderr: %s" % (returncode, stderr))
-            raise M2EEException("Failed to download %s, curl returncode %s" % (url, returncode))
+            raise M2EEException("Failed to download %s, curl returncode %s" %
+                                (url, cpe.returncode),
+                                cause=cpe, errno=M2EEException.ERR_DOWNLOAD_FAILED)
 
 
 def unpack_runtime(version, tempdir, temptgz, runtimes_path):

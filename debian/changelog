@@ -1,8 +1,10 @@
-m2ee-tools (7.0-1~mx7u1) wheezy; urgency=medium
+m2ee-tools (7.0.1-1) unstable; urgency=medium
 
-  * Rebuild for Wheezy
+  * Remove overengineered download retry handing
+  * Remove deprecated wget download
+  * Elminate httplib2 usage for download
 
- -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Mon, 13 Feb 2017 17:39:11 +0100
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Mon, 06 Mar 2017 17:20:33 +0100
 
 m2ee-tools (7.0-1) unstable; urgency=medium
 
