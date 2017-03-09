@@ -195,8 +195,8 @@ class M2EEClient:
     def get_log_settings(self, params):
         return self.request("get_log_settings", params)
 
-    def check_health(self, params=None):
-        return self.request("check_health", params)
+    def check_health(self, params=None, timeout=None):
+        return self.request("check_health", params, timeout)
 
     def get_current_runtime_requests(self):
         return self.request("get_current_runtime_requests")

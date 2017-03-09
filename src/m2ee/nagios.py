@@ -106,9 +106,9 @@ def check_process(runner, client):
     return (state, message)
 
 
-def check_health(client):
+def check_health(client, timeout=60):
     try:
-        feedback = client.check_health()
+        feedback = client.check_health(timeout=timeout)
         if feedback['health'] == 'healthy':
             return STATE_OK, "Healty"
         elif feedback['health'] == 'sick':
