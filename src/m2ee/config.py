@@ -403,9 +403,6 @@ class M2EEConfig:
 
         return dotm2ee
 
-    def get_runtime_blocking_connector(self):
-        return self._conf['m2ee'].get('runtime_blocking_connector', False)
-
     def get_symlink_mxclientsystem(self):
         return self._conf['m2ee'].get('symlink_mxclientsystem', True)
 
@@ -476,9 +473,6 @@ class M2EEConfig:
         # appcontainer from runtime distro
         if not self._appcontainer_version and self.runtime_version < 5:
             env['M2EE_RUNTIME_PORT'] = str(self._conf['m2ee']['runtime_port'])
-            if 'runtime_blocking_connector' in self._conf['m2ee']:
-                env['M2EE_RUNTIME_BLOCKING_CONNECTOR'] = str(
-                    self._conf['m2ee']['runtime_blocking_connector'])
 
         if 'monitoring_pass' in self._conf['m2ee']:
             env['M2EE_MONITORING_PASS'] = str(
@@ -582,10 +576,6 @@ class M2EEConfig:
         jetty_opts = copy.deepcopy(self._conf['m2ee'].get('jetty'))
         if jetty_opts is None:
             jetty_opts = {}
-        if self.get_runtime_version() >= 5:
-            jetty_opts['use_blocking_connector'] = (
-                jetty_opts.get('use_blocking_connector',
-                               self.get_runtime_blocking_connector()))
         return jetty_opts
 
     def get_munin_options(self):

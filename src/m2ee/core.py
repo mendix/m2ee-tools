@@ -100,8 +100,6 @@ class M2EE():
                 os.path.join(self.config.get_runtime_path(), 'runtime'),
                 "port": self.config.get_runtime_port(),
                 "application_base_path": self.config.get_app_base(),
-                "use_blocking_connector":
-                self.config.get_runtime_blocking_connector(),
             })
         elif version >= 5:
             self.client.update_appcontainer_configuration({
