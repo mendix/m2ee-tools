@@ -487,8 +487,7 @@ class M2EEConfig:
         """
         Build complete JVM startup command line
         """
-        cmd = []
-        cmd.append(self._conf['m2ee'].get('javabin', 'java'))
+        cmd = flatten(self._conf['m2ee'].get('javabin', 'java'))
 
         if 'javaopts' in self._conf['m2ee']:
             if isinstance(self._conf['m2ee']['javaopts'], list):
@@ -879,6 +878,10 @@ def merge_config(initial_config, additional_config):
             result[section] = additional_config[section]
 
     return result
+
+
+def flatten(l):
+    return [l] if not isinstance(l, list) else sum(map(flatten, l), [])
 
 
 if __name__ == '__main__':
