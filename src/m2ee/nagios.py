@@ -9,6 +9,7 @@ import datetime
 import logging
 import time
 from m2ee.client import M2EEAdminException, M2EEAdminNotAvailable
+from m2ee import client_errno
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +120,7 @@ def check_health(client):
         else:
             return STATE_WARNING, "Unexpected health check status: %s" % feedback['health']
     except M2EEAdminException as e:
-        if e.result == e.ERR_ACTION_NOT_FOUND:
+        if e.result in (e.ERR_ACTION_NOT_FOUND, client_errno.check_health_INVALID_STATE):
             return STATE_UNKNOWN, "Health check not available, health could not be determined"
         else:
             return STATE_CRITICAL, "Health check failed unexpectedly: %s" % e
