@@ -16,6 +16,7 @@ logger = logging
 import os
 import pwd
 import random
+import shlex
 import signal
 import string
 import subprocess
@@ -663,7 +664,11 @@ class CLI(cmd.Cmd, object):
             self.prompt = "LOG %s" % self._default_prompt
 
     def do_loglevel(self, args):
-        args = string.split(args)
+        try:
+            args = shlex.split(args)
+        except ValueError as ve:
+            logger.error("Input cannot be parsed: %s" % ve.message)
+            return
         if len(args) == 3:
             (subscriber, node, level) = args
             self._set_log_level(subscriber, node, level)
