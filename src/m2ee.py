@@ -308,12 +308,25 @@ class CLI(cmd.Cmd, object):
                         "complete list." % max_show_users)
 
     def do_show_critical_log_messages(self, args):
-        critlist = self.m2ee.client.get_critical_log_messages()
-        if len(critlist) == 0:
+        errors = self.m2ee.client.get_critical_log_messages()
+        if len(errors) == 0:
             logger.info("No messages were logged to a critical loglevel since "
                         "starting the application.")
             return
-        print("\n".join(critlist))
+        for error in errors:
+            errorline = []
+            if 'message' in error and error['message'] != '':
+                errorline.append("- %s" % error['message'])
+            if 'cause' in error and error['cause'] != '':
+                errorline.append("- Caused by: %s" % error['cause'])
+            if len(errorline) == 0:
+                errorline.append("- [No message or cause was logged]")
+            errorline.insert(
+                0,
+                datetime.datetime.fromtimestamp(error['timestamp'] / 1000)
+                .strftime("%Y-%m-%d %H:%M:%S")
+            )
+            print(' '.join(errorline))
 
     def do_check_health(self, args):
         feedback = self.m2ee.client.check_health()

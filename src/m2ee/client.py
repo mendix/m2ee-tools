@@ -100,28 +100,7 @@ class M2EEClient:
     def get_critical_log_messages(self):
         echo_feedback = self.echo()
         if echo_feedback['echo'] != "pong":
-            errors = echo_feedback['errors']
-            # default to 3.0 format [{"message":"Hello,
-            # world!","timestamp":1315316488958,"cause":""}, ...]
-            if type(errors[0]) != dict:
-                return errors
-            from datetime import datetime
-            result = []
-            for error in errors:
-                errorline = []
-                if 'message' in error and error['message'] != '':
-                    errorline.append("- %s" % error['message'])
-                if 'cause' in error and error['cause'] != '':
-                    errorline.append("- Caused by: %s" % error['cause'])
-                if len(errorline) == 0:
-                    errorline.append("- [No message or cause was logged]")
-                errorline.insert(
-                    0,
-                    datetime.fromtimestamp(error['timestamp'] / 1000)
-                    .strftime("%Y-%m-%d %H:%M:%S")
-                )
-                result.append(' '.join(errorline))
-            return result
+            return echo_feedback['errors']
         return []
 
     def shutdown(self, timeout=5):
