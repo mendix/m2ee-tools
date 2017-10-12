@@ -6,6 +6,7 @@
 # http://www.mendix.com/
 #
 
+from __future__ import print_function
 import atexit
 import cmd
 import datetime

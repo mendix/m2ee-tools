@@ -5,6 +5,7 @@
 # http://www.mendix.com/
 #
 
+from __future__ import print_function
 import json
 import logging
 import yaml

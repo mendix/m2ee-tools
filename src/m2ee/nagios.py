@@ -5,6 +5,7 @@
 # http://www.mendix.com/
 #
 
+from __future__ import print_function
 import datetime
 import logging
 import time
@@ -51,9 +52,9 @@ def check(runner, client):
         if state != STATE_CRITICAL:
             state = license_state
 
-    print message
+    print(message)
     if loglines is not None:
-        print '\n'.join(loglines)
+        print('\n'.join(loglines))
     return state
 
 
