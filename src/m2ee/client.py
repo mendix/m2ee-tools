@@ -9,7 +9,6 @@ from base64 import b64encode
 import json
 import logging
 import socket
-from version import MXVersion
 
 logger = logging.getLogger(__name__)
 
@@ -75,20 +74,8 @@ class M2EEClient:
         return self.request("echo", myparams, timeout)
 
     def require_action(self, action):
-        try:
-            feedback = self.get_admin_action_info()
-            implemented = action in feedback['action_info']
-        except M2EEAdminException as e:
-            if e.result == M2EEAdminException.ERR_ACTION_NOT_FOUND:
-                if action in M2EEAdminException.implemented_in:
-                    implemented_in = M2EEAdminException.implemented_in[action]
-                    runtime_version = MXVersion(self.about()['version'])
-                    implemented = runtime_version >= implemented_in
-                else:
-                    implemented = True
-            else:
-                raise
-        if implemented is False:
+        feedback = self.get_admin_action_info()
+        if action not in feedback['action_info']:
             raise M2EEAdminException(
                 action,
                 {"result": M2EEAdminException.ERR_ACTION_NOT_FOUND}
@@ -232,17 +219,16 @@ class M2EEAdminException(Exception):
     ERR_READ_REQUEST = -6
     ERR_WRITE_REQUEST = -7
 
+    # Note: if an action gets introduced in multiple Mendix versions,
+    # they can be specified as a tuple, like:
+    # "get_current_runtime_requests": ('2.5.8', '3.1'),
     implemented_in = {
-        "get_admin_action_info": '3',
-        "check_health": '2.5.4',
         "cache_statistics": '4',
-        "get_license_information": '3',
-        "set_license": '3',
         "enable_debugger": '4.3',
         "disable_debugger": '4.3',
         "get_debugger_status": '4.3',
-        "get_current_runtime_requests": ('2.5.8', '3.1'),
-        "interrupt_request": ('2.5.8', '3.1'),
+        "get_current_runtime_requests": '3.1',
+        "interrupt_request": '3.1',
         "get_all_thread_stack_traces": '3.2',
     }
 
