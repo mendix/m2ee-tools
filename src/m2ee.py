@@ -12,7 +12,6 @@ import datetime
 import getpass
 import json
 import logging
-logger = logging
 import os
 import pwd
 import random
@@ -25,6 +24,8 @@ import yaml
 
 from m2ee import pgutil, M2EE, client_errno
 import m2ee
+
+logger = logging
 
 if not sys.stdout.isatty():
     import codecs

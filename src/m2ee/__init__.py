@@ -1,3 +1,6 @@
+import logging
+
+
 def monkeypatch_logging():
     # register trace logging possibility
     TRACE = 5
@@ -16,7 +19,6 @@ def monkeypatch_logging():
     setattr(logging, 'trace', rootTrace)
 
 
-import logging
 if not hasattr(logging, 'trace'):
     monkeypatch_logging()
 
