@@ -200,7 +200,7 @@ class M2EEConfig:
         return False
 
     def dump(self):
-        print(yaml.dump(self._conf))
+        print(yaml.dump(self._conf, default_flow_style=False))
 
     def _check_appcontainer_config(self):
         # did we load any configuration at all?
