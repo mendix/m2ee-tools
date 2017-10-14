@@ -349,10 +349,9 @@ class CLI(cmd.Cmd, object):
         print(json.dumps(stats, sort_keys=True,
                          indent=4, separators=(',', ': ')))
 
-    def do_show_cache_statistics_raw(self, args):
+    def do_show_cache_statistics(self, args):
         stats = self.m2ee.client.cache_statistics()
-        print(json.dumps(stats, sort_keys=True,
-                         indent=4, separators=(',', ': ')))
+        print(yaml.safe_dump(stats, default_flow_style=False))
 
     def do_munin_config(self, args):
         m2ee.munin.print_config(
@@ -880,6 +879,7 @@ Available commands:
  show_current_runtime_requests - show action stack of current running requests
  interrupt_request - cancel a running runtime request
  show_license_information - show details about current mendix license key
+ show_cache_statistics - show details about the runtime object cache
  cleanup_runtimes - clean up downloaded Mendix Runtime versions, except the
      one currently in use
  cleanup_runtimes_except [<version> <version> ...] - clean up downloaded Mendix
