@@ -11,7 +11,6 @@ import atexit
 import cmd
 import datetime
 import getpass
-import json
 import logging
 import os
 import pwd
@@ -346,8 +345,7 @@ class CLI(cmd.Cmd, object):
     def do_statistics(self, args):
         stats = self.m2ee.client.runtime_statistics()
         stats.update(self.m2ee.client.server_statistics())
-        print(json.dumps(stats, sort_keys=True,
-                         indent=4, separators=(',', ': ')))
+        print(yaml.safe_dump(stats, default_flow_style=False))
 
     def do_show_cache_statistics(self, args):
         stats = self.m2ee.client.cache_statistics()
@@ -722,13 +720,12 @@ class CLI(cmd.Cmd, object):
             logger.info("There are no currently running runtime requests.")
         else:
             print("Current running Runtime Requests:")
-            print(yaml.safe_dump(feedback))
+            print(yaml.safe_dump(feedback, default_flow_style=False))
 
     def do_show_all_thread_stack_traces(self, args):
         feedback = self.m2ee.client.get_all_thread_stack_traces()
         print("Current JVM Thread Stacktraces:")
-        print(json.dumps(feedback, sort_keys=True,
-                         indent=4, separators=(',', ': ')))
+        print(yaml.safe_dump(feedback, default_flow_style=False))
 
     def do_interrupt_request(self, args):
         if args == "":
