@@ -45,7 +45,12 @@ class M2EEClient:
                 raise M2EEAdminHTTPException("Non OK http status code: %s %s" %
                                              (response_headers, response_body))
             response = json.loads(response_body)
-            if response['result'] != 0:
+            result = response['result']
+            if result == M2EEAdminException.ERR_ACTION_NOT_FOUND and action != "runtime_status":
+                status = self.runtime_status()['status']
+                if status != 'running':
+                    raise M2EERuntimeNotFullyRunning(status, action)
+            if result != 0:
                 raise M2EEAdminException(action, response)
             return response.get('feedback', {})
         except AttributeError, e:
@@ -207,6 +212,16 @@ class M2EEAdminHTTPException(Exception):
 
 class M2EEAdminNotAvailable(Exception):
     pass
+
+
+class M2EERuntimeNotFullyRunning(Exception):
+    def __init__(self, status, action):
+        self.status = status
+        self.action = action
+
+    def __str__(self):
+        return "The Mendix Runtime is not fully running, but reporting status '%s'. " \
+               "Unable to execute action %s." % (self.status, self.action)
 
 
 class M2EEAdminException(Exception):

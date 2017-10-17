@@ -294,8 +294,11 @@ class CLI(cmd.Cmd, object):
 
     def do_status(self, args):
         feedback = self.m2ee.client.runtime_status()
-        logger.info("The application process is running, the MxRuntime has "
-                    "status: %s" % feedback['status'])
+        status = feedback['status']
+        logger.info("The application process is running, the MxRuntime has status: %s" % status)
+
+        if status != 'running':
+            return
 
         critlist = self.m2ee.client.get_critical_log_messages()
         if len(critlist) > 0:
@@ -840,6 +843,8 @@ class CLI(cmd.Cmd, object):
         except m2ee.client.M2EEAdminException as e:
             logger.error(e)
         except m2ee.client.M2EEAdminHTTPException as e:
+            logger.error(e)
+        except m2ee.client.M2EERuntimeNotFullyRunning as e:
             logger.error(e)
         except m2ee.exceptions.M2EEException as e:
             logger.error(e)
