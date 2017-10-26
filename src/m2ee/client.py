@@ -60,7 +60,11 @@ class M2EEClient:
                 logger.trace("%s (%s: %s)" % (message, type(e), e))
                 raise M2EEAdminNotAvailable(message)
             raise e
-        except (socket.error, socket.timeout), e:
+        except socket.timeout, e:
+            message = "Admin API does not respond. Timeout reached after (%s seconds)" % timeout
+            logger.trace(message)
+            raise M2EEAdminTimeout(message)
+        except socket.error, e:
             message = "Admin API not available for requests: (%s: %s)" % (type(e), e)
             logger.trace(message)
             raise M2EEAdminNotAvailable(message)
@@ -69,7 +73,8 @@ class M2EEClient:
         try:
             self.echo(timeout=timeout)
             return True
-        except (M2EEAdminException, M2EEAdminHTTPException, M2EEAdminNotAvailable):
+        except (M2EEAdminException, M2EEAdminHTTPException,
+                M2EEAdminNotAvailable, M2EEAdminTimeout):
             return False
 
     def echo(self, params=None, timeout=5):
@@ -211,6 +216,10 @@ class M2EEAdminHTTPException(Exception):
 
 
 class M2EEAdminNotAvailable(Exception):
+    pass
+
+
+class M2EEAdminTimeout(Exception):
     pass
 
 

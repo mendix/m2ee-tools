@@ -846,6 +846,8 @@ class CLI(cmd.Cmd, object):
             logger.error(e)
         except m2ee.client.M2EERuntimeNotFullyRunning as e:
             logger.error(e)
+        except m2ee.client.M2EEAdminTimeout as e:
+            logger.error(e)
         except m2ee.exceptions.M2EEException as e:
             logger.error(e)
 
