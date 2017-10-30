@@ -100,7 +100,8 @@ class M2EEClient:
             return echo_feedback['errors']
         return []
 
-    def shutdown(self, timeout=5):
+    def shutdown(self, timeout):
+        logger.trace("Sending shutdown request: timeout=%s" % timeout)
         # Currently, the exception thrown is a feature, because the shutdown
         # action gets interrupted while executing. Even if an internal error
         # occurs in the runtime / appcontainer there's no point in trying to

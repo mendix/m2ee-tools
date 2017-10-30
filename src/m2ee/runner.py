@@ -8,6 +8,7 @@ import logging
 import subprocess
 import os
 import signal
+import time
 import errno
 from time import sleep
 from client import M2EEAdminException
@@ -85,8 +86,14 @@ class M2EERunner:
         logger.trace("Attached JVM process is still alive.")
         return True
 
-    def stop(self, timeout=5):
-        self._client.shutdown()
+    def stop(self, timeout):
+        walltime_begin = time.time()
+        self._client.shutdown(timeout)
+        timeout = int(timeout - (time.time() - walltime_begin))
+        if timeout < 1:
+            logger.trace("Shutdown request returned just in time, adding a little bit of "
+                         "extra time to wait for the pid to disappear")
+            timeout = 2
         return self._wait_pid(timeout)
 
     def terminate(self, timeout=5):

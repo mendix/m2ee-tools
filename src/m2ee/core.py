@@ -118,7 +118,7 @@ class M2EE():
         logger.debug("MxRuntime status: %s" % self.client.runtime_status()['status'])
         logger.info("The MxRuntime is fully started now.")
 
-    def stop(self, timeout=10):
+    def stop(self, timeout=30):
         if self.client.ping():
             logger.info("Waiting for the application to shutdown...")
             stopped = self.runner.stop(timeout)
