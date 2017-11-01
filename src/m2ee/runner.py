@@ -96,7 +96,7 @@ class M2EERunner:
             timeout = 2
         return self._wait_pid(timeout)
 
-    def terminate(self, timeout=5):
+    def terminate(self, timeout):
         logger.debug("sending SIGTERM to pid %s" % self._pid)
         try:
             os.kill(self._pid, signal.SIGTERM)
@@ -105,7 +105,7 @@ class M2EERunner:
             logger.debug("OSError! Process already gone?")
         return self._wait_pid(timeout)
 
-    def kill(self, timeout=5):
+    def kill(self, timeout):
         logger.debug("sending SIGKILL to pid %s" % self._pid)
         try:
             os.kill(self._pid, signal.SIGKILL)
