@@ -183,29 +183,6 @@ m2ee:
  # default: .m2ee/m2ee.pid under the current users home directory
  pidfile: /somwhere/else/m2ee.pid
 
- # The runtime_blocking_connector option specifies whether the Mendix Runtime
- # will use a Jetty BlockingChannelConnector for the runtime port http
- # interface, or a SelectChannelConnector.
- #
- # When using the BlockingChannelConnector implementation, a dedicated JVM
- # thread is allocated per connection. This solution fits situations where http
- # connection offloading is done at a reverse proxy between the end user and the
- # Mendix Runtime. If end users are directly connecting to this port (which is
- # not recommended) use runtime_blocking_connector false to prevent idle open
- # browser connections from unnecessarily occupying JVM threads.
- #
- # There might be uses cases in which not using runtime_blocking_connector is
- # better, e.g. when using custom request handlers and long polling, e.g. when
- # using websockets.
- #
- # However, there are also reports of bugs in the BlockingChannelConnector that
- # cause connections to the Runtime being closed by Jetty while waiting for a
- # response after issuing a HTTP request. Because of this, this option is set
- # to false by default.
- #
- # default: false
- runtime_blocking_connector: false
-
  # By default, the Mendix Runtime is started using an emptied environment map
  # for security reasons. There may be situations in which it is desired to keep
  # some specific environment variables, or set them to specific values. In this

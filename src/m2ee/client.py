@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009-2015, Mendix bv
+# Copyright (c) 2009-2017, Mendix bv
 # All Rights Reserved.
 #
 # http://www.mendix.com/
@@ -9,7 +9,6 @@ from base64 import b64encode
 import json
 import logging
 import socket
-from version import MXVersion
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +45,12 @@ class M2EEClient:
                 raise M2EEAdminHTTPException("Non OK http status code: %s %s" %
                                              (response_headers, response_body))
             response = json.loads(response_body)
-            if response['result'] != 0:
+            result = response['result']
+            if result == M2EEAdminException.ERR_ACTION_NOT_FOUND and action != "runtime_status":
+                status = self.runtime_status()['status']
+                if status != 'running':
+                    raise M2EERuntimeNotFullyRunning(status, action)
+            if result != 0:
                 raise M2EEAdminException(action, response)
             return response.get('feedback', {})
         except AttributeError, e:
@@ -56,7 +60,11 @@ class M2EEClient:
                 logger.trace("%s (%s: %s)" % (message, type(e), e))
                 raise M2EEAdminNotAvailable(message)
             raise e
-        except (socket.error, socket.timeout), e:
+        except socket.timeout, e:
+            message = "Admin API does not respond. Timeout reached after (%s seconds)" % timeout
+            logger.trace(message)
+            raise M2EEAdminTimeout(message)
+        except socket.error, e:
             message = "Admin API not available for requests: (%s: %s)" % (type(e), e)
             logger.trace(message)
             raise M2EEAdminNotAvailable(message)
@@ -65,7 +73,8 @@ class M2EEClient:
         try:
             self.echo(timeout=timeout)
             return True
-        except (M2EEAdminException, M2EEAdminHTTPException, M2EEAdminNotAvailable):
+        except (M2EEAdminException, M2EEAdminHTTPException,
+                M2EEAdminNotAvailable, M2EEAdminTimeout):
             return False
 
     def echo(self, params=None, timeout=5):
@@ -75,20 +84,8 @@ class M2EEClient:
         return self.request("echo", myparams, timeout)
 
     def require_action(self, action):
-        try:
-            feedback = self.get_admin_action_info()
-            implemented = action in feedback['action_info']
-        except M2EEAdminException as e:
-            if e.result == M2EEAdminException.ERR_ACTION_NOT_FOUND:
-                if action in M2EEAdminException.implemented_in:
-                    implemented_in = M2EEAdminException.implemented_in[action]
-                    runtime_version = MXVersion(self.about()['version'])
-                    implemented = runtime_version >= implemented_in
-                else:
-                    implemented = True
-            else:
-                raise
-        if implemented is False:
+        feedback = self.get_admin_action_info()
+        if action not in feedback['action_info']:
             raise M2EEAdminException(
                 action,
                 {"result": M2EEAdminException.ERR_ACTION_NOT_FOUND}
@@ -100,31 +97,11 @@ class M2EEClient:
     def get_critical_log_messages(self):
         echo_feedback = self.echo()
         if echo_feedback['echo'] != "pong":
-            errors = echo_feedback['errors']
-            # default to 3.0 format [{"message":"Hello,
-            # world!","timestamp":1315316488958,"cause":""}, ...]
-            if type(errors[0]) != dict:
-                return errors
-            from datetime import datetime
-            result = []
-            for error in errors:
-                errorline = []
-                if 'message' in error and error['message'] != '':
-                    errorline.append("- %s" % error['message'])
-                if 'cause' in error and error['cause'] != '':
-                    errorline.append("- Caused by: %s" % error['cause'])
-                if len(errorline) == 0:
-                    errorline.append("- [No message or cause was logged]")
-                errorline.insert(
-                    0,
-                    datetime.fromtimestamp(error['timestamp'] / 1000)
-                    .strftime("%Y-%m-%d %H:%M:%S")
-                )
-                result.append(' '.join(errorline))
-            return result
+            return echo_feedback['errors']
         return []
 
-    def shutdown(self, timeout=5):
+    def shutdown(self, timeout):
+        logger.trace("Sending shutdown request: timeout=%s" % timeout)
         # Currently, the exception thrown is a feature, because the shutdown
         # action gets interrupted while executing. Even if an internal error
         # occurs in the runtime / appcontainer there's no point in trying to
@@ -243,6 +220,20 @@ class M2EEAdminNotAvailable(Exception):
     pass
 
 
+class M2EEAdminTimeout(Exception):
+    pass
+
+
+class M2EERuntimeNotFullyRunning(Exception):
+    def __init__(self, status, action):
+        self.status = status
+        self.action = action
+
+    def __str__(self):
+        return "The Mendix Runtime is not fully running, but reporting status '%s'. " \
+               "Unable to execute action %s." % (self.status, self.action)
+
+
 class M2EEAdminException(Exception):
 
     ERR_REQUEST_NULL = -1
@@ -253,17 +244,16 @@ class M2EEAdminException(Exception):
     ERR_READ_REQUEST = -6
     ERR_WRITE_REQUEST = -7
 
+    # Note: if an action gets introduced in multiple Mendix versions,
+    # they can be specified as a tuple, like:
+    # "get_current_runtime_requests": ('2.5.8', '3.1'),
     implemented_in = {
-        "get_admin_action_info": '3',
-        "check_health": '2.5.4',
         "cache_statistics": '4',
-        "get_license_information": '3',
-        "set_license": '3',
         "enable_debugger": '4.3',
         "disable_debugger": '4.3',
         "get_debugger_status": '4.3',
-        "get_current_runtime_requests": ('2.5.8', '3.1'),
-        "interrupt_request": ('2.5.8', '3.1'),
+        "get_current_runtime_requests": '3.1',
+        "interrupt_request": '3.1',
         "get_all_thread_stack_traces": '3.2',
     }
 
