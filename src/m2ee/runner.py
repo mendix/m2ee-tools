@@ -100,9 +100,6 @@ class M2EERunner:
             logger.error("The application process is already started!")
             return
 
-        env = self._config.get_java_env()
-        cmd = self._config.get_java_cmd()
-
         try:
             logger.trace("[%s] Forking now..." % os.getpid())
             pid = os.fork()
@@ -113,43 +110,7 @@ class M2EERunner:
                 # prevent zombie process
                 (pid, result) = os.waitpid(pid, 0)
                 exitcode = result >> 8
-                if exitcode == 0:
-                    logger.debug("The JVM process has been started.")
-                elif exitcode == 2:
-                    logger.error("The java binary cannot be found in the default search path!")
-                    logger.error("By default, when starting the JVM, the environment is not "
-                                 "preserved. If you don't set preserve_environment to true or "
-                                 "specify PATH in preserve_environment or custom_environment in "
-                                 "the m2ee section of your m2ee.yaml configuration file, the "
-                                 "search path is likely a very basic default list like "
-                                 "'/bin:/usr/bin'")
-                    raise M2EEException("Starting the JVM process did not succeed: "
-                                        "JVM binary not found",
-                                        errno=M2EEException.ERR_JVM_BINARY_NOT_FOUND)
-                elif exitcode == 3:
-                    raise M2EEException("Starting the JVM process (fork/exec) did not succeed.",
-                                        errno=M2EEException.ERR_JVM_FORKEXEC)
-                elif exitcode == 4:
-                    raise M2EEException("Starting the JVM process takes too long.",
-                                        errno=M2EEException.ERR_JVM_TIMEOUT)
-                elif exitcode == 0x20:
-                    raise M2EEException("JVM process disappeared with a clean exit code.",
-                                        errno=M2EEException.ERR_APPCONTAINER_EXIT_ZERO)
-                elif exitcode == 0x21:
-                    raise M2EEException("JVM process terminated without reason.",
-                                        errno=M2EEException.ERR_APPCONTAINER_UNKNOWN_ERROR)
-                elif exitcode == 0x22:
-                    raise M2EEException("JVM process terminated: could not bind admin port.",
-                                        errno=M2EEException.ERR_APPCONTAINER_ADMIN_PORT_IN_USE)
-                elif exitcode == 0x23:
-                    raise M2EEException("JVM process terminated: could not bind runtime port.",
-                                        errno=M2EEException.ERR_APPCONTAINER_RUNTIME_PORT_IN_USE)
-                elif exitcode == 0x24:
-                    raise M2EEException("JVM process terminated: incompatible JVM version.",
-                                        errno=M2EEException.ERR_APPCONTAINER_INVALID_JDK_VERSION)
-                else:
-                    raise M2EEException("Starting the JVM process failed, reason unknown (%s)." %
-                                        exitcode, errno=M2EEException.ERR_JVM_UNKNOWN)
+                self._handle_jvm_start_result(exitcode)
                 return
         except OSError, e:
             raise M2EEException("Forking subprocess failed: %d (%s)\n" %
@@ -160,6 +121,53 @@ class M2EERunner:
         os.chdir("/")
         os.setsid()
         os.umask(0022)
+        exitcode = self._start_jvm(timeout, step)
+        logger.trace("[%s] Exiting intermediate process with exit code %s" %
+                     (os.getpid(), exitcode))
+        os._exit(exitcode)
+
+    def _handle_jvm_start_result(self, exitcode):
+        if exitcode == 0:
+            logger.debug("The JVM process has been started.")
+        elif exitcode == 2:
+            logger.error("The java binary cannot be found in the default search path!")
+            logger.error("By default, when starting the JVM, the environment is not "
+                         "preserved. If you don't set preserve_environment to true or "
+                         "specify PATH in preserve_environment or custom_environment in "
+                         "the m2ee section of your m2ee.yaml configuration file, the "
+                         "search path is likely a very basic default list like "
+                         "'/bin:/usr/bin'")
+            raise M2EEException("Starting the JVM process did not succeed: JVM binary not found",
+                                errno=M2EEException.ERR_JVM_BINARY_NOT_FOUND)
+        elif exitcode == 3:
+            raise M2EEException("Starting the JVM process (fork/exec) did not succeed.",
+                                errno=M2EEException.ERR_JVM_FORKEXEC)
+        elif exitcode == 4:
+            raise M2EEException("Starting the JVM process takes too long.",
+                                errno=M2EEException.ERR_JVM_TIMEOUT)
+        elif exitcode == 0x20:
+            raise M2EEException("JVM process disappeared with a clean exit code.",
+                                errno=M2EEException.ERR_APPCONTAINER_EXIT_ZERO)
+        elif exitcode == 0x21:
+            raise M2EEException("JVM process terminated without reason.",
+                                errno=M2EEException.ERR_APPCONTAINER_UNKNOWN_ERROR)
+        elif exitcode == 0x22:
+            raise M2EEException("JVM process terminated: could not bind admin port.",
+                                errno=M2EEException.ERR_APPCONTAINER_ADMIN_PORT_IN_USE)
+        elif exitcode == 0x23:
+            raise M2EEException("JVM process terminated: could not bind runtime port.",
+                                errno=M2EEException.ERR_APPCONTAINER_RUNTIME_PORT_IN_USE)
+        elif exitcode == 0x24:
+            raise M2EEException("JVM process terminated: incompatible JVM version.",
+                                errno=M2EEException.ERR_APPCONTAINER_INVALID_JDK_VERSION)
+        else:
+            raise M2EEException("Starting the JVM process failed, reason unknown (%s)." %
+                                exitcode, errno=M2EEException.ERR_JVM_UNKNOWN)
+        return
+
+    def _start_jvm(self, timeout, step):
+        env = self._config.get_java_env()
+        cmd = self._config.get_java_cmd()
 
         logger.trace("Environment to be used when starting the JVM: %s" %
                      ' '.join(["%s='%s'" % (k, v)
@@ -178,10 +186,10 @@ class M2EERunner:
             )
         except Exception as e:
             if isinstance(e, OSError) and e.errno == errno.ENOENT:
-                os._exit(2)
+                return 2
             else:
                 logger.error("Starting JVM failed: %s" % e)
-                os._exit(3)
+                return 3
 
         # always write pid asap, so that monitoring can detect apps that should
         # be started but fail to do so
@@ -196,24 +204,22 @@ class M2EERunner:
             dead = proc.poll()
             if dead is not None:
                 logger.debug("Java subprocess terminated with errorcode %s" % dead)
-                logger.debug("[%s] Doing unclean exit from intermediate "
-                             "process now." % os.getpid())
-                os._exit(0x20 + dead)
+                return 0x20 + dead
             if self.check_pid(proc.pid) and self._client.ping():
                 break
             t += step
         if t >= timeout:
             logger.debug("Timeout: Java subprocess takes too long to start.")
-            logger.trace("[%s] Doing unclean exit from intermediate process "
-                         "now." % os.getpid())
-            os._exit(4)
+            return 4
+        self.close_jvm_stdio()
+        return 0
+
+    def close_jvm_stdio(self):
         logger.trace("Calling CloseStdIO...")
         try:
             self._client.close_stdio()
         except M2EEAdminException as e:
             logger.error("Failed to close stdio, ignoring: %s" % e)
-        logger.trace("[%s] Exiting intermediate process..." % os.getpid())
-        os._exit(0)
 
     def _wait_pid(self, timeout=None, step=0.25):
         logger.trace("Waiting for process to disappear: timeout=%s" % timeout)
