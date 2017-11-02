@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2015, Mendix bv
+# Copyright (c) 2009-2017, Mendix bv
 # All Rights Reserved.
 # http://www.mendix.com/
 #
@@ -59,7 +59,7 @@ class M2EE():
                          self.runner.get_pid())
         return (pid_alive, m2ee_alive)
 
-    def start_appcontainer(self):
+    def start_appcontainer(self, detach=True):
         logger.debug("Checking if the runtime is already alive...")
         (pid_alive, m2ee_alive) = self.check_alive()
         if pid_alive is True or m2ee_alive is True:
@@ -81,7 +81,7 @@ class M2EE():
             util.fix_mxclientsystem_symlink(self.config)
 
         logger.info("Trying to start the MxRuntime...")
-        self.runner.start()
+        self.runner.start(detach=detach)
         logger.debug("MxRuntime status: %s" % self.client.runtime_status()['status'])
 
         # go do startup sequence
@@ -100,8 +100,6 @@ class M2EE():
                 os.path.join(self.config.get_runtime_path(), 'runtime'),
                 "port": self.config.get_runtime_port(),
                 "application_base_path": self.config.get_app_base(),
-                "use_blocking_connector":
-                self.config.get_runtime_blocking_connector(),
             })
         elif version >= 5:
             self.client.update_appcontainer_configuration({
@@ -120,7 +118,7 @@ class M2EE():
         logger.debug("MxRuntime status: %s" % self.client.runtime_status()['status'])
         logger.info("The MxRuntime is fully started now.")
 
-    def stop(self, timeout=10):
+    def stop(self, timeout=30):
         if self.client.ping():
             logger.info("Waiting for the application to shutdown...")
             stopped = self.runner.stop(timeout)

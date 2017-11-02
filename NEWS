@@ -1,3 +1,14 @@
+m2ee-tools 7.1, 2 Nov 2017
+==========================
+
+This release introduces two new exception types that can occur when directly executing
+admin actions from python code:
+* When an action is called that is not available (yet) because the runtime is
+  still starting up, an m2ee.client.M2EERuntimeNotFullyRunning is raised.
+* When a timeout happens when executing an admin action, an
+  m2ee.client.M2EEAdminTimeout is raised now instead of an
+  m2ee.client.M2EEAdminNotAvailable
+
 m2ee-tools 7.0, 13 Feb 2017
 ===========================
 

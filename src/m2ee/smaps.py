@@ -1,10 +1,11 @@
 #
-# Copyright (c) 2009-2015, Mendix bv
+# Copyright (c) 2009-2017, Mendix bv
 # All Rights Reserved.
 #
 # http://www.mendix.com/
 #
 
+from __future__ import print_function
 import sys
 
 CATEGORY_CODE = 0

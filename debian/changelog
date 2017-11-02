@@ -1,8 +1,13 @@
-m2ee-tools (7.0.1-1~mx7u1) wheezy; urgency=medium
+m2ee-tools (7.1-1) unstable; urgency=medium
 
-  * Rebuild for Wheezy
+  * New release v7.1, see CHANGES and NEWS for changes
+  * debian/copyright: cleanup, fix year, fix BSD name
+  * debian/control: shuffle package sections
+  * debian/control: Update to standards 4.1.1
+  * debian/control: change homepage to github
+  * debian/control: munin-plugins-m2ee dependency
 
- -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Mon, 06 Mar 2017 17:23:20 +0100
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Thu, 02 Nov 2017 18:50:19 +0100
 
 m2ee-tools (7.0.1-1) unstable; urgency=medium
 

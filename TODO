@@ -1,4 +1,0 @@
-[ ] add command to display cache_statistics
-[ ] rewrite configuration handling mess
-[ ] possibility to use units (ms,s,h,d,w,y) for time length values
-[ ] man m2ee.yaml instead of lots of documentation in the example file itself

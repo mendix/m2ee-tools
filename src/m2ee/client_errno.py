@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009-2015, Mendix bv
+# Copyright (c) 2009-2017, Mendix bv
 # All Rights Reserved.
 #
 # http://www.mendix.com/
@@ -38,3 +38,5 @@ start_INVALID_LICENSE = 10
 start_SECURITY_DISABLED = 11
 start_STARTUP_ACTION_FAILED = 12
 start_NO_MOBILE_IN_LICENSE = 13
+
+check_health_INVALID_STATE = 2

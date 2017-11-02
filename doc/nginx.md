@@ -21,62 +21,105 @@ It's up to you, but here's a simple example, using a single host, connected to t
 
 Please refer to the official documentation at http://wiki.nginx.org/ for more information about configuration details mentioned below.
 
-## Static and dynamic content
+## A configuration example
 
-A basic nginx server section to serve up a mendix application could look like this:
+Some basic pieces of nginx configuration to serve up a mendix application could look like this:
 
-    server {
-        listen [::]:443;
-        listen 0.0.0.0:443;
-        ssl_certificate /etc/ssl/nginx/ssl_certificate.pem;
-        ssl_certificate_key /etc/ssl/nginx/ssl_certificate.key;
+    http {
+        # See the section about gzip below for more info about these lines
+        gzip on;
+        gzip_static on;
+        gzip_proxied any;
+        gzip_types application/json;
 
-        server_name some-customer.mendix.com;
-
-        # all static content is served directly from the project location
-        root /srv/mendix/somecust/web/;
-
-        # locations matching the exact string /xas/ are requests for the main
-        # client JSON API, so we send them to the application http port
-        location = /xas/ {
-            proxy_pass http://127.0.0.1:8000;
-        }
-        # /file is used for uploading/downloading files into the application,
-        # which get registered in the application as FileDocument objects
-        location = /file {
-            proxy_pass http://127.0.0.1:8000;
-            client_max_body_size 512M;
-        }
-        # optionally, additional sub-urls can be proxied to the application, like
-        # /link/ when using the deeplink widget, which registers a request handler
-        # on /link/
-        # note this one does not have the equals sign after location, because the
-        # link widget uses urls like /link/blahblah, and not only /link/
-        location /link/ {
-            proxy_pass http://127.0.0.1:8000;
-        }
-        # same story for /ws/, when exposing web services in the application
-        # or... use a regular expression to fit them both in one line:
-        #location ~ ^/(link|ws)/ {
-        #   proxy_pass http://127.0.0.1:8000;
-        #}
+        proxy_read_timeout 15m;
+        proxy_http_version 1.1;
 
         # Provide some extra information to the Mendix Runtime about the
         # end user connection
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-
-        # Restrict using of IFrames
-        proxy_set_header X-Frame-Options SAMEORIGIN;
 
         # This is an important one, make sure to hint the mendix runtime
         # whether https is used to the end user, so the secure flag on
-        # session cookies gets set (Mendix >= 3.3.3,4.2.2)
+        # session cookies gets set (Mendix >= 3.3.3, 4.2.2)
         proxy_set_header X-Forwarded-Scheme $scheme;
-    }
 
-When using this example literally for an application on which you want to call a web service, nginx will start looking for a directory named `/ws/` inside the web folder of the project, because the sub url `/ws/` does not get proxied to the application port. So, when getting unexpected 404 not found results on requests, a missing `proxy_pass` might be the cause.
+        # Restrict usage of IFrames
+        add_header X-Frame-Options SAMEORIGIN;
+        # Tell the browser to always use https
+        add_header Strict-Transport-Security "max-age=31536000;";
+
+        # Random bots scanning the internet end up here
+        # Also see the section about the catch-all server declaration below
+        server {
+            listen [::]:443 default_server ipv6only=on ssl;
+            listen 0.0.0.0:443 default_server ssl;
+            server_name _;
+            ssl_certificate /etc/ssl/nginx/dummy.crt;
+            ssl_certificate_key /etc/ssl/nginx/dummy.key;
+            return 503;
+        }
+
+        # When specifically accessing our application URL we end up here
+        upstream somecust {
+            server 127.0.0.1:8000;
+            keepalive 8;
+        }
+        server {
+            listen [::]:443;
+            listen 0.0.0.0:443;
+            server_name some-customer.mendix.com;
+            ssl_certificate /etc/ssl/nginx/some-customer.crt;
+            ssl_certificate_key /etc/ssl/nginx/some-customer.key;
+
+            # All static content is served directly from the project location
+            root /srv/mendix/somecust/web/;
+
+            location / {
+                # Instruct the browser to never cache the first login page, since
+                # it would prevent us from seeing updates after a change
+                if ($request_uri ~ ^/((index[\w-]*|login)\.html)?$) {
+                    add_header Cache-Control "no-cache";
+                    add_header X-Frame-Options "SAMEORIGIN";
+                }
+                # Agressively cache these files, since they use a cache bust
+                if ($request_uri ~ ^/(.*\.(css|js)|(css|img|js|lib|mxclientsystem|pages|widgets)/.*)\?[0-9]+$) {
+                    expires 1y;
+                }
+                # By default first look if the requests points to static content.
+                # If not, proxy it to the runtime process.
+                try_files $uri $uri/ @runtime;
+            }
+            location @runtime {
+                proxy_pass http://somecust;
+                allow all;
+            }
+            location = /file {
+                proxy_pass http://somecust;
+                # Be generous about the size of things that can be uploaded
+                client_max_body_size 1G;
+                # Never buffer uploads or downloads, directly stream them
+                proxy_buffering off;
+                proxy_request_buffering off;
+            }
+            location = /xas/ {
+                proxy_pass http://somecust;
+            }
+            # Never expose the -doc paths on a public application instance
+            location ~ ^/\w+-doc/ {
+                deny all;
+            }
+            # Apply an IP Filter restriction on some path, regardless of the fact we're serving
+            # static or dynamic content
+            location /hello/ {
+                try_files $uri $uri/ @runtime;
+                allow 198.51.100.0/24;
+                allow 2001:db8:4:3770::/120;
+                deny all;
+            }
+        }
+    }
 
 ## Set the X-Forwarded-Scheme header!
 
@@ -103,7 +146,7 @@ The following nginx configuration (which can be placed inside the http configura
 
 When your server does not have one yet, perferably configure a default catch-all server declaration, which will match all incoming requests not explicitely mentioning the application url name (e.g. some-customer.mendix.com) in the Host header of the request. This can be useful to, by default, block requests from random scripts that are connecting to the plain IP address or canonical host name (example.mendix.net in this case).
 
-Another use for a catch-all server declaration is to listen on a non-ssl http port, redirecting the browser to the same url on https. This is a convenience option for users, who do not have to type the https:// explicitely when trying to reach an application.
+Another use for a catch-all server declaration is to listen on a non-ssl http port, redirecting the browser to the same url on https. This is a convenience option for users, who do not have to type the https:// explicitely the first time when trying to reach an application. When the Strict-Transport-Security setting is also used, as seen above, this redirect will only be used exactly once. Even when not specifying https the second time, the browser will be instructed to always use it nonetheless.
 
     server {
         listen [::]:80 default ipv6only=on;
@@ -113,11 +156,11 @@ Another use for a catch-all server declaration is to listen on a non-ssl http po
     }
 
     server {
-        listen [::]:443 default ipv6only=on ssl;
-        listen 0.0.0.0:443 default ssl;
+        listen [::]:443 default_server ipv6only=on ssl;
+        listen 0.0.0.0:443 default_server ssl;
         server_name _;
-        ssl_certificate /etc/ssl/mendix/ssl_certificate.pem;
-        ssl_certificate_key /etc/ssl/mendix/ssl_certificate.key;
+        ssl_certificate /etc/ssl/nginx/dummy.crt;
+        ssl_certificate_key /etc/ssl/nginx/dummy.key;
         return 503;
     }
 
