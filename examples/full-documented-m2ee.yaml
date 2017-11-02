@@ -412,6 +412,17 @@ logging:
    # see no log message. :-) Available log levels are: NONE, CRITICAL, ERROR,
    # WARNING, INFO, DEBUG, TRACE
    autosubscribe: INFO
+   # From Mendix 6 onwards it is possible to preconfigure specific log nodes
+   # to get a different subscription level. This is optional by specifying a
+   # list of log nodes with their level
+   nodes:
+    -
+      # The name of the log node. If you specify a name that is not in use,
+      # the system will not complain, but just continue
+      name: ConnectionBus
+      # The level of this log node. Available loglevels are the same as for
+      # autosubscribe
+      level: ERROR
    # Well-known syslog specific parameters:
    host: localhost
    port: 514
@@ -445,6 +456,16 @@ logging:
    # etc. Set max_rotation to 0 to never rotate
    # default: 10
    max_rotation: 10
+ -
+   # Example of configuring log nodes for all subscribers. This only requires
+   # two properties: name and nodes
+   name: *
+   # The nodes with their specific levels as described above in the
+   # SysLogSubscriber example
+   nodes:
+    -
+      name: Core
+      level: DEBUG
 
 # The last section of this file contains the 'mxruntime' section, which contains
 # configuration which will be sent to the Mendix Runtime when it's started.
