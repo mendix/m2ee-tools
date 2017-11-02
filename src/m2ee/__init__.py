@@ -28,4 +28,4 @@ import nagios  # noqa
 import munin  # noqa
 import version  # noqa
 
-__version__ = '7.0.1'
+__version__ = '7.1'
