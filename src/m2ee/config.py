@@ -1,10 +1,11 @@
 #
-# Copyright (c) 2009-2015, Mendix bv
+# Copyright (c) 2009-2017, Mendix bv
 # All Rights Reserved.
 #
 # http://www.mendix.com/
 #
 
+from __future__ import print_function
 import json
 import logging
 import yaml
@@ -199,7 +200,7 @@ class M2EEConfig:
         return False
 
     def dump(self):
-        print(yaml.dump(self._conf))
+        print(yaml.dump(self._conf, default_flow_style=False))
 
     def _check_appcontainer_config(self):
         # did we load any configuration at all?
@@ -403,9 +404,6 @@ class M2EEConfig:
 
         return dotm2ee
 
-    def get_runtime_blocking_connector(self):
-        return self._conf['m2ee'].get('runtime_blocking_connector', False)
-
     def get_symlink_mxclientsystem(self):
         return self._conf['m2ee'].get('symlink_mxclientsystem', True)
 
@@ -476,9 +474,6 @@ class M2EEConfig:
         # appcontainer from runtime distro
         if not self._appcontainer_version and self.runtime_version < 5:
             env['M2EE_RUNTIME_PORT'] = str(self._conf['m2ee']['runtime_port'])
-            if 'runtime_blocking_connector' in self._conf['m2ee']:
-                env['M2EE_RUNTIME_BLOCKING_CONNECTOR'] = str(
-                    self._conf['m2ee']['runtime_blocking_connector'])
 
         if 'monitoring_pass' in self._conf['m2ee']:
             env['M2EE_MONITORING_PASS'] = str(
@@ -493,8 +488,7 @@ class M2EEConfig:
         """
         Build complete JVM startup command line
         """
-        cmd = []
-        cmd.append(self._conf['m2ee'].get('javabin', 'java'))
+        cmd = flatten(self._conf['m2ee'].get('javabin', 'java'))
 
         if 'javaopts' in self._conf['m2ee']:
             if isinstance(self._conf['m2ee']['javaopts'], list):
@@ -582,10 +576,6 @@ class M2EEConfig:
         jetty_opts = copy.deepcopy(self._conf['m2ee'].get('jetty'))
         if jetty_opts is None:
             jetty_opts = {}
-        if self.get_runtime_version() >= 5:
-            jetty_opts['use_blocking_connector'] = (
-                jetty_opts.get('use_blocking_connector',
-                               self.get_runtime_blocking_connector()))
         return jetty_opts
 
     def get_munin_options(self):
@@ -889,6 +879,10 @@ def merge_config(initial_config, additional_config):
             result[section] = additional_config[section]
 
     return result
+
+
+def flatten(l):
+    return [l] if not isinstance(l, list) else sum(map(flatten, l), [])
 
 
 if __name__ == '__main__':

@@ -1,21 +1,21 @@
 #!/usr/bin/python
 #
-# Copyright (c) 2009-2015, Mendix bv
+# Copyright (c) 2009-2017, Mendix bv
 # All Rights Reserved.
 #
 # http://www.mendix.com/
 #
 
+from __future__ import print_function
 import atexit
 import cmd
 import datetime
 import getpass
-import json
 import logging
-logger = logging
 import os
 import pwd
 import random
+import shlex
 import signal
 import string
 import subprocess
@@ -24,6 +24,8 @@ import yaml
 
 from m2ee import pgutil, M2EE, client_errno
 import m2ee
+
+logger = logging
 
 if not sys.stdout.isatty():
     import codecs
@@ -42,6 +44,7 @@ class CLI(cmd.Cmd, object):
         self.prompt_username = pwd.getpwuid(os.getuid())[0]
         self._default_prompt = "m2ee(%s): " % self.prompt_username
         self.prompt = self._default_prompt
+        self.nodetach = False
         logger.info("Application Name: %s" % self.m2ee.config.get_app_name())
 
     def do_restart(self, args):
@@ -109,7 +112,7 @@ class CLI(cmd.Cmd, object):
                         "download_runtime command.")
             return
 
-        self.m2ee.start_appcontainer()
+        self.m2ee.start_appcontainer(detach=not self.nodetach)
 
         try:
             self.m2ee.send_runtime_config()
@@ -291,8 +294,11 @@ class CLI(cmd.Cmd, object):
 
     def do_status(self, args):
         feedback = self.m2ee.client.runtime_status()
-        logger.info("The application process is running, the MxRuntime has "
-                    "status: %s" % feedback['status'])
+        status = feedback['status']
+        logger.info("The application process is running, the MxRuntime has status: %s" % status)
+
+        if status != 'running':
+            return
 
         critlist = self.m2ee.client.get_critical_log_messages()
         if len(critlist) > 0:
@@ -306,12 +312,25 @@ class CLI(cmd.Cmd, object):
                         "complete list." % max_show_users)
 
     def do_show_critical_log_messages(self, args):
-        critlist = self.m2ee.client.get_critical_log_messages()
-        if len(critlist) == 0:
+        errors = self.m2ee.client.get_critical_log_messages()
+        if len(errors) == 0:
             logger.info("No messages were logged to a critical loglevel since "
                         "starting the application.")
             return
-        print("\n".join(critlist))
+        for error in errors:
+            errorline = []
+            if 'message' in error and error['message'] != '':
+                errorline.append("- %s" % error['message'])
+            if 'cause' in error and error['cause'] != '':
+                errorline.append("- Caused by: %s" % error['cause'])
+            if len(errorline) == 0:
+                errorline.append("- [No message or cause was logged]")
+            errorline.insert(
+                0,
+                datetime.datetime.fromtimestamp(error['timestamp'] / 1000)
+                .strftime("%Y-%m-%d %H:%M:%S")
+            )
+            print(' '.join(errorline))
 
     def do_check_health(self, args):
         feedback = self.m2ee.client.check_health()
@@ -329,13 +348,11 @@ class CLI(cmd.Cmd, object):
     def do_statistics(self, args):
         stats = self.m2ee.client.runtime_statistics()
         stats.update(self.m2ee.client.server_statistics())
-        print(json.dumps(stats, sort_keys=True,
-                         indent=4, separators=(',', ': ')))
+        print(yaml.safe_dump(stats, default_flow_style=False))
 
-    def do_show_cache_statistics_raw(self, args):
+    def do_show_cache_statistics(self, args):
         stats = self.m2ee.client.cache_statistics()
-        print(json.dumps(stats, sort_keys=True,
-                         indent=4, separators=(',', ': ')))
+        print(yaml.safe_dump(stats, default_flow_style=False))
 
     def do_munin_config(self, args):
         m2ee.munin.print_config(
@@ -662,7 +679,11 @@ class CLI(cmd.Cmd, object):
             self.prompt = "LOG %s" % self._default_prompt
 
     def do_loglevel(self, args):
-        args = string.split(args)
+        try:
+            args = shlex.split(args)
+        except ValueError as ve:
+            logger.error("Input cannot be parsed: %s" % ve.message)
+            return
         if len(args) == 3:
             (subscriber, node, level) = args
             self._set_log_level(subscriber, node, level)
@@ -702,13 +723,12 @@ class CLI(cmd.Cmd, object):
             logger.info("There are no currently running runtime requests.")
         else:
             print("Current running Runtime Requests:")
-            print(yaml.safe_dump(feedback))
+            print(yaml.safe_dump(feedback, default_flow_style=False))
 
     def do_show_all_thread_stack_traces(self, args):
         feedback = self.m2ee.client.get_all_thread_stack_traces()
         print("Current JVM Thread Stacktraces:")
-        print(json.dumps(feedback, sort_keys=True,
-                         indent=4, separators=(',', ': ')))
+        print(yaml.safe_dump(feedback, default_flow_style=False))
 
     def do_interrupt_request(self, args):
         if args == "":
@@ -723,14 +743,25 @@ class CLI(cmd.Cmd, object):
             logger.info("An attempt to cancel the running action was "
                         "made.")
 
+    def do_nodetach(self, args):
+        self.nodetach = True
+        logger.info("Setting nodetach, application process will not run in the background.")
+
     def do_exit(self, args):
-        return -1
+        return self._exit()
 
     def do_quit(self, args):
-        return -1
+        return self._exit()
 
     def do_EOF(self, args):
         print("exit")
+        return self._exit()
+
+    def _exit(self):
+        if self.m2ee.runner.check_attached_proc():
+            logger.warning("There is still an attached application process running. "
+                           "Stop it first.")
+            return None
         return -1
 
     def do_download_runtime(self, args):
@@ -813,6 +844,10 @@ class CLI(cmd.Cmd, object):
             logger.error(e)
         except m2ee.client.M2EEAdminHTTPException as e:
             logger.error(e)
+        except m2ee.client.M2EERuntimeNotFullyRunning as e:
+            logger.error(e)
+        except m2ee.client.M2EEAdminTimeout as e:
+            logger.error(e)
         except m2ee.exceptions.M2EEException as e:
             logger.error(e)
 
@@ -848,6 +883,7 @@ Available commands:
  show_current_runtime_requests - show action stack of current running requests
  interrupt_request - cancel a running runtime request
  show_license_information - show details about current mendix license key
+ show_cache_statistics - show details about the runtime object cache
  cleanup_runtimes - clean up downloaded Mendix Runtime versions, except the
      one currently in use
  cleanup_runtimes_except [<version> <version> ...] - clean up downloaded Mendix
@@ -875,6 +911,7 @@ Available commands:
 Extra commands you probably don't need:
  debug - dive into a local python debug session inside this program
  dump_config - dump the yaml configuration information
+ nodetach - do not detach the application process after starting
  reload - reload configuration from yaml files (this is done automatically)
  munin_config - configure option for the built-in munin plugin
  munin_values - show monitoring output gathered by the built-in munin plugin

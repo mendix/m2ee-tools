@@ -1,3 +1,18 @@
+m2ee-tools 7.1, 2 Nov 2017
+  * [31534c3] TODO items have been moved to github issues
+  * [d10017f] Update nginx reverse proxy example config
+  * [a9bc6f5] Mention Debian Stretch as supported
+  * [c4fe80c] Allow starting an application without detaching (for debugging)
+  * [4fb9b1c] Allow setting loglevels with spaces
+  * [55ceb11] Make show_cache_statistics an official command
+  * [e9a3d87] Don't report actions as not implemented while starting. This
+    introduces a new exception type: M2EERuntimeNotFullyRunning
+  * [717ae24] Distinguish between a non available Admin API port and a timeout
+    that happens when handling a request. This introduces a new exception type:
+    M2EEAdminTimeout
+  * [835ed7b] Increase the default timeout for stopping
+  * Small fixes and cosmetics in code and CLI output
+
 m2ee-tools 7.0, 13 Feb 2017
   * Major rewrite of internal error handling. Boolean return codes have been
     replaced with proper exception handling.
