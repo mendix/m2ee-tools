@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
 Build-Depends: debhelper (>= 9), dh-python, python-all (>= 2.6.6-3~), python-setuptools
 Standards-Version: 4.1.1
-Homepage: http://www.mendix.com/
+Homepage: https://github.com/mendix/m2ee-tools/
 
 Package: m2ee-tools
 Architecture: all
