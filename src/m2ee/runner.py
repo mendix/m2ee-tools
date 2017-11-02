@@ -24,6 +24,7 @@ class M2EERunner:
         self._config = config
         self._client = client
         self._read_pidfile()
+        self._attached_proc = None
 
     def _read_pidfile(self):
         pidfile = self._config.get_pidfile()
@@ -73,6 +74,17 @@ class M2EERunner:
             logger.trace("No process with pid %s, or not ours." % pid)
             return False
 
+    def check_attached_proc(self):
+        if self._attached_proc is None:
+            return False
+        returncode = self._attached_proc.poll()
+        if returncode is not None:
+            logger.trace("Attached JVM process exited with returncode %s" % returncode)
+            self._attached_proc = None
+            return False
+        logger.trace("Attached JVM process is still alive.")
+        return True
+
     def stop(self, timeout=5):
         self._client.shutdown()
         return self._wait_pid(timeout)
@@ -95,36 +107,37 @@ class M2EERunner:
             logger.debug("OSError! Process already gone?")
         return self._wait_pid(timeout)
 
-    def start(self, timeout=60, step=0.25):
+    def start(self, detach=True, timeout=60, step=0.25):
         if self.check_pid():
             logger.error("The application process is already started!")
             return
 
-        try:
-            logger.trace("[%s] Forking now..." % os.getpid())
-            pid = os.fork()
-            if pid > 0:
-                self._pid = None
-                logger.trace("[%s] Waiting for intermediate process to "
-                             "exit..." % os.getpid())
-                # prevent zombie process
-                (pid, result) = os.waitpid(pid, 0)
-                exitcode = result >> 8
-                self._handle_jvm_start_result(exitcode)
-                return
-        except OSError, e:
-            raise M2EEException("Forking subprocess failed: %d (%s)\n" %
-                                (e.errno, e.strerror))
-        logger.trace("[%s] Now in intermediate forked process..." %
-                     os.getpid())
-        # decouple from parent environment
-        os.chdir("/")
-        os.setsid()
-        os.umask(0022)
-        exitcode = self._start_jvm(timeout, step)
-        logger.trace("[%s] Exiting intermediate process with exit code %s" %
-                     (os.getpid(), exitcode))
-        os._exit(exitcode)
+        if detach:
+            try:
+                logger.trace("[%s] Forking now..." % os.getpid())
+                pid = os.fork()
+                if pid > 0:
+                    self._pid = None
+                    logger.trace("[%s] Waiting for intermediate process to exit..." % os.getpid())
+                    # prevent zombie process
+                    (pid, result) = os.waitpid(pid, 0)
+                    exitcode = result >> 8
+                    self._handle_jvm_start_result(exitcode)
+                    return
+            except OSError, e:
+                raise M2EEException("Forking subprocess failed: %d (%s)\n" % (e.errno, e.strerror))
+            logger.trace("[%s] Now in intermediate forked process..." % os.getpid())
+            # decouple from parent environment
+            os.chdir("/")
+            os.setsid()
+            os.umask(0022)
+            exitcode = self._start_jvm(detach, timeout, step)
+            logger.trace("[%s] Exiting intermediate process with exit code %s" %
+                         (os.getpid(), exitcode))
+            os._exit(exitcode)
+        else:
+            exitcode = self._start_jvm(detach, timeout, step)
+            self._handle_jvm_start_result(exitcode)
 
     def _handle_jvm_start_result(self, exitcode):
         if exitcode == 0:
@@ -165,7 +178,7 @@ class M2EERunner:
                                 exitcode, errno=M2EEException.ERR_JVM_UNKNOWN)
         return
 
-    def _start_jvm(self, timeout, step):
+    def _start_jvm(self, detach, timeout, step):
         env = self._config.get_java_env()
         cmd = self._config.get_java_cmd()
 
@@ -177,6 +190,7 @@ class M2EERunner:
             proc = subprocess.Popen(
                 cmd,
                 close_fds=True,
+                stdin=subprocess.PIPE,
                 cwd='/',
                 env=env,
             )
@@ -206,7 +220,10 @@ class M2EERunner:
         if t >= timeout:
             logger.debug("Timeout: Java subprocess takes too long to start.")
             return 4
-        self.close_jvm_stdio()
+        if detach:
+            self.close_jvm_stdio()
+        if not detach:
+            self._attached_proc = proc
         return 0
 
     def close_jvm_stdio(self):
@@ -224,7 +241,9 @@ class M2EERunner:
             t = 0
             while t < timeout:
                 sleep(step)
-                if not self.check_pid():
+                alive = self.check_pid()
+                self.check_attached_proc()
+                if not alive:
                     break
                 t += step
             if t >= timeout:

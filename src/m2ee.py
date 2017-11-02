@@ -42,6 +42,7 @@ class CLI(cmd.Cmd, object):
         self.prompt_username = pwd.getpwuid(os.getuid())[0]
         self._default_prompt = "m2ee(%s): " % self.prompt_username
         self.prompt = self._default_prompt
+        self.nodetach = False
         logger.info("Application Name: %s" % self.m2ee.config.get_app_name())
 
     def do_restart(self, args):
@@ -109,7 +110,7 @@ class CLI(cmd.Cmd, object):
                         "download_runtime command.")
             return
 
-        self.m2ee.start_appcontainer()
+        self.m2ee.start_appcontainer(detach=not self.nodetach)
 
         try:
             self.m2ee.send_runtime_config()
@@ -723,14 +724,25 @@ class CLI(cmd.Cmd, object):
             logger.info("An attempt to cancel the running action was "
                         "made.")
 
+    def do_nodetach(self, args):
+        self.nodetach = True
+        logger.info("Setting nodetach, application process will not run in the background.")
+
     def do_exit(self, args):
-        return -1
+        return self._exit()
 
     def do_quit(self, args):
-        return -1
+        return self._exit()
 
     def do_EOF(self, args):
         print("exit")
+        return self._exit()
+
+    def _exit(self):
+        if self.m2ee.runner.check_attached_proc():
+            logger.warning("There is still an attached application process running. "
+                           "Stop it first.")
+            return None
         return -1
 
     def do_download_runtime(self, args):
@@ -875,6 +887,7 @@ Available commands:
 Extra commands you probably don't need:
  debug - dive into a local python debug session inside this program
  dump_config - dump the yaml configuration information
+ nodetach - do not detach the application process after starting
  reload - reload configuration from yaml files (this is done automatically)
  munin_config - configure option for the built-in munin plugin
  munin_values - show monitoring output gathered by the built-in munin plugin
