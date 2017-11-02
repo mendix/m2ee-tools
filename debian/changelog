@@ -1,3 +1,14 @@
+m2ee-tools (7.1-1) unstable; urgency=medium
+
+  * New release v7.1, see CHANGES and NEWS for changes
+  * debian/copyright: cleanup, fix year, fix BSD name
+  * debian/control: shuffle package sections
+  * debian/control: Update to standards 4.1.1
+  * debian/control: change homepage to github
+  * debian/control: munin-plugins-m2ee dependency
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Thu, 02 Nov 2017 18:50:19 +0100
+
 m2ee-tools (7.0.1-1) unstable; urgency=medium
 
   * Remove overengineered download retry handing
