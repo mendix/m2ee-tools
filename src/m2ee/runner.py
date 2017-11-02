@@ -170,12 +170,8 @@ class M2EERunner:
         cmd = self._config.get_java_cmd()
 
         logger.trace("Environment to be used when starting the JVM: %s" %
-                     ' '.join(["%s='%s'" % (k, v)
-                               for k, v in env.iteritems()]))
-        logger.trace("Command line to be used when starting the JVM: %s" %
-                     ' '.join(cmd))
-
-        # start java subprocess (second fork)
+                     ' '.join(["%s='%s'" % (k, v) for k, v in env.iteritems()]))
+        logger.trace("Command line to be used when starting the JVM: %s" % ' '.join(cmd))
         logger.trace("[%s] Starting the JVM..." % os.getpid())
         try:
             proc = subprocess.Popen(
@@ -194,8 +190,7 @@ class M2EERunner:
         # always write pid asap, so that monitoring can detect apps that should
         # be started but fail to do so
         self._pid = proc.pid
-        logger.trace("[%s] Writing JVM pid to pidfile: %s" %
-                     (os.getpid(), self._pid))
+        logger.trace("[%s] Writing JVM pid to pidfile: %s" % (os.getpid(), self._pid))
         self._write_pidfile()
         # wait for m2ee to become available
         t = 0
