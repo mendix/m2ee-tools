@@ -30,7 +30,7 @@ Description: Python modules for administrative interaction with the Mendix Runti
 
 Package: munin-plugins-m2ee
 Architecture: all
-Depends: ${misc:Depends}, python
+Depends: ${misc:Depends}, python, python-m2ee (>= 7~)
 Section: net
 Recommends: munin-node
 Description: m2ee plugin for Munin
