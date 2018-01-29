@@ -112,7 +112,7 @@ def check_health(client):
     try:
         feedback = client.check_health()
         if feedback['health'] == 'healthy':
-            return STATE_OK, "Healty"
+            return STATE_OK, "Healthy"
         elif feedback['health'] == 'sick':
             message = "Health: %s" % feedback['diagnosis']
             return STATE_WARNING, message
