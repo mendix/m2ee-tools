@@ -133,9 +133,6 @@ class M2EEClient:
     def update_configuration(self, params):
         return self.request("update_configuration", params)
 
-    def update_custom_configuration(self, params):
-        return self.request("update_custom_configuration", params)
-
     def update_appcontainer_configuration(self, params):
         return self.request("update_appcontainer_configuration", params)
 
