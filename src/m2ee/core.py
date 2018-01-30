@@ -88,27 +88,15 @@ class M2EE():
         self._configure_logging()
         self._send_mime_types()
 
-        hybrid = self.config.use_hybrid_appcontainer()
-
-        if version < 5 and not hybrid:
+        if version < 5:
             self._send_jetty_config()
-        elif version < 5 and hybrid:
-            self._send_jetty_config()
-            self._connect_xmpp()
-            self.client.create_runtime({
-                "runtime_path":
-                os.path.join(self.config.get_runtime_path(), 'runtime'),
-                "port": self.config.get_runtime_port(),
-                "application_base_path": self.config.get_app_base(),
-            })
-        elif version >= 5:
+        else:
             self.client.update_appcontainer_configuration({
                 "runtime_port": self.config.get_runtime_port(),
                 "runtime_listen_addresses":
                 self.config.get_runtime_listen_addresses(),
                 "runtime_jetty_options": self.config.get_jetty_options()
             })
-            self._connect_xmpp()
 
     def start_runtime(self, params=None):
         if params is None:
@@ -227,11 +215,6 @@ class M2EE():
         post_unpack_hook = self.config.get_post_unpack_hook()
         if post_unpack_hook:
             util.run_post_unpack_hook(post_unpack_hook)
-
-    def _connect_xmpp(self):
-        xmpp_credentials = self.config.get_xmpp_credentials()
-        if xmpp_credentials:
-            self.client.connect_xmpp(xmpp_credentials)
 
     def download_and_unpack_runtime(self, version, curl_opts=None):
         mxversion = MXVersion(version)

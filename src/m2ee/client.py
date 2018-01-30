@@ -190,12 +190,6 @@ class M2EEClient:
     def set_license(self, params):
         return self.request("set_license", params)
 
-    def connect_xmpp(self, params):
-        return self.request("connect_xmpp", params)
-
-    def disconnect_xmpp(self):
-        return self.request("disconnect_xmpp")
-
     def create_runtime(self, params):
         return self.request("createruntime", params)
 
