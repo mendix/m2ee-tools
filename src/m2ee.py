@@ -39,6 +39,7 @@ class CLI(cmd.Cmd, object):
         logger.debug('Using m2ee-tools version %s' % m2ee.__version__)
         cmd.Cmd.__init__(self)
         self.m2ee = M2EE(yaml_files=yaml_files)
+        self.m2ee.config.warn_constants()
         self.yolo_mode = yolo_mode
         self.onecmd('status')
         self.prompt_username = pwd.getpwuid(os.getuid())[0]

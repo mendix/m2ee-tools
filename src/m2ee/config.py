@@ -74,8 +74,6 @@ class M2EEConfig:
                          % runtimePath)
             self._conf['mxruntime']['RuntimePath'] = runtimePath
 
-        self._warn_constants()
-
     def _setup_classpath(self):
         logger.debug("Determining classpath to be used...")
         classpath = self._setup_classpath_runtime_binary()
@@ -687,7 +685,7 @@ class M2EEConfig:
     def get_runtime_path(self):
         return self._runtime_path
 
-    def _warn_constants(self):
+    def warn_constants(self):
         if 'Constants' not in self._model_metadata:
             return
         if 'MicroflowConstants' not in self._conf['mxruntime']:
