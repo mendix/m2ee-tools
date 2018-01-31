@@ -162,6 +162,13 @@ m2ee:
  # no default, configuration is mandatory
  runtime_port: 8000
 
+ # By default we close stdout/stderr of the Runtime process. However, in some
+ # cases you might want to leave it open, for example when running in containers
+ # where stderr and stdout are streamed to a log system.
+ #
+ # default: true
+ close_stdio: false
+
  # Specify a comma separated list of addresses for the runtime port to listen on
  # or use "*" to bind the wildcard address (IPv4: 0.0.0.0, IPv6: ::)
  #

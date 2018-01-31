@@ -227,7 +227,7 @@ class M2EERunner:
         if t >= timeout:
             logger.debug("Timeout: Java subprocess takes too long to start.")
             return 4
-        if detach:
+        if detach and self._config.get_close_stdio():
             self.close_jvm_stdio()
         if not detach:
             self._attached_proc = proc

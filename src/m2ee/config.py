@@ -343,6 +343,9 @@ class M2EEConfig:
     def get_app_base(self):
         return self._conf['m2ee']['app_base']
 
+    def get_close_stdio(self):
+        return self._conf['m2ee'].get('close_stdio', True)
+
     def get_default_dotm2ee_directory(self):
         dotm2ee = os.path.join(pwd.getpwuid(os.getuid())[5], ".m2ee")
         if not os.path.isdir(dotm2ee):
