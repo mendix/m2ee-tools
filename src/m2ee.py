@@ -880,6 +880,9 @@ Available commands:
  log - follow live logging from the application
  loglevel - view and configure loglevels
  about - show Mendix Runtime version information
+ enable_debugger - enable remote debugger API
+ disable_debugger - disable remote debugger API
+ show_debugger_status - show whether debugger is enabled or not
  show_current_runtime_requests - show action stack of current running requests
  interrupt_request - cancel a running runtime request
  show_license_information - show details about current mendix license key
@@ -904,9 +907,6 @@ Available commands:
  statistics - show all application statistics that can be used for monitoring
  show_all_thread_stack_traces - show all low-level JVM threads with stack trace
  check_health - manually execute health check
- enable_debugger - enable remote debugger API
- disable_debugger - disable remote debugger API
- show_debugger_status - show whether debugger is enabled or not
 
 Extra commands you probably don't need:
  debug - dive into a local python debug session inside this program
