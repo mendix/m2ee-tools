@@ -74,8 +74,6 @@ class M2EEConfig:
                          % runtimePath)
             self._conf['mxruntime']['RuntimePath'] = runtimePath
 
-        self._warn_constants()
-
     def _setup_classpath(self):
         logger.debug("Determining classpath to be used...")
         classpath = self._setup_classpath_runtime_binary()
@@ -344,6 +342,9 @@ class M2EEConfig:
 
     def get_app_base(self):
         return self._conf['m2ee']['app_base']
+
+    def get_close_stdio(self):
+        return self._conf['m2ee'].get('close_stdio', True)
 
     def get_default_dotm2ee_directory(self):
         dotm2ee = os.path.join(pwd.getpwuid(os.getuid())[5], ".m2ee")
@@ -687,7 +688,7 @@ class M2EEConfig:
     def get_runtime_path(self):
         return self._runtime_path
 
-    def _warn_constants(self):
+    def warn_constants(self):
         if 'Constants' not in self._model_metadata:
             return
         if 'MicroflowConstants' not in self._conf['mxruntime']:
