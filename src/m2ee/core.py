@@ -174,6 +174,9 @@ class M2EE():
     def send_runtime_config(self):
         config = copy.deepcopy(self.config.get_runtime_config())
 
+        constants_to_use, _, _ = self.config.get_constants()
+        config['MicroflowConstants'] = constants_to_use
+
         # convert MyScheduledEvents from list to dumb comma separated string if
         # needed:
         if isinstance(config.get('MyScheduledEvents', None), list):

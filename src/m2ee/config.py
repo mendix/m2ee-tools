@@ -74,8 +74,6 @@ class M2EEConfig:
                          % runtimePath)
             self._conf['mxruntime']['RuntimePath'] = runtimePath
 
-        self._warn_constants()
-
     def _setup_classpath(self):
         logger.debug("Determining classpath to be used...")
         classpath = self._setup_classpath_runtime_binary()
@@ -687,30 +685,28 @@ class M2EEConfig:
     def get_runtime_path(self):
         return self._runtime_path
 
-    def _warn_constants(self):
-        if 'Constants' not in self._model_metadata:
-            return
-        if 'MicroflowConstants' not in self._conf['mxruntime']:
-            return
-
-        model_constants = [
-            constant['Name']
-            for constant
-            in self._model_metadata['Constants']
-        ]
-        yaml_constants = self._conf['mxruntime']['MicroflowConstants'].keys()
-
-        missing = [m for m in model_constants if m not in yaml_constants]
-        if missing:
-            logger.warn('Constants not defined:')
-            for constant in missing:
-                logger.warn('- %s' % constant)
-
-        obsolete = [m for m in yaml_constants if m not in model_constants]
-        if obsolete:
-            logger.info('Constants defined but not needed by application:')
-            for constant in obsolete:
-                logger.info('- %s' % constant)
+    def get_constants(self):
+        logger.debug("Merging constant definitions...")
+        model_constants = {}
+        for metadata_constant in self._model_metadata['Constants']:
+            model_constants[metadata_constant['Name']] = metadata_constant['DefaultValue']
+        yaml_constants = copy.deepcopy(self._conf['mxruntime']['MicroflowConstants'])
+        constants_to_use = {}
+        default_constants = {}
+        for name, value in model_constants.items():
+            if name not in yaml_constants:
+                default_constants[name] = value
+                constants_to_use[name] = value
+        obsolete_constants = {}
+        for name, value in yaml_constants.items():
+            if name in model_constants:
+                constants_to_use[name] = value
+            else:
+                obsolete_constants[name] = value
+        logger.trace("Constants to send to runtime: %s" % constants_to_use)
+        logger.trace("Constants with default values: %s" % default_constants)
+        logger.trace("Obsolete constant definitions: %s" % obsolete_constants)
+        return constants_to_use, default_constants, obsolete_constants
 
     def set_database_password(self, password):
         self._conf['mxruntime']['DatabasePassword'] = password

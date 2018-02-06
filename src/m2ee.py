@@ -658,6 +658,19 @@ class CLI(cmd.Cmd, object):
                 and f.startswith(text)
                 and (f.endswith(".zip") or f.endswith(".mda"))]
 
+    def do_check_constants(self, args):
+        constants_to_use, default_constants, obsolete_constants = self.m2ee.config.get_constants()
+        if len(default_constants) > 0:
+            logger.info('Missing constant definitions (model defaults will be used):')
+            for name in sorted(default_constants.keys()):
+                logger.info('- %s' % name)
+        else:
+            logger.info('All required constant definitions have explicit definitions.')
+        if len(obsolete_constants) > 0:
+            logger.info('Constants defined but not needed by the application:')
+            for name in sorted(obsolete_constants.keys()):
+                logger.info('- %s' % name)
+
     def do_log(self, args):
         if self._cleanup_logging():
             return
