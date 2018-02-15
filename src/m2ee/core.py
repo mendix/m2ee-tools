@@ -196,12 +196,12 @@ class M2EE():
         logger.debug("Sending MxRuntime configuration...")
         self.client.update_configuration(config)
 
-    def set_log_level(self, subscriber, node, level):
+    def set_log_level(self, subscriber, node, level, timeout=None):
         params = {"subscriber": subscriber, "node": node, "level": level}
-        return self.client.set_log_level(params)
+        return self.client.set_log_level(params, timeout=timeout)
 
-    def get_log_levels(self):
-        return self.client.get_log_settings({"sort": "subscriber"})
+    def get_log_levels(self, timeout=None):
+        return self.client.get_log_settings({"sort": "subscriber"}, timeout=timeout)
 
     def save_ddl_commands(self, ddl_commands):
         query_file_name = os.path.join(self.config.get_database_dump_path(),

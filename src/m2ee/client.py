@@ -91,10 +91,10 @@ class M2EEClient:
                 {"result": M2EEAdminException.ERR_ACTION_NOT_FOUND}
             )
 
-    def get_admin_action_info(self):
-        return self.request("get_admin_action_info")
+    def get_admin_action_info(self, timeout=None):
+        return self.request("get_admin_action_info", timeout=timeout)
 
-    def get_critical_log_messages(self):
+    def get_critical_log_messages(self, timeout=None):
         echo_feedback = self.echo()
         if echo_feedback['echo'] != "pong":
             return echo_feedback['errors']
@@ -112,11 +112,11 @@ class M2EEClient:
         except Exception:
             pass
 
-    def close_stdio(self):
-        return self.request("close_stdio")
+    def close_stdio(self, timeout=None):
+        return self.request("close_stdio", timeout=timeout)
 
-    def runtime_status(self):
-        return self.request("runtime_status")
+    def runtime_status(self, timeout=None):
+        return self.request("runtime_status", timeout=timeout)
 
     def runtime_statistics(self, timeout=None):
         return self.request("runtime_statistics", timeout=timeout)
@@ -124,83 +124,83 @@ class M2EEClient:
     def server_statistics(self, timeout=None):
         return self.request("server_statistics", timeout=timeout)
 
-    def create_log_subscriber(self, params):
-        return self.request("create_log_subscriber", params)
+    def create_log_subscriber(self, params, timeout=None):
+        return self.request("create_log_subscriber", params, timeout=timeout)
 
-    def start_logging(self):
-        return self.request("start_logging")
+    def start_logging(self, timeout=None):
+        return self.request("start_logging", timeout=timeout)
 
-    def update_configuration(self, params):
-        return self.request("update_configuration", params)
+    def update_configuration(self, params, timeout=None):
+        return self.request("update_configuration", params, timeout=timeout)
 
-    def update_appcontainer_configuration(self, params):
-        return self.request("update_appcontainer_configuration", params)
+    def update_appcontainer_configuration(self, params, timeout=None):
+        return self.request("update_appcontainer_configuration", params, timeout=timeout)
 
-    def start(self, params=None):
-        return self.request("start", params)
+    def start(self, params=None, timeout=None):
+        return self.request("start", params, timeout=timeout)
 
-    def get_ddl_commands(self, params=None):
-        return self.request("get_ddl_commands", params)
+    def get_ddl_commands(self, params=None, timeout=None):
+        return self.request("get_ddl_commands", params, timeout=timeout)
 
-    def execute_ddl_commands(self, params=None):
-        return self.request("execute_ddl_commands", params)
+    def execute_ddl_commands(self, params=None, timeout=None):
+        return self.request("execute_ddl_commands", params, timeout=timeout)
 
-    def update_admin_user(self, params):
-        return self.request("update_admin_user", params)
+    def update_admin_user(self, params, timeout=None):
+        return self.request("update_admin_user", params, timeout=timeout)
 
-    def create_admin_user(self, params):
-        return self.request("create_admin_user", params)
+    def create_admin_user(self, params, timeout=None):
+        return self.request("create_admin_user", params, timeout=timeout)
 
-    def get_logged_in_user_names(self, params=None):
-        return self.request("get_logged_in_user_names", params)
+    def get_logged_in_user_names(self, params=None, timeout=None):
+        return self.request("get_logged_in_user_names", params, timeout=timeout)
 
-    def set_jetty_options(self, params=None):
-        return self.request("set_jetty_options", params)
+    def set_jetty_options(self, params=None, timeout=None):
+        return self.request("set_jetty_options", params, timeout=timeout)
 
-    def add_mime_type(self, params):
-        return self.request("add_mime_type", params)
+    def add_mime_type(self, params, timeout=None):
+        return self.request("add_mime_type", params, timeout=timeout)
 
-    def about(self):
-        return self.request("about")
+    def about(self, timeout=None):
+        return self.request("about", timeout=timeout)
 
-    def set_log_level(self, params):
-        return self.request("set_log_level", params)
+    def set_log_level(self, params, timeout=None):
+        return self.request("set_log_level", params, timeout=timeout)
 
-    def get_log_settings(self, params):
-        return self.request("get_log_settings", params)
+    def get_log_settings(self, params, timeout=None):
+        return self.request("get_log_settings", params, timeout=timeout)
 
-    def check_health(self, params=None):
-        return self.request("check_health", params)
+    def check_health(self, params=None, timeout=None):
+        return self.request("check_health", params, timeout=timeout)
 
-    def get_current_runtime_requests(self):
-        return self.request("get_current_runtime_requests")
+    def get_current_runtime_requests(self, timeout=None):
+        return self.request("get_current_runtime_requests", timeout=timeout)
 
-    def interrupt_request(self, params):
-        return self.request("interrupt_request", params)
+    def interrupt_request(self, params, timeout=None):
+        return self.request("interrupt_request", params, timeout=timeout)
 
-    def get_all_thread_stack_traces(self):
-        return self.request("get_all_thread_stack_traces")
+    def get_all_thread_stack_traces(self, timeout=None):
+        return self.request("get_all_thread_stack_traces", timeout=timeout)
 
-    def get_license_information(self):
-        return self.request("get_license_information")
+    def get_license_information(self, timeout=None):
+        return self.request("get_license_information", timeout=timeout)
 
-    def set_license(self, params):
-        return self.request("set_license", params)
+    def set_license(self, params, timeout=None):
+        return self.request("set_license", params, timeout=timeout)
 
-    def create_runtime(self, params):
-        return self.request("createruntime", params)
+    def create_runtime(self, params, timeout=None):
+        return self.request("createruntime", params, timeout=timeout)
 
-    def enable_debugger(self, params):
-        return self.request("enable_debugger", params)
+    def enable_debugger(self, params, timeout=None):
+        return self.request("enable_debugger", params, timeout=timeout)
 
-    def disable_debugger(self):
-        return self.request("disable_debugger")
+    def disable_debugger(self, timeout=None):
+        return self.request("disable_debugger", timeout=timeout)
 
-    def get_debugger_status(self):
-        return self.request("get_debugger_status")
+    def get_debugger_status(self, timeout=None):
+        return self.request("get_debugger_status", timeout=timeout)
 
-    def cache_statistics(self):
-        return self.request("cache_statistics")
+    def cache_statistics(self, timeout=None):
+        return self.request("cache_statistics", timeout=timeout)
 
 
 class M2EEAdminHTTPException(Exception):
