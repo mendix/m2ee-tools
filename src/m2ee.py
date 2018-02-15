@@ -7,6 +7,7 @@
 #
 
 from __future__ import print_function
+import argparse
 import atexit
 import cmd
 import datetime
@@ -972,29 +973,30 @@ def start_console_logging(level):
 
 
 def main():
-    from optparse import OptionParser
-    parser = OptionParser()
-    parser.add_option(
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
         "-c",
+        nargs=1,
         action="append",
-        type="string",
         dest="yaml_files"
     )
-    parser.add_option(
+    parser.add_argument(
         "-v",
         "--verbose",
         action="count",
         dest="verbose",
+        default=0,
         help="increase verbosity of output (-vv to be even more verbose)"
     )
-    parser.add_option(
+    parser.add_argument(
         "-q",
         "--quiet",
         action="count",
         dest="quiet",
+        default=0,
         help="decrease verbosity of output (-qq to be even more quiet)"
     )
-    parser.add_option(
+    parser.add_argument(
         "-y",
         "--yolo",
         action="store_true",
@@ -1002,15 +1004,19 @@ def main():
         dest="yolo_mode",
         help="automatically answer all questions to run as non-interactively as possible"
     )
-    (options, args) = parser.parse_args()
+    parser.add_argument(
+        "onecmd",
+        nargs='*',
+    )
+    args = parser.parse_args()
 
     # how verbose should we be? see
     # http://docs.python.org/release/2.7/library/logging.html#logging-levels
-    verbosity = 0
-    if options.quiet:
-        verbosity = verbosity + options.quiet
-    if options.verbose:
-        verbosity = verbosity - options.verbose
+    verbosity = args.quiet - args.verbose
+    if args.quiet:
+        verbosity = verbosity + args.quiet
+    if args.verbose:
+        verbosity = verbosity - args.verbose
     verbosity = verbosity * 10 + 20
     if verbosity > 50:
         verbosity = 100
@@ -1019,12 +1025,12 @@ def main():
     start_console_logging(verbosity)
 
     cli = CLI(
-        yaml_files=options.yaml_files,
-        yolo_mode=options.yolo_mode,
+        yaml_files=args.yaml_files,
+        yolo_mode=args.yolo_mode,
     )
     atexit.register(cli._cleanup_logging)
-    if args:
-        cli.onecmd(' '.join(args))
+    if args.onecmd:
+        cli.onecmd(' '.join(args.onecmd))
     else:
         cli.cmdloop_handle_ctrl_c()
 
