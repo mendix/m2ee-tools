@@ -41,12 +41,10 @@ class CLI(cmd.Cmd, object):
         cmd.Cmd.__init__(self)
         self.m2ee = M2EE(yaml_files=yaml_files)
         self.yolo_mode = yolo_mode
-        self.onecmd('status')
         self.prompt_username = pwd.getpwuid(os.getuid())[0]
         self._default_prompt = "m2ee(%s): " % self.prompt_username
         self.prompt = self._default_prompt
         self.nodetach = False
-        logger.info("Application Name: %s" % self.m2ee.config.get_app_name())
 
     def do_restart(self, args):
         if self._stop():
@@ -1032,6 +1030,8 @@ def main():
     if args.onecmd:
         cli.onecmd(' '.join(args.onecmd))
     else:
+        logger.info("Application Name: %s" % cli.m2ee.config.get_app_name())
+        cli.onecmd('status')
         cli.cmdloop_handle_ctrl_c()
 
 
