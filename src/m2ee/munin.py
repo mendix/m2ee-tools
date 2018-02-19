@@ -112,7 +112,7 @@ def print_values(m2ee, name):
 
 
 def guess_java_version(client, runtime_version, stats):
-    about = client.about()
+    about = client.about(timeout=5)
     if 'java_version' in about:
         java_version = about['java_version']
         java_major, java_minor, _ = java_version.split('.')
@@ -171,7 +171,7 @@ def get_stats_from_runtime(client, config):
 
     runtime_version = config.get_runtime_version()
     if runtime_version is not None and runtime_version >= 3.2:
-        stats['threads'] = len(client.get_all_thread_stack_traces())
+        stats['threads'] = len(client.get_all_thread_stack_traces(timeout=5))
 
     java_version = guess_java_version(client, runtime_version, stats)
     if 'memorypools' in stats['memory']:
