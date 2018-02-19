@@ -58,7 +58,7 @@ class M2EEClient:
                 raise M2EEAdminNotAvailable(message)
             raise e
         except socket.timeout, e:
-            message = "Admin API does not respond. Timeout reached after (%s seconds)" % timeout
+            message = "Admin API does not respond. Timeout reached after %s seconds." % timeout
             logger.trace(message)
             raise M2EEAdminTimeout(message)
         except socket.error, e:
