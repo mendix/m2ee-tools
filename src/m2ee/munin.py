@@ -10,7 +10,8 @@ import json
 import logging
 import os
 import string
-from m2ee.client import M2EEAdminException, M2EEAdminNotAvailable
+from m2ee.client import M2EEAdminException, M2EEAdminNotAvailable, \
+    M2EEAdminHTTPException, M2EEAdminTimeout
 import smaps
 
 logger = logging.getLogger(__name__)
@@ -138,7 +139,8 @@ def get_stats(action, client, config):
     try:
         stats, java_version = get_stats_from_runtime(client, config)
         write_last_known_good_stats_cache(stats, config_cache)
-    except (M2EEAdminException, M2EEAdminNotAvailable) as e:
+    except (M2EEAdminException, M2EEAdminNotAvailable,
+            M2EEAdminHTTPException, M2EEAdminTimeout) as e:
         logger.error(e)
         if action == 'config':
             return get_last_known_good_or_fake_stats(config_cache), java_version
