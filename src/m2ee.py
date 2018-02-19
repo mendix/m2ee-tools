@@ -289,7 +289,7 @@ class CLI(cmd.Cmd, object):
             code.interact(local=locals())
 
     def do_status(self, args):
-        feedback = self.m2ee.client.runtime_status()
+        feedback = self.m2ee.client.runtime_status(timeout=3)
         status = feedback['status']
         logger.info("The application process is running, the MxRuntime has status: %s" % status)
 
