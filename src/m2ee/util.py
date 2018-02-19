@@ -1,8 +1,5 @@
 #
-# Copyright (c) 2009-2017, Mendix bv
-# All Rights Reserved.
-#
-# http://www.mendix.com/
+# Copyright (C) 2009 Mendix. All rights reserved.
 #
 
 import os
