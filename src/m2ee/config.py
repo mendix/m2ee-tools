@@ -46,8 +46,6 @@ class M2EEConfig:
 
         self.runtime_version = self._lookup_runtime_version()
 
-        self._conf['mxruntime'] = self._merge_microflow_constants()
-
         self._runtime_path = None
         if self.runtime_version is None:
             logger.info("Unable to look up mendix runtime files "
@@ -88,65 +86,6 @@ class M2EEConfig:
             logger.trace("Using classpath: %s" % self._classpath)
         else:
             logger.debug("No classpath will be used")
-
-    def _merge_microflow_constants(self):
-        """
-        config.json "contains the configuration settings of the active
-        configuration (in the Modeler) at the time of deployment." It also
-        contains default values for microflow constants. D/T configuration is
-        not stored in the mdp anymore, so for D/T we need to insert it into
-        the configuration we read from yaml (yay!)
-        { "Configuration": { "key": "value", ... }, "Constants": {
-        "Module.Constant": "value", ... } }
-        """
-
-        logger.debug("Merging microflow constants configuration...")
-
-        config_json = {}
-        if not self.get_dtap_mode()[0] in ('A', 'P'):
-            config_json_file = os.path.join(self._conf['m2ee']['app_base'],
-                                            'model',
-                                            'config.json'
-                                            )
-            logger.trace("In DTAPMode %s, so loading configuration from %s" %
-                         (self.get_dtap_mode(), config_json_file)
-                         )
-            config_json = self._try_load_json(config_json_file)
-
-        # figure out which constants to use
-        merge_constants = {}
-        if not self.get_dtap_mode()[0] in ('A', 'P'):
-            config_json_constants = config_json.get('Constants', {})
-            logger.trace("In DTAPMode %s, so using Constants from "
-                         "config.json: %s" %
-                         (self.get_dtap_mode(), config_json_constants))
-            merge_constants.update(config_json_constants)
-        # 'MicroflowConstants' from runtime yaml section can override defaults
-        yaml_mxruntime_mfconstants = (
-            self._conf['mxruntime'].get('MicroflowConstants', {}))
-        if yaml_mxruntime_mfconstants:
-            logger.trace("Using constants from mxruntime/MicroflowConstants: "
-                         "%s" % yaml_mxruntime_mfconstants)
-            merge_constants.update(yaml_mxruntime_mfconstants)
-        # merge all yaml runtime settings into config
-        merge_config = {}
-        if not self.get_dtap_mode()[0] in ('A', 'P'):
-            config_json_configuration = config_json.get('Configuration', {})
-            logger.trace("In DTAPMode %s, so seeding runtime configuration "
-                         "with Configuration from config.json: %s" %
-                         (self.get_dtap_mode(), config_json_configuration))
-            merge_config.update(config_json_configuration)
-        merge_config.update(self._conf['mxruntime'])
-        logger.trace("Merging current mxruntime config into it... %s" %
-                     self._conf['mxruntime'])
-        # replace 'MicroflowConstants' with mfconstants we just figured out
-        # before to prevent dict-deepmerge-problems
-        merge_config['MicroflowConstants'] = merge_constants
-        logger.trace("Replacing 'MicroflowConstants' with constants we just "
-                     "figured out: %s" % merge_constants)
-        # the merged result will be put back into self._conf['mxruntime']
-        logger.trace("Merged runtime configuration: %s" % merge_config)
-        return merge_config
 
     def _try_load_json(self, jsonfile):
         logger.debug("Loading json configuration from %s" % jsonfile)
