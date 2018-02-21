@@ -689,31 +689,6 @@ mxruntime:
  # every request the browser client issues (and that's a lot of times).
  PersistentSessions: False
 
- # DTAPMode is an old setting that specifies in which DTAP (Development, Test,
- # Acceptance, Production) step the application is running. The Mendix Runtime
- # will behave differently when using Development/Test setting than in
- # Acceptance/Production. In D/T, more 'development'-like extra magic
- # functionality like automatically creating/updating an administrative account
- # or trying to create a database when it does not exist is enabled.
- #
- # Nowadays this DTAP stages are replaced by the 'Configurations' tab page in
- # Project Settings in the Modeler, which allows to create any number of sets of
- # configuration settings to be used. (e.g. run on built-in database for
- # development, switch to test-database of the project team etc...) The Modeler
- # always starts using the Development mode.
- #
- # NEVER EVER use Development or Test on a production server.
- #
- # Also, NEVER EVER run the Modeler on a production database using e.g. an ssh
- # tunnel to the database. Because the Modeler is always using development mode,
- # it will instantaneously reset the password of the 'admin user' which is
- # defined in the modeler to its development default (which likely means there
- # will be a user MxAdmin with password set to '1' and/or create this account
- # when it does not exist, which you DO NOT WANT TO HAPPEN.
- #
- # default: P(roduction)
- #DTAPMode: P
-
 # By specifying file names in the include section, additional configuration
 # will be read from those files, and will be deep-merged into the already read
 # configuration.
