@@ -105,7 +105,7 @@ def print_values(m2ee, name):
     print_threadpool_values(name, stats)
     print_cache_values(name, stats)
     print_jvm_threads_values(name, stats)
-    print_jvm_process_memory_values(name, stats, m2ee.runner.get_pid(), m2ee.client, java_version)
+    print_jvm_process_memory_values(name, stats, m2ee.runner.get_pid(), java_version)
 
 
 def guess_java_version(client, runtime_version, stats):
@@ -487,7 +487,7 @@ def print_jvm_process_memory_config(name):
     print("")
 
 
-def print_jvm_process_memory_values(name, stats, pid, client, java_version):
+def print_jvm_process_memory_values(name, stats, pid, java_version):
     if pid is None:
         return
     totals = smaps.get_smaps_rss_by_category(pid)
