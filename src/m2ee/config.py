@@ -266,10 +266,6 @@ class M2EEConfig:
         if len(self._conf['logging']) == 0:
             logger.warn("No logging settings found, this is probably not what you want.")
 
-        if 'custom' in self._conf:
-            logger.warn("Old 'custom' section found in configuration. Move the contents "
-                        "to the MicroflowConstants section now!")
-
     def fix_permissions(self):
         basepath = self._conf['m2ee']['app_base']
         for directory, mode in {
