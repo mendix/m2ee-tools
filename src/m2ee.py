@@ -838,6 +838,9 @@ class CLI(cmd.Cmd, object):
         except m2ee.exceptions.M2EEException as e:
             logger.error(e)
 
+    def unchecked_onecmd(self, line):
+        super(CLI, self).onecmd(line)
+
     # if the emptyline function is not defined, Cmd will automagically
     # repeat the previous command given, and that's not what we want
     def emptyline(self):
@@ -1003,7 +1006,21 @@ def main():
     )
     atexit.register(cli._cleanup_logging)
     if args.onecmd:
-        cli.onecmd(' '.join(args.onecmd))
+        try:
+            cli.unchecked_onecmd(' '.join(args.onecmd))
+        except (m2ee.client.M2EEAdminException,
+                m2ee.client.M2EEAdminHTTPException,
+                m2ee.client.M2EERuntimeNotFullyRunning,
+                m2ee.client.M2EEAdminTimeout,
+                m2ee.exceptions.M2EEException) as e:
+            logger.error(e)
+            sys.exit(1)
+        except m2ee.client.M2EEAdminNotAvailable:
+            pid_alive, m2ee_alive = cli.m2ee.check_alive()
+            if not pid_alive and not m2ee_alive:
+                logger.info("The application process is not running.")
+                sys.exit(0)
+            sys.exit(1)
     else:
         logger.info("Application Name: %s" % cli.m2ee.config.get_app_name())
         cli.onecmd('status')
