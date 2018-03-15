@@ -128,8 +128,11 @@ class CLI(cmd.Cmd, object):
             except m2ee.client.M2EEAdminException as e:
                 logger.error(e)
                 if e.result == client_errno.start_NO_EXISTING_DB:
-                    answer = self._ask_user_whether_to_create_db()
-                    if answer == 'a':
+                    if self.yolo_mode:
+                        # This call tries to create a database and immediately execute
+                        # ddl commands.
+                        self.m2ee.client.execute_ddl_commands()
+                    else:
                         abort = True
                 elif e.result == client_errno.start_INVALID_DB_STRUCTURE:
                     answer = self._handle_ddl_commands()
@@ -153,30 +156,6 @@ class CLI(cmd.Cmd, object):
 
         if abort:
             self._stop()
-
-    def _ask_user_whether_to_create_db(self):
-        answer = None
-        while answer not in ('c', 'r', 'a'):
-            if self.m2ee.config.get_dtap_mode()[0] in 'DT':
-                answer = raw_input("Do you want to (c)reate, (r)etry, or "
-                                   "(a)bort: ")
-            else:
-                answer = raw_input("Do you want to (r)etry, or (a)bort: ")
-            if answer in ('a', 'r'):
-                pass
-            elif answer == 'c':
-                if not self.m2ee.config.get_dtap_mode()[0] in ('D', 'T'):
-                    logger.error("Automatic Database creation is disabled in "
-                                 "Acceptance and Production mode!")
-                    answer = None
-                else:
-                    # If in Development/Test, call execute_ddl_commands,
-                    # this tries to create a database and
-                    # immediately executes initial ddl commands
-                    self.m2ee.client.execute_ddl_commands()
-            else:
-                print("Unknown option %s" % answer)
-        return answer
 
     def _handle_ddl_commands(self):
         feedback = self.m2ee.client.get_ddl_commands({"verbose": True})
