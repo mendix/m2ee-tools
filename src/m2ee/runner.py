@@ -184,6 +184,13 @@ class M2EERunner:
             raise M2EEException("Starting the JVM process (fork/exec) did not succeed.",
                                 errno=M2EEException.ERR_JVM_FORKEXEC)
         elif exitcode == 4:
+            if self.check_pid():
+                stopped = self.terminate(5)
+            if not stopped and self.check_pid():
+                logger.error("Unable to terminate JVM process...")
+                stopped = self.kill(5)
+            if not stopped:
+                logger.error("Unable to kill JVM process!")
             raise M2EEException("Starting the JVM process takes too long.",
                                 errno=M2EEException.ERR_JVM_TIMEOUT,
                                 output=output)
@@ -255,11 +262,11 @@ class M2EERunner:
             if self.check_pid(proc.pid) and self._client.ping():
                 break
             t += step
+        if not detach:
+            self._attached_proc = proc
         if t >= timeout:
             logger.debug("Timeout: Java subprocess takes too long to start.")
             return 4
-        if not detach:
-            self._attached_proc = proc
         return 0
 
     def _wait_pid(self, timeout=None, step=0.25):
