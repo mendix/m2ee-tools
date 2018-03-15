@@ -121,16 +121,16 @@ class M2EERunner:
             try:
                 logger.trace("[%s] Forking now..." % os.getpid())
                 pid = os.fork()
-                if pid > 0:
-                    self._pid = None
-                    logger.trace("[%s] Waiting for intermediate process to exit..." % os.getpid())
-                    # prevent zombie process
-                    (pid, result) = os.waitpid(pid, 0)
-                    exitcode = result >> 8
-                    self._handle_jvm_start_result(exitcode)
-                    return
             except OSError, e:
                 raise M2EEException("Forking subprocess failed: %d (%s)\n" % (e.errno, e.strerror))
+            if pid > 0:
+                self._pid = None
+                logger.trace("[%s] Waiting for intermediate process to exit..." % os.getpid())
+                # prevent zombie process
+                (pid, result) = os.waitpid(pid, 0)
+                exitcode = result >> 8
+                self._handle_jvm_start_result(exitcode)
+                return
             logger.trace("[%s] Now in intermediate forked process..." % os.getpid())
             # decouple from parent environment
             os.chdir("/")
