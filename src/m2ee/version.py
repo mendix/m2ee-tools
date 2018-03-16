@@ -5,7 +5,7 @@ from m2ee.exceptions import M2EEException
 def __to_mx_version__(version):
     if isinstance(version, MXVersion):
         return version
-    if isinstance(version, (int, long, float)):
+    if isinstance(version, (int, float)):
         version = str(version)
     return MXVersion(version)
 
@@ -13,7 +13,7 @@ def __to_mx_version__(version):
 class MXVersion:
 
     def __init__(self, version):
-        if isinstance(version, (int, long, float, MXVersion)):
+        if isinstance(version, (int, float, MXVersion)):
             version = str(version)
         parsed = re.match(
             "(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:\.(\d+))?(?:-(.*))?",
