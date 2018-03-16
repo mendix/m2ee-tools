@@ -219,14 +219,7 @@ class M2EEConfig:
             os.chmod(fullpath, mode)
 
     def get_felix_config_file(self):
-        return self._conf['m2ee'].get(
-            'felix_config_file',
-            os.path.join(
-                self._conf['m2ee']['app_base'],
-                'model',
-                'felixconfig.properties'
-            )
-        )
+        return os.path.join(self._conf['m2ee']['app_base'], 'model', 'felixconfig.properties')
 
     def write_felix_config(self):
         felix_config_file = self.get_felix_config_file()

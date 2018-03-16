@@ -288,14 +288,6 @@ m2ee:
  # defaults to data/model-upload under app_base path
  model_upload_path: '/path/to/project/data/model-upload'
 
- # Configuration file for Apache Felix / OSGi (Mendix >= 5 only)
- #
- # The configuration file will be generated when application configuration is
- # being loaded.
- #
- # defaults to the file felixconfig.properties in model under app_base path
- felix_config_file: '/path/to/project/model/felixconfig.properties'
-
  # When using the log command in the m2ee shell, m2ee-tools will execute a tail
  # -F on the log file of your Mendix Runtime. Unfortunately, it does not
  # automagically know where this file is located. You might be logging via
