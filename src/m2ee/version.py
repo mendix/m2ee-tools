@@ -31,8 +31,8 @@ class MXVersion:
         self.addendum = groups[-1]
 
     def _numbers(self):
-        v = [self.major, self.minor, self.patch, self.hotfix]
-        return filter(lambda x: x is not None, v)
+        return [x for x in [self.major, self.minor, self.patch, self.hotfix]
+                if x is not None]
 
     def __str__(self):
         version = ".".join(map(str, self._numbers()))

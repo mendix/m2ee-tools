@@ -23,7 +23,7 @@ class M2EEClient:
         self._url = url
         self._headers = {
             'Content-Type': 'application/json',
-            'X-M2EE-Authentication': b64encode(password),
+            'X-M2EE-Authentication': b64encode(bytearray(password, 'utf-8')),
             'Connection': 'close',
         }
 
@@ -35,8 +35,9 @@ class M2EEClient:
         try:
             h = httplib2.Http(timeout=timeout, proxy_info=None)  # httplib does not like os.fork
             logger.trace("M2EE request body: %s" % body)
-            (response_headers, response_body) = h.request(self._url, "POST", body,
-                                                          headers=self._headers)
+            response_headers, response_bytes = h.request(self._url, "POST", body,
+                                                         headers=self._headers)
+            response_body = response_bytes.decode('utf-8')
             logger.trace("M2EE response: %s" % response_body)
             if (response_headers['status'] != "200"):
                 raise M2EEAdminHTTPException("Non OK http status code: %s %s" %
@@ -50,18 +51,18 @@ class M2EEClient:
             if result != 0:
                 raise M2EEAdminException(action, response)
             return response.get('feedback', {})
-        except AttributeError, e:
+        except AttributeError as e:
             # httplib 0.6 throws this in case of a connection refused :-|
             if str(e) == "'NoneType' object has no attribute 'makefile'":
                 message = "Admin API not available for requests."
                 logger.trace("%s (%s: %s)" % (message, type(e), e))
                 raise M2EEAdminNotAvailable(message)
             raise e
-        except socket.timeout, e:
+        except socket.timeout as e:
             message = "Admin API does not respond. Timeout reached after %s seconds." % timeout
             logger.trace(message)
             raise M2EEAdminTimeout(message)
-        except socket.error, e:
+        except socket.error as e:
             message = "Admin API not available for requests: (%s: %s)" % (type(e), e)
             logger.trace(message)
             raise M2EEAdminNotAvailable(message)
