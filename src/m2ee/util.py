@@ -46,7 +46,7 @@ def unpack(config, mda_name):
                 "stdout: %s" % stdout,
                 "stderr: %s" % stderr,
             ]))
-    except OSError, ose:
+    except OSError as ose:
         import errno
         if ose.errno == errno.ENOENT:
             raise M2EEException("The unzip program could not be found", ose)
@@ -103,7 +103,7 @@ def fix_mxclientsystem_symlink(config):
                      real_mxclientsystem_path)
         try:
             os.symlink(real_mxclientsystem_path, mxclient_symlink)
-        except OSError, e:
+        except OSError as e:
             logger.error("creating symlink failed: %s" % e)
     else:
         logger.warn("Not touching mxclientsystem symlink: file exists "

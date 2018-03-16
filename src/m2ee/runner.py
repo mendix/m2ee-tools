@@ -29,14 +29,14 @@ class M2EERunner:
     def _read_pidfile(self):
         pidfile = self._config.get_pidfile()
         try:
-            pf = file(pidfile, 'r')
+            pf = open(pidfile, 'r')
             self._pid = int(pf.read().strip())
             pf.close()
-        except IOError, e:
+        except IOError as e:
             if e.errno != errno.ENOENT:
                 logger.warn("Cannot read pidfile: %s" % e)
             self._pid = None
-        except ValueError, e:
+        except ValueError as e:
             logger.warn("Cannot read pidfile: %s" % e)
             self._pid = None
 
@@ -44,8 +44,8 @@ class M2EERunner:
         if self._pid:
             pidfile = self._config.get_pidfile()
             try:
-                file(pidfile, 'w+').write("%s\n" % self._pid)
-            except IOError, e:
+                open(pidfile, 'w+').write("%s\n" % self._pid)
+            except IOError as e:
                 logger.error("Cannot write pidfile: %s" % e)
 
     def cleanup_pid(self):
@@ -123,7 +123,7 @@ class M2EERunner:
             try:
                 logger.trace("[%s] Forking now..." % os.getpid())
                 pid = os.fork()
-            except OSError, e:
+            except OSError as e:
                 raise M2EEException("Forking subprocess failed: %d (%s)\n" % (e.errno, e.strerror))
             if pid > 0:
                 self._pid = None
@@ -157,7 +157,7 @@ class M2EERunner:
             # decouple from parent environment
             os.chdir("/")
             os.setsid()
-            os.umask(0022)
+            os.umask(0o0022)
             exitcode = self._start_jvm(detach, timeout, step, pipe_w)
             os.close(pipe_w)
             logger.trace("[%s] Exiting intermediate process with exit code %s" %
@@ -225,7 +225,7 @@ class M2EERunner:
         cmd = self._config.get_java_cmd()
 
         logger.trace("Environment to be used when starting the JVM: %s" %
-                     ' '.join(["%s='%s'" % (k, v) for k, v in env.iteritems()]))
+                     ' '.join(["%s='%s'" % (k, v) for k, v in env.items()]))
         logger.trace("Command line to be used when starting the JVM: %s" % ' '.join(cmd))
         logger.trace("[%s] Starting the JVM..." % os.getpid())
         try:

@@ -30,6 +30,11 @@ if not sys.stdout.isatty():
     import locale
     sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
 
+try:
+    raw_input
+except NameError:
+    raw_input = input
+
 
 class CLI(cmd.Cmd, object):
 
@@ -686,8 +691,8 @@ class CLI(cmd.Cmd, object):
         log_levels = self.m2ee.get_log_levels()
         print("Current loglevels:")
         log_subscribers = []
-        for (subscriber_name, node_names) in log_levels.iteritems():
-            for (node_name, subscriber_level) in node_names.iteritems():
+        for (subscriber_name, node_names) in log_levels.items():
+            for (node_name, subscriber_level) in node_names.items():
                 log_subscribers.append("%s %s %s" %
                                        (subscriber_name,
                                         node_name,

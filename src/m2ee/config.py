@@ -12,7 +12,7 @@ import pwd
 import copy
 
 from collections import defaultdict
-from version import MXVersion
+from m2ee.version import MXVersion
 from m2ee.exceptions import M2EEException
 
 logger = logging.getLogger(__name__)
@@ -92,7 +92,7 @@ class M2EEConfig:
         fd = None
         try:
             fd = open(jsonfile)
-        except Exception, e:
+        except Exception as e:
             logger.debug("Error reading configuration file %s: %s; "
                          "ignoring..." % (jsonfile, e))
             return {}
@@ -100,7 +100,7 @@ class M2EEConfig:
         config = None
         try:
             config = json.load(fd)
-        except Exception, e:
+        except Exception as e:
             logger.error("Error parsing configuration file %s: %s" %
                          (jsonfile, e))
             return {}
@@ -109,7 +109,7 @@ class M2EEConfig:
         return config
 
     def mtime_changed(self):
-        for yamlfile, mtime in self._mtimes.iteritems():
+        for yamlfile, mtime in self._mtimes.items():
             if os.stat(yamlfile)[8] != mtime:
                 return True
         return False
@@ -208,9 +208,9 @@ class M2EEConfig:
     def fix_permissions(self):
         basepath = self._conf['m2ee']['app_base']
         for directory, mode in {
-                "model": 0700,
-                "web": 0755,
-                "data": 0700}.iteritems():
+                "model": 0o0700,
+                "web": 0o0755,
+                "data": 0o0700}.items():
             fullpath = os.path.join(basepath, directory)
             if not os.path.exists(fullpath):
                 logger.critical("Directory %s does not exist!" % fullpath)
@@ -253,7 +253,7 @@ class M2EEConfig:
             try:
                 input_file = open(felix_template_file)
                 template = input_file.read()
-            except IOError, e:
+            except IOError as e:
                 raise M2EEException("felix configuration template could not be read: %s", e)
             try:
                 output_file = open(felix_config_file, 'w')
@@ -263,7 +263,7 @@ class M2EEConfig:
                     FrameworkStorage=osgi_storage_path
                 )
                 output_file.write(render)
-            except IOError, e:
+            except IOError as e:
                 raise M2EEException("felix configuration file could not be written: %s", e)
         else:
             raise M2EEException("felix configuration template is not a readable file: %s" %
@@ -280,7 +280,7 @@ class M2EEConfig:
         if not os.path.isdir(dotm2ee):
             try:
                 os.mkdir(dotm2ee)
-            except OSError, e:
+            except OSError as e:
                 logger.debug("Got %s: %s" % (type(e), e))
                 import traceback
                 logger.debug(traceback.format_exc())
@@ -489,7 +489,7 @@ class M2EEConfig:
         repos = self._conf['mxnode']['mxjar_repo']
         logger.debug("Searching for writeable mxjar repos... in %s"
                      % repos)
-        repos = filter(lambda repo: os.access(repo, os.W_OK), repos)
+        repos = [repo for repo in repos if os.access(repo, os.W_OK)]
         if len(repos) > 0:
             found = repos[0]
             logger.debug("Found writable mxjar location: %s" % found)
@@ -690,7 +690,7 @@ def merge_config(initial_config, additional_config):
     if initial_config is None:
         return additional_config
 
-    for section in set(initial_config.keys() + additional_config.keys()):
+    for section in set(list(initial_config.keys()) + list(additional_config.keys())):
         if section in initial_config:
             if section in additional_config:
                 if isinstance(additional_config[section], dict):
