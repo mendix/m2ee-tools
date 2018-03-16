@@ -48,8 +48,7 @@
 # The configuration in /etc/ can be used to set server-wide configuration
 # options without having to specify them again for each user. (if you run
 # multiple applications on a single operating system installation, which is
-# perfectly possible). Examples are the file system location where you put
-# Mendix Runtime distributions (the unpacked mendix-x.y.z.tar.gz files)
+# perfectly possible).
 #
 # In configuration options explained below, the uncommented shown values are in
 # most cases not default values, but just an example value. When an option has
@@ -58,19 +57,22 @@
 
 mxnode:
  # mxjar_repo can be a single location, or a list of locations which need to be
- # searched for installed Mendix Runtime versions
+ # searched for installed Mendix Runtime versions.
+ #
+ # It is highly recommended to not set this option, but let it default to the
+ # 'runtimes' directory under the app_base location, as specified in the m2ee
+ # section below, so the user can use the download_runtime command to install
+ # mendix runtime versions.
+ #
  mxjar_repo: /usr/local/share/mendix/
  # or, when specifying multiple locations:
  #mxjar_repo: ["/opt/mendix/runtime/", "/usr/local/share/mendix/"]
  #
- # When starting an application that has been created using version 4.2.2 of
+ # When starting an application that has been created using version 7.7.1 of
  # the Mendix Business Modeler, the following location would be checked for
- # existence: /usr/local/share/mendix/4.2.2/ when the first configuration
+ # existence: /usr/local/share/mendix/7.7.1/ when the first configuration
  # example above is used.
  #
- # If the mxjar_repo contains a path that is writable by the user itself, it can be
- # used together with the download_runtime functionality to download runtimes on
- # demand.
  # If a 'runtimes' directory exists under the app_base location, as specified
  # in the m2ee section below, it will be inserted at the front of the
  # mxjar_repo automatically, to facilitate runtime downloads on demand.
