@@ -677,8 +677,8 @@ def load_yaml_file(yaml_file, config, yaml_mtimes):
             additional_config = yaml.load(fd)
             config = merge_config(config, additional_config)
             yaml_mtimes[yaml_file] = os.stat(yaml_file)[8]
-    except Exception:
-        logger.warn("Error reading configuration file %s, ignoring..." % yaml_file)
+    except Exception as e:
+        logger.warn("Error reading configuration file %s: %s, ignoring..." % (yaml_file, e))
     return (config, yaml_mtimes)
 
 
