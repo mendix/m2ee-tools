@@ -8,13 +8,13 @@ import codecs
 import time
 import copy
 
-from config import M2EEConfig
-from client import M2EEClient
-from runner import M2EERunner
-from version import MXVersion
+from m2ee.config import M2EEConfig
+from m2ee.client import M2EEClient
+from m2ee.runner import M2EERunner
+from m2ee.version import MXVersion
 from m2ee.exceptions import M2EEException
 
-import util
+from m2ee import util
 
 logger = logging.getLogger(__name__)
 
