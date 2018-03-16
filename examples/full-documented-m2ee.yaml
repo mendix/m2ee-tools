@@ -411,6 +411,21 @@ logging:
    port: 514
    facility: LOCAL6
    prefix: example
+   # In the Mendix Runtime, log nodes are created on the fly when a log message
+   # is published to them and they don't exist yet.  However, since we cannot
+   # interactively change the log level for a node that does not exist yet,
+   # loglevel configuration in here allows to force create and set a loglevel
+   # for nodes even before any logging in the Mendix Runtime happens, to enable
+   # debugging right from the start. This also allows debugging of the early
+   # startup code of the Mendix Runtime.
+   #
+   # This functionality is available in Mendix >= 6
+   #
+   # Note that setting a log level on a single logsubscriber will also
+   # configure it on other log subscribers using their autosubscribe setting!
+   loglevel:
+    Core: DEBUG
+    Connector: WARNING
  -
    # Example of File Subscriber configuration. This log subscriber will output
    # all log messages directly to a text file.
