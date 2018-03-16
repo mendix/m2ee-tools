@@ -153,9 +153,18 @@ class M2EE():
 
     def _configure_logging(self):
         logger.debug("Setting up logging...")
+        version = self.config.get_runtime_version()
         logging_config = self.config.get_logging_config()
         for log_subscriber in logging_config:
+            loglevels = log_subscriber.pop('loglevel', None)
             self.client.create_log_subscriber(log_subscriber)
+            if version >= 6 and loglevels is not None:
+                self.client.set_log_level({
+                    "subscriber": log_subscriber['name'],
+                    "nodes": [{'name': name, 'level': level}
+                              for name, level in loglevels.items()],
+                    "force": True,
+                })
         self.client.start_logging()
 
     def _send_jetty_config(self):
