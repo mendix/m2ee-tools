@@ -1,32 +1,32 @@
 m2ee-tools 7.1, 2 Nov 2017
-  * [31534c3] TODO items have been moved to github issues
-  * [d10017f] Update nginx reverse proxy example config
-  * [a9bc6f5] Mention Debian Stretch as supported
-  * [c4fe80c] Allow starting an application without detaching (for debugging)
-  * [4fb9b1c] Allow setting loglevels with spaces
-  * [55ceb11] Make show_cache_statistics an official command
-  * [e9a3d87] Don't report actions as not implemented while starting. This
+  * TODO items have been moved to github issues
+  * Update nginx reverse proxy example config
+  * Mention Debian Stretch as supported
+  * Allow starting an application without detaching (for debugging)
+  * Allow setting loglevels with spaces
+  * Make show_cache_statistics an official command
+  * Don't report actions as not implemented while starting. This
     introduces a new exception type: M2EERuntimeNotFullyRunning
-  * [717ae24] Distinguish between a non available Admin API port and a timeout
+  * Distinguish between a non available Admin API port and a timeout
     that happens when handling a request. This introduces a new exception type:
     M2EEAdminTimeout
-  * [835ed7b] Increase the default timeout for stopping
+  * Increase the default timeout for stopping
   * Small fixes and cosmetics in code and CLI output
 
 m2ee-tools 7.0, 13 Feb 2017
   * Major rewrite of internal error handling. Boolean return codes have been
     replaced with proper exception handling.
-  * [e0561c9] Cleanup of nagios plugin messages, to make them more
+  * Cleanup of nagios plugin messages, to make them more
     understandable
-  * [cd50662] The built-in nagios plugin now checks license expiry. It's
+  * The built-in nagios plugin now checks license expiry. It's
     currently hard coded to 30 days for warning and 7 days for critical.
-  * [2af3b3f] Drop Mendix 2.5 compatibility. (now supports at least 3.0)
-  * [aa66cd7] Drop python 2.5 compatibility (2.7 recommended)
-  * [4cd5833] The download runtime command now uses curl and handles incomplete
+  * Drop Mendix 2.5 compatibility. (now supports at least 3.0)
+  * Drop python 2.5 compatibility (2.7 recommended)
+  * The download runtime command now uses curl and handles incomplete
     downloads more nicely.
-  * [444cac1] A new interactive command is added, cleanup_runtimes, which
+  * A new interactive command is added, cleanup_runtimes, which
     removes unused downloaded Mendix Runtime versions.
-  * [b139dd2] During statistics gathering in the munin plugin, the timeout when
+  * During statistics gathering in the munin plugin, the timeout when
     contacting the Runtime Admin API has been lowered, so that a non-responding
     application will not cause skipping other plugins that still have to be run
     on the host.
