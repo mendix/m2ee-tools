@@ -75,11 +75,11 @@ default_stats = {
 }
 
 
-def print_config(m2ee, name):
-    stats, java_version = get_stats('config', m2ee.client, m2ee.config)
+def print_config(m2, name):
+    stats, java_version = get_stats('config', m2)
     if stats is None:
         return
-    options = m2ee.config.get_munin_options()
+    options = m2.config.get_munin_options()
 
     print_requests_config(name, stats)
     print_connectionbus_config(name, stats)
@@ -91,11 +91,11 @@ def print_config(m2ee, name):
     print_jvm_process_memory_config(name)
 
 
-def print_values(m2ee, name):
-    stats, java_version = get_stats('values', m2ee.client, m2ee.config)
+def print_values(m2, name):
+    stats, java_version = get_stats('values', m2)
     if stats is None:
         return
-    options = m2ee.config.get_munin_options()
+    options = m2.config.get_munin_options()
 
     print_requests_values(name, stats)
     print_connectionbus_values(name, stats)
@@ -104,11 +104,11 @@ def print_values(m2ee, name):
     print_threadpool_values(name, stats)
     print_cache_values(name, stats)
     print_jvm_threads_values(name, stats)
-    print_jvm_process_memory_values(name, stats, m2ee.runner.get_pid(), java_version)
+    print_jvm_process_memory_values(name, stats, m2.runner.get_pid(), java_version)
 
 
-def guess_java_version(client, runtime_version, stats):
-    about = client.about(timeout=5)
+def guess_java_version(m2, runtime_version, stats):
+    about = m2.client.about(timeout=5)
     if 'java_version' in about:
         java_version = about['java_version']
         java_major, java_minor, _ = java_version.split('.')
@@ -123,17 +123,17 @@ def guess_java_version(client, runtime_version, stats):
     return None
 
 
-def get_stats(action, client, config):
+def get_stats(action, m2):
     # place to store last known good statistics result to be used for munin
     # config when the app is down or b0rked
-    options = config.get_munin_options()
+    options = m2.config.get_munin_options()
     config_cache = options.get('config_cache',
-                               os.path.join(config.get_default_dotm2ee_directory(),
+                               os.path.join(m2.config.get_default_dotm2ee_directory(),
                                             'munin-cache.json'))
     stats = None
     java_version = None
     try:
-        stats, java_version = get_stats_from_runtime(client, config)
+        stats, java_version = get_stats_from_runtime(m2)
         write_last_known_good_stats_cache(stats, config_cache)
     except (M2EEAdminException, M2EEAdminNotAvailable,
             M2EEAdminHTTPException, M2EEAdminTimeout) as e:
@@ -153,11 +153,11 @@ def get_last_known_good_or_fake_stats(config_cache):
     return stats
 
 
-def get_stats_from_runtime(client, config):
+def get_stats_from_runtime(m2):
     stats = {}
     logger.debug("trying to fetch runtime/server statistics")
-    stats.update(client.runtime_statistics(timeout=5))
-    stats.update(client.server_statistics(timeout=5))
+    stats.update(m2.client.runtime_statistics(timeout=5))
+    stats.update(m2.client.server_statistics(timeout=5))
     if type(stats['requests']) == list:
         # convert back to normal, whraagh
         bork = {}
@@ -165,11 +165,11 @@ def get_stats_from_runtime(client, config):
             bork[x['name']] = x['value']
         stats['requests'] = bork
 
-    runtime_version = config.get_runtime_version()
+    runtime_version = m2.config.get_runtime_version()
     if runtime_version is not None and runtime_version >= 3.2:
-        stats['threads'] = len(client.get_all_thread_stack_traces(timeout=5))
+        stats['threads'] = len(m2.client.get_all_thread_stack_traces(timeout=5))
 
-    java_version = guess_java_version(client, runtime_version, stats)
+    java_version = guess_java_version(m2, runtime_version, stats)
     if 'memorypools' in stats['memory']:
         memorypools = stats['memory']['memorypools']
         if java_version == 7:
