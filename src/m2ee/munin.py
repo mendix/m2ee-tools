@@ -137,7 +137,8 @@ def get_stats(action, m2):
         write_last_known_good_stats_cache(stats, config_cache)
     except (M2EEAdminException, M2EEAdminNotAvailable,
             M2EEAdminHTTPException, M2EEAdminTimeout) as e:
-        logger.error(e)
+        if not isinstance(e, M2EEAdminNotAvailable) or m2.runner.check_pid():
+            logger.error(e)
         if action == 'config':
             return get_last_known_good_or_fake_stats(config_cache), java_version
     return stats, java_version
