@@ -58,7 +58,7 @@ class M2EE():
                          self.runner.get_pid())
         return (pid_alive, m2ee_alive)
 
-    def start_appcontainer(self, detach=True):
+    def start_appcontainer(self, detach=True, timeout=60):
         logger.debug("Checking if the runtime is already alive...")
         (pid_alive, m2ee_alive) = self.check_alive()
         if pid_alive is True or m2ee_alive is True:
@@ -80,7 +80,7 @@ class M2EE():
             util.fix_mxclientsystem_symlink(self.config)
 
         logger.info("Trying to start the MxRuntime...")
-        self.runner.start(detach=detach)
+        self.runner.start(detach=detach, timeout=timeout)
         logger.debug("MxRuntime status: %s" % self.client.runtime_status()['status'])
 
         # go do startup sequence
