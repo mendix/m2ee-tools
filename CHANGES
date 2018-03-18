@@ -1,3 +1,31 @@
+m2ee-tools 7.2-rc1, 30 Jul 2018
+  * Drop support for RHEL 6 / Centos 6
+  * Drop support for Debian Wheezy
+  * Don't warn about missing constants any more, but use default values from
+    the application model.
+  * New check_constants command in the cli to check which constant definitions
+    are missing or unneeded.
+  * Fix hanging and unusable m2ee cli when runtime admin port does not respond.
+  * Allow persistent (or, 'early') loglevel configuration for Mendix >= 6.
+  * Exit with status code 1 instead of 0 if an exception occurs when using the
+    cli in one-off mode.
+  * When the JVM process fails to start (the startup phase before the admin
+    port comes online) when doing a detached start, capture stdout/stderr
+    output of the JVM process and put it in the 'output' field of the exception
+    object that is raised.
+  * Add munin plugins with database statistics (open connections, database
+    size, transaction commits, tuple mutations) when PostgreSQL is used.
+  * Remove system-wide-m2ee example from the documentation, it's not useful any
+    more.
+  * Ignore deprecated DTAPMode setting. Only try creating database in yolo mode
+    instead.
+  * Ignore http proxy environment variable settings for admin port connections.
+  * Remove felix_config_file configuration option, it should always be set to
+    the default location.
+  * Python 3 compatibility. This is only tested with Debian Stretch. Any older
+    Debian Release will not be supported with Python 3.
+  * Small typo fixes, cleanups and improvements.
+
 m2ee-tools 7.1, 2 Nov 2017
   * TODO items have been moved to github issues
   * Update nginx reverse proxy example config
