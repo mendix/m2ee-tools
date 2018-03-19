@@ -201,7 +201,8 @@ def get_stats_from_runtime(m2):
 def write_last_known_good_stats_cache(stats, config_cache):
     logger.debug("Writing munin cache to %s" % config_cache)
     try:
-        open(config_cache, 'w+').write(json.dumps(stats))
+        with open(config_cache, 'w+') as f:
+            f.write(json.dumps(stats))
     except Exception as e:
         logger.error("Error writing munin config cache to %s: %s",
                      (config_cache, e))
@@ -211,9 +212,8 @@ def read_stats_from_last_known_good_stats_cache(config_cache):
     stats = None
     logger.debug("Loading munin cache from %s" % config_cache)
     try:
-        fd = open(config_cache)
-        stats = json.loads(fd.read())
-        fd.close()
+        with open(config_cache) as f:
+            stats = json.load(f)
     except IOError as e:
         logger.error("Error reading munin cache file %s: %s" %
                      (config_cache, e))
