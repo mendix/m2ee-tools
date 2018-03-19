@@ -6,7 +6,6 @@ from __future__ import print_function
 import json
 import logging
 import os
-import string
 from m2ee.client import M2EEAdminException, M2EEAdminNotAvailable, \
     M2EEAdminHTTPException, M2EEAdminTimeout
 import m2ee.smaps as smaps
