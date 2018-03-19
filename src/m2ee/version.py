@@ -40,6 +40,9 @@ class MXVersion:
             version = "%s-%s" % (version, self.addendum)
         return version
 
+    def __repr__(self):
+        return "%s('%s')" % (self.__class__.__name__, str(self))
+
     def __contains__(self, other):
         if not isinstance(other, MXVersion):
             other = MXVersion(other)
