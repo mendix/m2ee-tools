@@ -41,7 +41,7 @@ class MXVersion:
         return version
 
     def __contains__(self, other):
-        if isinstance(other, basestring):
+        if not isinstance(other, MXVersion):
             other = MXVersion(other)
         s = self._numbers()
         o = other._numbers()
