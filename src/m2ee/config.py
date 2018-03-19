@@ -89,24 +89,19 @@ class M2EEConfig:
 
     def _try_load_json(self, jsonfile):
         logger.debug("Loading json configuration from %s" % jsonfile)
-        fd = None
         try:
-            fd = open(jsonfile)
-        except Exception as e:
+            with open(jsonfile) as f:
+                config = json.load(f)
+            logger.trace("contents read from %s: %s" % (jsonfile, config))
+            return config
+        except IOError as e:
             logger.debug("Error reading configuration file %s: %s; "
                          "ignoring..." % (jsonfile, e))
             return {}
-
-        config = None
-        try:
-            config = json.load(fd)
-        except Exception as e:
+        except ValueError as e:
             logger.error("Error parsing configuration file %s: %s" %
                          (jsonfile, e))
             return {}
-
-        logger.trace("contents read from %s: %s" % (jsonfile, config))
-        return config
 
     def mtime_changed(self):
         for yamlfile, mtime in self._mtimes.items():
@@ -244,18 +239,18 @@ class M2EEConfig:
             logger.debug("writing felix configuration template from %s "
                          "to %s" % (felix_template_file, felix_config_file))
             try:
-                input_file = open(felix_template_file)
-                template = input_file.read()
+                with open(felix_template_file) as f:
+                    template = f.read()
             except IOError as e:
                 raise M2EEException("felix configuration template could not be read: %s", e)
             try:
-                output_file = open(felix_config_file, 'w')
                 render = template.format(
                     ProjectBundlesDir=project_bundles_path,
                     InstallDir=self._runtime_path,
                     FrameworkStorage=osgi_storage_path
                 )
-                output_file.write(render)
+                with open(felix_config_file, 'w') as f:
+                    f.write(render)
             except IOError as e:
                 raise M2EEException("felix configuration file could not be written: %s", e)
         else:
@@ -666,10 +661,10 @@ def read_yaml_files(yaml_files):
 def load_yaml_file(yaml_file, config, yaml_mtimes):
     logger.debug("Loading configuration from %s" % yaml_file)
     try:
-        with open(yaml_file) as fd:
-            additional_config = yaml.load(fd)
-            config = merge_config(config, additional_config)
-            yaml_mtimes[yaml_file] = os.stat(yaml_file)[8]
+        with open(yaml_file) as f:
+            additional_config = yaml.load(f)
+        config = merge_config(config, additional_config)
+        yaml_mtimes[yaml_file] = os.stat(yaml_file)[8]
     except Exception as e:
         logger.warn("Error reading configuration file %s: %s, ignoring..." % (yaml_file, e))
     return (config, yaml_mtimes)

@@ -216,9 +216,8 @@ class M2EE():
                                        "%s_database_commands.sql" %
                                        time.strftime("%Y%m%d_%H%M%S"))
         logger.info("Saving DDL commands to %s" % query_file_name)
-        fd = codecs.open(query_file_name, mode='w', encoding='utf-8')
-        fd.write("%s" % '\n'.join(ddl_commands))
-        fd.close()
+        with codecs.open(query_file_name, mode='w', encoding='utf-8') as f:
+            f.write('\n'.join(ddl_commands))
 
     def unpack(self, mda_name):
         util.unpack(self.config, mda_name)
