@@ -97,11 +97,11 @@ class M2EE():
                 "runtime_jetty_options": self.config.get_jetty_options()
             })
 
-    def start_runtime(self, params=None):
+    def start_runtime(self, params=None, timeout=None):
         if params is None:
             params = {}
         logger.debug("MxRuntime status: %s" % self.client.runtime_status()['status'])
-        self.client.start(params)
+        self.client.start(params, timeout)
         logger.debug("MxRuntime status: %s" % self.client.runtime_status()['status'])
         logger.info("The MxRuntime is fully started now.")
 
