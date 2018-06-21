@@ -678,25 +678,35 @@ mxruntime:
  # stored in the database of your Mendix application, instead of only in the
  # volatile application memory.
  #
- # Only login sessions will be stored in the database. The object cache
- # (choosing edit in the client... editing... save...) and intermediate state of
- # running microflows are not persistanly committed to the database, as doing so
- # would instantly open the gates of performance hell.
+ # Only login sessions will be stored in the database. Intermediate state of
+ # running microflows and objects that are being edited in the web client, but
+ # not yet committed, are not saved in the database.
  #
- # Enabling persistent sessions is not desirable in any use case. It might be
- # fun that users are not logged out if you do a quick restart of the
- # application, but all unsaved edit forms will generate errors or corrupt data
- # when you do so.
+ # -- For Mendix versions before 7 --
  #
- # After all, it may only be desirable in a testing environment where integrity
- # of data is not a big issue, when application restarts are done frequently and
- # logging in again is more inconvenient than working through some red error
- # popups. My advice... never enable persistent sessions.
+ # It is not desirable in any use case to enable persistent sessions in Mendix
+ # versions earlier than 7. It might be convenient that users do not seem to be
+ # logged out if you do a quick restart of the application, but all unsaved
+ # edit forms will generate errors or corrupt data.
  #
- # Do not enable persistent sessions together with disabling keepalive, because
- # this will cause an extra database update to happen on the session store for
- # every request the browser client issues (and that's a lot of times).
+ # Moreover, never disable the EnableKeepAlive setting together with enabling
+ # PersistentSessions, because this will cause an extra database update to
+ # happen on the user object for every request the browser client issues, which
+ # has serious impact on the performance of the application.
+ #
+ # default: False  # for Mendix < 7
  PersistentSessions: False
+ #
+ # -- For Mendix 7 --
+ #
+ # In Mendix 7, optimizations were made to reduce the performance impact of
+ # enabling PersistentSessions and disabling the EnableKeepAlive option.
+ #
+ # When using multiple runtime instances for a single environment, this option
+ # needs to be enabled.
+ #
+ # default: True  # Mendix 7
+ PersistentSessions: True
 
 # By specifying file names in the include section, additional configuration
 # will be read from those files, and will be deep-merged into the already read
