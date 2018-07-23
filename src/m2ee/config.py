@@ -628,6 +628,9 @@ class M2EEConfig:
     def set_database_password(self, password):
         self._conf['mxruntime']['DatabasePassword'] = password
 
+    def get_max_active_db_connections(self):
+        return self._conf['mxruntime'].get('ConnectionPoolingMaxActive', 50)
+
 
 def find_yaml_files():
     yaml_files = []

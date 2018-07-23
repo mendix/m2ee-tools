@@ -9,6 +9,7 @@ import os
 from m2ee.client import M2EEAdminException, M2EEAdminNotAvailable, \
     M2EEAdminHTTPException, M2EEAdminTimeout
 import m2ee.smaps as smaps
+import m2ee.pgutil
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +90,10 @@ def print_config(m2, name):
     print_cache_config(name, stats)
     print_jvm_threads_config(name, stats)
     print_jvm_process_memory_config(name)
+    if m2.config.is_using_postgresql():
+        print_pg_stat_database_config(name)
+        print_pg_stat_activity_config(name)
+        print_pg_table_index_size_config(name)
 
 
 def print_values(m2, name):
@@ -105,6 +110,10 @@ def print_values(m2, name):
     print_cache_values(name, stats)
     print_jvm_threads_values(name, stats)
     print_jvm_process_memory_values(name, stats, m2.runner.get_pid(), java_version)
+    if m2.config.is_using_postgresql():
+        print_pg_stat_database_values(name, m2)
+        print_pg_stat_activity_values(name, m2)
+        print_pg_table_index_size_values(name, m2)
 
 
 def guess_java_version(m2, runtime_version, stats):
@@ -520,4 +529,137 @@ def print_jvm_process_memory_values(name, stats, pid, java_version):
 
     print("stacks.value %s" % (totals[smaps.CATEGORY_THREAD_STACK] * 1024))
     print("total.value %s" % (sum(totals.values()) * 1024))
+    print("")
+
+
+def print_pg_stat_database_config(name):
+    print("multigraph mxruntime_pg_stat_xact_%s" % name)
+    print("graph_args -l 0")
+    print("graph_vlabel transactions per second")
+    print("graph_title %s - PostgreSQL transactions" % name)
+    print("graph_category Mendix")
+    print("graph_info This graph shows amount of transaction commits and rollbacks")
+    print("xact_commit.label xact commit")
+    print("xact_commit.draw LINE1")
+    print("xact_commit.min 0")
+    print("xact_commit.type DERIVE")
+    print("xact_commit.info Number of commits")
+    print("xact_rollback.label xact rollback")
+    print("xact_rollback.draw LINE1")
+    print("xact_rollback.min 0")
+    print("xact_rollback.type DERIVE")
+    print("xact_rollback.info Number of rollbacks")
+    print("")
+    print("multigraph mxruntime_pg_stat_tuples_%s" % name)
+    print("graph_args -l 0")
+    print("graph_vlabel tuple mutations per second")
+    print("graph_title %s - PostgreSQL tuple mutations" % name)
+    print("graph_category Mendix")
+    print("graph_info This graph shows amount of tuple mutations")
+    print("tup_inserted.label tuples inserted")
+    print("tup_inserted.draw LINE1")
+    print("tup_inserted.min 0")
+    print("tup_inserted.type DERIVE")
+    print("tup_inserted.info Number of inserts")
+    print("tup_updated.label tuples updated")
+    print("tup_updated.draw LINE1")
+    print("tup_updated.min 0")
+    print("tup_updated.type DERIVE")
+    print("tup_updated.info Number of updates")
+    print("tup_deleted.label tuples deleted")
+    print("tup_deleted.draw LINE1")
+    print("tup_deleted.min 0")
+    print("tup_deleted.type DERIVE")
+    print("tup_deleted.info Number of deletes")
+    print("")
+
+
+def print_pg_stat_database_values(name, m2):
+    xact_commit, xact_rollback, tup_inserted, tup_updated, tup_deleted = \
+        m2ee.pgutil.pg_stat_database(m2.config)
+    print("multigraph mxruntime_pg_stat_xact_%s" % name)
+    print("xact_commit.value %s" % xact_commit)
+    print("xact_rollback.value %s" % xact_rollback)
+    print("")
+    print("multigraph mxruntime_pg_stat_tuples_%s" % name)
+    print("tup_inserted.value %s" % tup_inserted)
+    print("tup_updated.value %s" % tup_updated)
+    print("tup_deleted.value %s" % tup_deleted)
+    print("")
+
+
+def print_pg_stat_activity_config(name):
+    print("multigraph mxruntime_pg_stat_activity_%s" % name)
+    print("graph_args -l 0")
+    print("graph_vlabel connections")
+    print("graph_title %s - PostgreSQL connections" % name)
+    print("graph_category Mendix")
+    print("graph_info This graph shows the amount of open database connections")
+    print("active.label active")
+    print("active.draw AREA")
+    print("active.info Amount of connections that currently execute a query "
+          "(including this monitoring plugin)")
+    print("idle_in_transaction.label idle in transaction")
+    print("idle_in_transaction.draw STACK")
+    print("idle_in_transaction.info Amount of idle transactions (e.g. running Mendix microflow "
+          "which is not executing a database operation right now.")
+    print("idle_in_transaction_aborted.label idle in transaction (aborted)")
+    print("idle_in_transaction_aborted.draw STACK")
+    print("idle_in_transaction_aborted.info Amount of idle transactions with errors")
+    print("idle.label idle")
+    print("idle.draw STACK")
+    print("idle.info Amount of idle (unused) but open connections")
+    print("total.label total")
+    print("total.draw LINE0")
+    print("total.colour 000000")
+    print("total.info Total amount of open connections as seen by PostgreSQL "
+          "(e.g. also including this monitoring query and things like backup dump operations)")
+    print("limit.label mendix runtime limit")
+    print("limit.draw LINE1")
+    print("limit.info Limit on amount of open connections for the "
+          "Mendix Runtime connection pooling")
+    print("")
+
+
+def print_pg_stat_activity_values(name, m2):
+    activity = m2ee.pgutil.pg_stat_activity(m2.config)
+    total = sum(activity.values())
+    limit = m2.config.get_max_active_db_connections()
+    print("multigraph mxruntime_pg_stat_activity_%s" % name)
+    print("active.value %s" % activity.get('active', 0))
+    print("idle.value %s" % activity.get('idle', 0))
+    print("idle_in_transaction.value %s" % activity.get('idle in transaction', 0))
+    print("idle_in_transaction_aborted.value %s" %
+          activity.get('idle in transaction (aborted)', 0))
+    print("total.value %s" % total)
+    print("limit.value %s" % limit)
+    print("")
+
+
+def print_pg_table_index_size_config(name):
+    print("multigraph mxruntime_pg_table_index_size_%s" % name)
+    print("graph_args --base 1024 --lower-limit 0")
+    print("graph_vlabel bytes")
+    print("graph_title %s - PostgreSQL database size" % name)
+    print("graph_category Mendix")
+    print("graph_info This graph shows the distribution of table and index size in a database")
+    print("tables.label tables")
+    print("tables.draw AREA")
+    print("tables.info Total disk space occupied by tables")
+    print("indexes.label indexes")
+    print("indexes.draw STACK")
+    print("indexes.info Total disk space occupied by indexes")
+    print("total.label total size")
+    print("total.draw LINE0")
+    print("total.colour 000000")
+    print("total.info Total database size")
+    print("")
+
+
+def print_pg_table_index_size_values(name, m2):
+    tables, indexes = m2ee.pgutil.pg_table_index_size(m2.config)
+    print("multigraph mxruntime_pg_table_index_size_%s" % name)
+    print("tables.value %s" % tables)
+    print("indexes.value %s" % indexes)
+    print("total.value %s" % (tables + indexes))
     print("")

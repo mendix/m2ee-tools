@@ -141,3 +141,68 @@ def psql(config):
         subprocess.call(cmd, env=env)
     except OSError as e:
         raise M2EEException("An error occured while calling psql, cmd: %s" % cmd, e)
+
+
+def pg_stat_database(config):
+    env = os.environ.copy()
+    env.update(config.get_pg_environment())
+    datname = env['PGDATABASE']
+
+    cmd = (
+        config.get_psql_binary(), "-At", "-c",
+        "SELECT xact_commit, xact_rollback, tup_inserted, tup_updated, tup_deleted "
+        "FROM pg_stat_database where datname = '%s'" % datname
+    )
+    try:
+        proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        (stdout, stderr) = proc.communicate()
+        if stderr != '':
+            raise M2EEException("Retrieving pg_stat_database info failed: %s" % stderr.strip())
+    except OSError as e:
+        raise M2EEException("Retrieving pg_stat_database info failed, cmd: %s" % cmd, e)
+
+    return [int(x) for x in stdout.split('|')]
+
+
+def pg_stat_activity(config):
+    env = os.environ.copy()
+    env.update(config.get_pg_environment())
+    datname = env['PGDATABASE']
+    usename = env['PGUSER']
+
+    cmd = (
+        config.get_psql_binary(), "-At", "-c",
+        "SELECT count(*), state FROM pg_stat_activity "
+        "WHERE datname = '%s' AND usename = '%s' GROUP BY 2" % (datname, usename)
+    )
+    try:
+        proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        (stdout, stderr) = proc.communicate()
+        if stderr != '':
+            raise M2EEException("Retrieving pg_stat_activity info failed: %s" % stderr.strip())
+    except OSError as e:
+        raise M2EEException("Retrieving pg_stat_activity info failed, cmd: %s" % cmd, e)
+
+    # e.g. {'idle': 19, 'active': 2, 'idle in transaction': 1}
+    return {
+        state: int(count)
+        for line in stdout.splitlines()
+        for count, state in [line.split('|')]
+    }
+
+
+def pg_table_index_size(config):
+    env = os.environ.copy()
+    env.update(config.get_pg_environment())
+
+    cmd = (
+        config.get_psql_binary(), "-At", "-c",
+        "SELECT sum(pg_table_size(table_name::regclass)), "
+        "sum(pg_indexes_size(table_name::regclass)) "
+        """FROM (SELECT ('"' || table_schema || '"."' || table_name || '"') """
+        "        AS table_name FROM information_schema.tables) AS foo"
+    )
+    output = subprocess.check_output(cmd, env=env)
+    return [int(x) for x in output.split('|')]
