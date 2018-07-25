@@ -83,7 +83,7 @@ def print_config(m2, name):
     options = m2.config.get_munin_options()
 
     print_requests_config(name, stats)
-    print_connectionbus_config(name, stats)
+    print_connectionbus_config(name, m2, stats)
     print_sessions_config(name, stats, options.get('graph_total_named_users', True))
     print_jvmheap_config(name, stats)
     print_threadpool_config(name, stats)
@@ -261,16 +261,19 @@ def print_requests_values(name, stats):
     print("")
 
 
-def print_connectionbus_config(name, stats):
+def print_connectionbus_config(name, m2, stats):
     if 'connectionbus' not in stats:
         return
     print("multigraph mxruntime_connectionbus_%s" % name)
     print("graph_args --base 1000 -l 0")
     print("graph_vlabel Statements per second")
-    print("graph_title %s - Database Queries" % name)
+    if m2.config.is_using_postgresql():
+        print("graph_title %s - PostgreSQL queries" % name)
+    else:
+        print("graph_title %s - Database queries" % name)
     print("graph_category Mendix")
-    print("graph_info This graph shows the amount of executed transactions and queries")
-    for s in stats['connectionbus'].keys():
+    print("graph_info This graph shows the amount of executed queries by type")
+    for s in ('select', 'insert', 'update', 'delete'):
         print("%s.label %ss" % (s, s))
         print("%s.draw LINE1" % s)
         print("%s.info amount of %ss" % (s, s))
@@ -283,8 +286,8 @@ def print_connectionbus_values(name, stats):
     if 'connectionbus' not in stats:
         return
     print("multigraph mxruntime_connectionbus_%s" % name)
-    for s, count in stats['connectionbus'].items():
-        print("%s.value %s" % (s, count))
+    for s in ('select', 'insert', 'update', 'delete'):
+        print("%s.value %s" % (s, stats['connectionbus'][s]))
     print("")
 
 
