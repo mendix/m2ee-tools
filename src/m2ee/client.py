@@ -1,8 +1,5 @@
 #
-# Copyright (c) 2009-2017, Mendix bv
-# All Rights Reserved.
-#
-# http://www.mendix.com/
+# Copyright (C) 2009 Mendix. All rights reserved.
 #
 
 from base64 import b64encode
@@ -26,7 +23,7 @@ class M2EEClient:
         self._url = url
         self._headers = {
             'Content-Type': 'application/json',
-            'X-M2EE-Authentication': b64encode(password),
+            'X-M2EE-Authentication': b64encode(bytearray(password, 'utf-8')),
             'Connection': 'close',
         }
 
@@ -36,10 +33,11 @@ class M2EEClient:
             body["params"] = params
         body = json.dumps(body)
         try:
-            h = httplib2.Http(timeout=timeout)  # httplib does not like os.fork
+            h = httplib2.Http(timeout=timeout, proxy_info=None)  # httplib does not like os.fork
             logger.trace("M2EE request body: %s" % body)
-            (response_headers, response_body) = h.request(self._url, "POST", body,
-                                                          headers=self._headers)
+            response_headers, response_bytes = h.request(self._url, "POST", body,
+                                                         headers=self._headers)
+            response_body = response_bytes.decode('utf-8')
             logger.trace("M2EE response: %s" % response_body)
             if (response_headers['status'] != "200"):
                 raise M2EEAdminHTTPException("Non OK http status code: %s %s" %
@@ -53,18 +51,18 @@ class M2EEClient:
             if result != 0:
                 raise M2EEAdminException(action, response)
             return response.get('feedback', {})
-        except AttributeError, e:
+        except AttributeError as e:
             # httplib 0.6 throws this in case of a connection refused :-|
             if str(e) == "'NoneType' object has no attribute 'makefile'":
                 message = "Admin API not available for requests."
                 logger.trace("%s (%s: %s)" % (message, type(e), e))
                 raise M2EEAdminNotAvailable(message)
             raise e
-        except socket.timeout, e:
-            message = "Admin API does not respond. Timeout reached after (%s seconds)" % timeout
+        except socket.timeout as e:
+            message = "Admin API does not respond. Timeout reached after %s seconds." % timeout
             logger.trace(message)
             raise M2EEAdminTimeout(message)
-        except socket.error, e:
+        except socket.error as e:
             message = "Admin API not available for requests: (%s: %s)" % (type(e), e)
             logger.trace(message)
             raise M2EEAdminNotAvailable(message)
@@ -91,10 +89,10 @@ class M2EEClient:
                 {"result": M2EEAdminException.ERR_ACTION_NOT_FOUND}
             )
 
-    def get_admin_action_info(self):
-        return self.request("get_admin_action_info")
+    def get_admin_action_info(self, timeout=None):
+        return self.request("get_admin_action_info", timeout=timeout)
 
-    def get_critical_log_messages(self):
+    def get_critical_log_messages(self, timeout=None):
         echo_feedback = self.echo()
         if echo_feedback['echo'] != "pong":
             return echo_feedback['errors']
@@ -112,11 +110,11 @@ class M2EEClient:
         except Exception:
             pass
 
-    def close_stdio(self):
-        return self.request("close_stdio")
+    def close_stdio(self, timeout=None):
+        return self.request("close_stdio", timeout=timeout)
 
-    def runtime_status(self):
-        return self.request("runtime_status")
+    def runtime_status(self, timeout=None):
+        return self.request("runtime_status", timeout=timeout)
 
     def runtime_statistics(self, timeout=None):
         return self.request("runtime_statistics", timeout=timeout)
@@ -124,92 +122,83 @@ class M2EEClient:
     def server_statistics(self, timeout=None):
         return self.request("server_statistics", timeout=timeout)
 
-    def create_log_subscriber(self, params):
-        return self.request("create_log_subscriber", params)
+    def create_log_subscriber(self, params, timeout=None):
+        return self.request("create_log_subscriber", params, timeout=timeout)
 
-    def start_logging(self):
-        return self.request("start_logging")
+    def start_logging(self, timeout=None):
+        return self.request("start_logging", timeout=timeout)
 
-    def update_configuration(self, params):
-        return self.request("update_configuration", params)
+    def update_configuration(self, params, timeout=None):
+        return self.request("update_configuration", params, timeout=timeout)
 
-    def update_custom_configuration(self, params):
-        return self.request("update_custom_configuration", params)
+    def update_appcontainer_configuration(self, params, timeout=None):
+        return self.request("update_appcontainer_configuration", params, timeout=timeout)
 
-    def update_appcontainer_configuration(self, params):
-        return self.request("update_appcontainer_configuration", params)
+    def start(self, params=None, timeout=None):
+        return self.request("start", params, timeout=timeout)
 
-    def start(self, params=None):
-        return self.request("start", params)
+    def get_ddl_commands(self, params=None, timeout=None):
+        return self.request("get_ddl_commands", params, timeout=timeout)
 
-    def get_ddl_commands(self, params=None):
-        return self.request("get_ddl_commands", params)
+    def execute_ddl_commands(self, params=None, timeout=None):
+        return self.request("execute_ddl_commands", params, timeout=timeout)
 
-    def execute_ddl_commands(self, params=None):
-        return self.request("execute_ddl_commands", params)
+    def update_admin_user(self, params, timeout=None):
+        return self.request("update_admin_user", params, timeout=timeout)
 
-    def update_admin_user(self, params):
-        return self.request("update_admin_user", params)
+    def create_admin_user(self, params, timeout=None):
+        return self.request("create_admin_user", params, timeout=timeout)
 
-    def create_admin_user(self, params):
-        return self.request("create_admin_user", params)
+    def get_logged_in_user_names(self, params=None, timeout=None):
+        return self.request("get_logged_in_user_names", params, timeout=timeout)
 
-    def get_logged_in_user_names(self, params=None):
-        return self.request("get_logged_in_user_names", params)
+    def set_jetty_options(self, params=None, timeout=None):
+        return self.request("set_jetty_options", params, timeout=timeout)
 
-    def set_jetty_options(self, params=None):
-        return self.request("set_jetty_options", params)
+    def add_mime_type(self, params, timeout=None):
+        return self.request("add_mime_type", params, timeout=timeout)
 
-    def add_mime_type(self, params):
-        return self.request("add_mime_type", params)
+    def about(self, timeout=None):
+        return self.request("about", timeout=timeout)
 
-    def about(self):
-        return self.request("about")
+    def set_log_level(self, params, timeout=None):
+        return self.request("set_log_level", params, timeout=timeout)
 
-    def set_log_level(self, params):
-        return self.request("set_log_level", params)
+    def get_log_settings(self, params, timeout=None):
+        return self.request("get_log_settings", params, timeout=timeout)
 
-    def get_log_settings(self, params):
-        return self.request("get_log_settings", params)
+    def check_health(self, params=None, timeout=None):
+        return self.request("check_health", params, timeout=timeout)
 
-    def check_health(self, params=None):
-        return self.request("check_health", params)
+    def get_current_runtime_requests(self, timeout=None):
+        return self.request("get_current_runtime_requests", timeout=timeout)
 
-    def get_current_runtime_requests(self):
-        return self.request("get_current_runtime_requests")
+    def interrupt_request(self, params, timeout=None):
+        return self.request("interrupt_request", params, timeout=timeout)
 
-    def interrupt_request(self, params):
-        return self.request("interrupt_request", params)
+    def get_all_thread_stack_traces(self, timeout=None):
+        return self.request("get_all_thread_stack_traces", timeout=timeout)
 
-    def get_all_thread_stack_traces(self):
-        return self.request("get_all_thread_stack_traces")
+    def get_license_information(self, timeout=None):
+        return self.request("get_license_information", timeout=timeout)
 
-    def get_license_information(self):
-        return self.request("get_license_information")
+    def set_license(self, params, timeout=None):
+        return self.request("set_license", params, timeout=timeout)
 
-    def set_license(self, params):
-        return self.request("set_license", params)
+    def create_runtime(self, params, timeout=None):
+        return self.request("createruntime", params, timeout=timeout)
 
-    def connect_xmpp(self, params):
-        return self.request("connect_xmpp", params)
+    def enable_debugger(self, params, timeout=None):
+        return self.request("enable_debugger", params, timeout=timeout)
 
-    def disconnect_xmpp(self):
-        return self.request("disconnect_xmpp")
+    def disable_debugger(self, timeout=None):
+        return self.request("disable_debugger", timeout=timeout)
 
-    def create_runtime(self, params):
-        return self.request("createruntime", params)
+    def get_debugger_status(self, timeout=None):
+        return self.request("get_debugger_status", timeout=timeout)
 
-    def enable_debugger(self, params):
-        return self.request("enable_debugger", params)
-
-    def disable_debugger(self):
-        return self.request("disable_debugger")
-
-    def get_debugger_status(self):
-        return self.request("get_debugger_status")
-
-    def cache_statistics(self):
-        return self.request("cache_statistics")
+    def cache_statistics(self, timeout=None):
+        return self.request("cache_statistics", timeout=timeout)
 
 
 class M2EEAdminHTTPException(Exception):

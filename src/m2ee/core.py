@@ -1,6 +1,5 @@
-# Copyright (c) 2009-2017, Mendix bv
-# All Rights Reserved.
-# http://www.mendix.com/
+#
+# Copyright (C) 2009 Mendix. All rights reserved.
 #
 
 import logging
@@ -9,13 +8,13 @@ import codecs
 import time
 import copy
 
-from config import M2EEConfig
-from client import M2EEClient
-from runner import M2EERunner
-from version import MXVersion
+from m2ee.config import M2EEConfig
+from m2ee.client import M2EEClient
+from m2ee.runner import M2EERunner
+from m2ee.version import MXVersion
 from m2ee.exceptions import M2EEException
 
-import util
+from m2ee import util
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +58,7 @@ class M2EE():
                          self.runner.get_pid())
         return (pid_alive, m2ee_alive)
 
-    def start_appcontainer(self, detach=True):
+    def start_appcontainer(self, detach=True, timeout=60):
         logger.debug("Checking if the runtime is already alive...")
         (pid_alive, m2ee_alive) = self.check_alive()
         if pid_alive is True or m2ee_alive is True:
@@ -81,40 +80,28 @@ class M2EE():
             util.fix_mxclientsystem_symlink(self.config)
 
         logger.info("Trying to start the MxRuntime...")
-        self.runner.start(detach=detach)
+        self.runner.start(detach=detach, timeout=timeout)
         logger.debug("MxRuntime status: %s" % self.client.runtime_status()['status'])
 
         # go do startup sequence
         self._configure_logging()
         self._send_mime_types()
 
-        hybrid = self.config.use_hybrid_appcontainer()
-
-        if version < 5 and not hybrid:
+        if version < 5:
             self._send_jetty_config()
-        elif version < 5 and hybrid:
-            self._send_jetty_config()
-            self._connect_xmpp()
-            self.client.create_runtime({
-                "runtime_path":
-                os.path.join(self.config.get_runtime_path(), 'runtime'),
-                "port": self.config.get_runtime_port(),
-                "application_base_path": self.config.get_app_base(),
-            })
-        elif version >= 5:
+        else:
             self.client.update_appcontainer_configuration({
                 "runtime_port": self.config.get_runtime_port(),
                 "runtime_listen_addresses":
                 self.config.get_runtime_listen_addresses(),
                 "runtime_jetty_options": self.config.get_jetty_options()
             })
-            self._connect_xmpp()
 
-    def start_runtime(self, params=None):
+    def start_runtime(self, params=None, timeout=None):
         if params is None:
             params = {}
         logger.debug("MxRuntime status: %s" % self.client.runtime_status()['status'])
-        self.client.start(params)
+        self.client.start(params, timeout)
         logger.debug("MxRuntime status: %s" % self.client.runtime_status()['status'])
         logger.info("The MxRuntime is fully started now.")
 
@@ -166,9 +153,18 @@ class M2EE():
 
     def _configure_logging(self):
         logger.debug("Setting up logging...")
+        version = self.config.get_runtime_version()
         logging_config = self.config.get_logging_config()
         for log_subscriber in logging_config:
+            loglevels = log_subscriber.pop('loglevel', None)
             self.client.create_log_subscriber(log_subscriber)
+            if version >= 6 and loglevels is not None:
+                self.client.set_log_level({
+                    "subscriber": log_subscriber['name'],
+                    "nodes": [{'name': name, 'level': level}
+                              for name, level in loglevels.items()],
+                    "force": True,
+                })
         self.client.start_logging()
 
     def _send_jetty_config(self):
@@ -185,6 +181,9 @@ class M2EE():
 
     def send_runtime_config(self):
         config = copy.deepcopy(self.config.get_runtime_config())
+
+        constants_to_use, _, _ = self.config.get_constants()
+        config['MicroflowConstants'] = constants_to_use
 
         # convert MyScheduledEvents from list to dumb comma separated string if
         # needed:
@@ -205,21 +204,20 @@ class M2EE():
         logger.debug("Sending MxRuntime configuration...")
         self.client.update_configuration(config)
 
-    def set_log_level(self, subscriber, node, level):
+    def set_log_level(self, subscriber, node, level, timeout=None):
         params = {"subscriber": subscriber, "node": node, "level": level}
-        return self.client.set_log_level(params)
+        return self.client.set_log_level(params, timeout=timeout)
 
-    def get_log_levels(self):
-        return self.client.get_log_settings({"sort": "subscriber"})
+    def get_log_levels(self, timeout=None):
+        return self.client.get_log_settings({"sort": "subscriber"}, timeout=timeout)
 
     def save_ddl_commands(self, ddl_commands):
         query_file_name = os.path.join(self.config.get_database_dump_path(),
                                        "%s_database_commands.sql" %
                                        time.strftime("%Y%m%d_%H%M%S"))
         logger.info("Saving DDL commands to %s" % query_file_name)
-        fd = codecs.open(query_file_name, mode='w', encoding='utf-8')
-        fd.write("%s" % '\n'.join(ddl_commands))
-        fd.close()
+        with codecs.open(query_file_name, mode='w', encoding='utf-8') as f:
+            f.write('\n'.join(ddl_commands))
 
     def unpack(self, mda_name):
         util.unpack(self.config, mda_name)
@@ -227,11 +225,6 @@ class M2EE():
         post_unpack_hook = self.config.get_post_unpack_hook()
         if post_unpack_hook:
             util.run_post_unpack_hook(post_unpack_hook)
-
-    def _connect_xmpp(self):
-        xmpp_credentials = self.config.get_xmpp_credentials()
-        if xmpp_credentials:
-            self.client.connect_xmpp(xmpp_credentials)
 
     def download_and_unpack_runtime(self, version, curl_opts=None):
         mxversion = MXVersion(version)

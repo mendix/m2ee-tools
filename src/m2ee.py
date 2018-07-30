@@ -1,12 +1,10 @@
 #!/usr/bin/python
 #
-# Copyright (c) 2009-2017, Mendix bv
-# All Rights Reserved.
-#
-# http://www.mendix.com/
+# Copyright (C) 2009 Mendix. All rights reserved.
 #
 
 from __future__ import print_function
+import argparse
 import atexit
 import cmd
 import datetime
@@ -32,6 +30,11 @@ if not sys.stdout.isatty():
     import locale
     sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
 
+try:
+    raw_input
+except NameError:
+    raw_input = input
+
 
 class CLI(cmd.Cmd, object):
 
@@ -40,12 +43,10 @@ class CLI(cmd.Cmd, object):
         cmd.Cmd.__init__(self)
         self.m2ee = M2EE(yaml_files=yaml_files)
         self.yolo_mode = yolo_mode
-        self.onecmd('status')
         self.prompt_username = pwd.getpwuid(os.getuid())[0]
         self._default_prompt = "m2ee(%s): " % self.prompt_username
         self.prompt = self._default_prompt
         self.nodetach = False
-        logger.info("Application Name: %s" % self.m2ee.config.get_app_name())
 
     def do_restart(self, args):
         if self._stop():
@@ -105,12 +106,11 @@ class CLI(cmd.Cmd, object):
         """
 
         if not self.m2ee.config.get_runtime_path():
-            logger.error("It appears that the Mendix Runtime version which "
-                         "has to be used for your application is not present "
-                         "yet.")
-            logger.info("You can try downloading it using the "
-                        "download_runtime command.")
-            return
+            raise m2ee.exceptions.M2EEException(
+                "It appears that the Mendix Runtime version which has to be "
+                "used for your application is not present yet. You can try "
+                "downloading it using the download_runtime command."
+            )
 
         self.m2ee.start_appcontainer(detach=not self.nodetach)
 
@@ -132,8 +132,11 @@ class CLI(cmd.Cmd, object):
             except m2ee.client.M2EEAdminException as e:
                 logger.error(e)
                 if e.result == client_errno.start_NO_EXISTING_DB:
-                    answer = self._ask_user_whether_to_create_db()
-                    if answer == 'a':
+                    if self.yolo_mode:
+                        # This call tries to create a database and immediately execute
+                        # ddl commands.
+                        self.m2ee.client.execute_ddl_commands()
+                    else:
                         abort = True
                 elif e.result == client_errno.start_INVALID_DB_STRUCTURE:
                     answer = self._handle_ddl_commands()
@@ -157,30 +160,6 @@ class CLI(cmd.Cmd, object):
 
         if abort:
             self._stop()
-
-    def _ask_user_whether_to_create_db(self):
-        answer = None
-        while answer not in ('c', 'r', 'a'):
-            if self.m2ee.config.get_dtap_mode()[0] in 'DT':
-                answer = raw_input("Do you want to (c)reate, (r)etry, or "
-                                   "(a)bort: ")
-            else:
-                answer = raw_input("Do you want to (r)etry, or (a)bort: ")
-            if answer in ('a', 'r'):
-                pass
-            elif answer == 'c':
-                if not self.m2ee.config.get_dtap_mode()[0] in ('D', 'T'):
-                    logger.error("Automatic Database creation is disabled in "
-                                 "Acceptance and Production mode!")
-                    answer = None
-                else:
-                    # If in Development/Test, call execute_ddl_commands,
-                    # this tries to create a database and
-                    # immediately executes initial ddl commands
-                    self.m2ee.client.execute_ddl_commands()
-            else:
-                print("Unknown option %s" % answer)
-        return answer
 
     def _handle_ddl_commands(self):
         feedback = self.m2ee.client.get_ddl_commands({"verbose": True})
@@ -293,7 +272,7 @@ class CLI(cmd.Cmd, object):
             code.interact(local=locals())
 
     def do_status(self, args):
-        feedback = self.m2ee.client.runtime_status()
+        feedback = self.m2ee.client.runtime_status(timeout=3)
         status = feedback['status']
         logger.info("The application process is running, the MxRuntime has status: %s" % status)
 
@@ -658,6 +637,19 @@ class CLI(cmd.Cmd, object):
                 and f.startswith(text)
                 and (f.endswith(".zip") or f.endswith(".mda"))]
 
+    def do_check_constants(self, args):
+        constants_to_use, default_constants, obsolete_constants = self.m2ee.config.get_constants()
+        if len(default_constants) > 0:
+            logger.info('Missing constant definitions (model defaults will be used):')
+            for name in sorted(default_constants.keys()):
+                logger.info('- %s' % name)
+        else:
+            logger.info('All required constant definitions have explicit definitions.')
+        if len(obsolete_constants) > 0:
+            logger.info('Constants defined but not needed by the application:')
+            for name in sorted(obsolete_constants.keys()):
+                logger.info('- %s' % name)
+
     def do_log(self, args):
         if self._cleanup_logging():
             return
@@ -699,8 +691,8 @@ class CLI(cmd.Cmd, object):
         log_levels = self.m2ee.get_log_levels()
         print("Current loglevels:")
         log_subscribers = []
-        for (subscriber_name, node_names) in log_levels.iteritems():
-            for (node_name, subscriber_level) in node_names.iteritems():
+        for (subscriber_name, node_names) in log_levels.items():
+            for (node_name, subscriber_level) in node_names.items():
                 log_subscribers.append("%s %s %s" %
                                        (subscriber_name,
                                         node_name,
@@ -851,6 +843,9 @@ class CLI(cmd.Cmd, object):
         except m2ee.exceptions.M2EEException as e:
             logger.error(e)
 
+    def unchecked_onecmd(self, line):
+        super(CLI, self).onecmd(line)
+
     # if the emptyline function is not defined, Cmd will automagically
     # repeat the previous command given, and that's not what we want
     def emptyline(self):
@@ -880,6 +875,10 @@ Available commands:
  log - follow live logging from the application
  loglevel - view and configure loglevels
  about - show Mendix Runtime version information
+ check_constants - check for missing or unneeded constant definitions
+ enable_debugger - enable remote debugger API
+ disable_debugger - disable remote debugger API
+ show_debugger_status - show whether debugger is enabled or not
  show_current_runtime_requests - show action stack of current running requests
  interrupt_request - cancel a running runtime request
  show_license_information - show details about current mendix license key
@@ -904,9 +903,6 @@ Available commands:
  statistics - show all application statistics that can be used for monitoring
  show_all_thread_stack_traces - show all low-level JVM threads with stack trace
  check_health - manually execute health check
- enable_debugger - enable remote debugger API
- disable_debugger - disable remote debugger API
- show_debugger_status - show whether debugger is enabled or not
 
 Extra commands you probably don't need:
  debug - dive into a local python debug session inside this program
@@ -958,29 +954,30 @@ def start_console_logging(level):
 
 
 def main():
-    from optparse import OptionParser
-    parser = OptionParser()
-    parser.add_option(
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
         "-c",
+        nargs=1,
         action="append",
-        type="string",
         dest="yaml_files"
     )
-    parser.add_option(
+    parser.add_argument(
         "-v",
         "--verbose",
         action="count",
         dest="verbose",
+        default=0,
         help="increase verbosity of output (-vv to be even more verbose)"
     )
-    parser.add_option(
+    parser.add_argument(
         "-q",
         "--quiet",
         action="count",
         dest="quiet",
+        default=0,
         help="decrease verbosity of output (-qq to be even more quiet)"
     )
-    parser.add_option(
+    parser.add_argument(
         "-y",
         "--yolo",
         action="store_true",
@@ -988,15 +985,19 @@ def main():
         dest="yolo_mode",
         help="automatically answer all questions to run as non-interactively as possible"
     )
-    (options, args) = parser.parse_args()
+    parser.add_argument(
+        "onecmd",
+        nargs='*',
+    )
+    args = parser.parse_args()
 
     # how verbose should we be? see
     # http://docs.python.org/release/2.7/library/logging.html#logging-levels
-    verbosity = 0
-    if options.quiet:
-        verbosity = verbosity + options.quiet
-    if options.verbose:
-        verbosity = verbosity - options.verbose
+    verbosity = args.quiet - args.verbose
+    if args.quiet:
+        verbosity = verbosity + args.quiet
+    if args.verbose:
+        verbosity = verbosity - args.verbose
     verbosity = verbosity * 10 + 20
     if verbosity > 50:
         verbosity = 100
@@ -1005,13 +1006,29 @@ def main():
     start_console_logging(verbosity)
 
     cli = CLI(
-        yaml_files=options.yaml_files,
-        yolo_mode=options.yolo_mode,
+        yaml_files=args.yaml_files,
+        yolo_mode=args.yolo_mode,
     )
     atexit.register(cli._cleanup_logging)
-    if args:
-        cli.onecmd(' '.join(args))
+    if args.onecmd:
+        try:
+            cli.unchecked_onecmd(' '.join(args.onecmd))
+        except (m2ee.client.M2EEAdminException,
+                m2ee.client.M2EEAdminHTTPException,
+                m2ee.client.M2EERuntimeNotFullyRunning,
+                m2ee.client.M2EEAdminTimeout,
+                m2ee.exceptions.M2EEException) as e:
+            logger.error(e)
+            sys.exit(1)
+        except m2ee.client.M2EEAdminNotAvailable:
+            pid_alive, m2ee_alive = cli.m2ee.check_alive()
+            if not pid_alive and not m2ee_alive:
+                logger.info("The application process is not running.")
+                sys.exit(0)
+            sys.exit(1)
     else:
+        logger.info("Application Name: %s" % cli.m2ee.config.get_app_name())
+        cli.onecmd('status')
         cli.cmdloop_handle_ctrl_c()
 
 

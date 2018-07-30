@@ -1,15 +1,13 @@
 #
-# Copyright (c) 2009-2017, Mendix bv
-# All Rights Reserved.
-#
-# http://www.mendix.com/
+# Copyright (C) 2009 Mendix. All rights reserved.
 #
 
 from __future__ import print_function
 import datetime
 import logging
 import time
-from m2ee.client import M2EEAdminException, M2EEAdminNotAvailable
+from m2ee.client import M2EEAdminException, M2EEAdminNotAvailable, \
+        M2EEAdminHTTPException, M2EEAdminTimeout
 from m2ee import client_errno
 
 logger = logging.getLogger(__name__)
@@ -82,21 +80,23 @@ def check_process(runner, client):
         pid_message = "Process with pid %s cannot receive signals" % runner.get_pid()
 
     try:
-        version_message = "Using Runtime %s" % client.about()['version']
-    except (M2EEAdminException, M2EEAdminNotAvailable) as e:
+        version_message = "Using Runtime %s" % client.about(timeout=5)['version']
+    except (M2EEAdminException, M2EEAdminNotAvailable,
+            M2EEAdminHTTPException, M2EEAdminTimeout) as e:
         version_message = ""
 
     state = STATE_OK
     m2ee_message = "Application is running"
     try:
-        runtime_status = client.runtime_status()['status']
+        runtime_status = client.runtime_status(timeout=5)['status']
         if runtime_status == 'starting':
             state = STATE_WARNING
             m2ee_message = "Application is still starting up..."
         elif runtime_status != 'running':
             state = STATE_CRITICAL
             m2ee_message = "Application is in state %s" % runtime_status
-    except (M2EEAdminException, M2EEAdminNotAvailable) as e:
+    except (M2EEAdminException, M2EEAdminNotAvailable,
+            M2EEAdminHTTPException, M2EEAdminTimeout) as e:
         state = STATE_CRITICAL
         m2ee_message = str(e)
 
@@ -110,9 +110,9 @@ def check_process(runner, client):
 
 def check_health(client):
     try:
-        feedback = client.check_health()
+        feedback = client.check_health(timeout=10)
         if feedback['health'] == 'healthy':
-            return STATE_OK, "Healty"
+            return STATE_OK, "Healthy"
         elif feedback['health'] == 'sick':
             message = "Health: %s" % feedback['diagnosis']
             return STATE_WARNING, message
@@ -125,26 +125,30 @@ def check_health(client):
             return STATE_UNKNOWN, "Health check not available, health could not be determined"
         else:
             return STATE_CRITICAL, "Health check failed unexpectedly: %s" % e
-    except M2EEAdminNotAvailable as e:
+    except (M2EEAdminNotAvailable, M2EEAdminHTTPException) as e:
         return STATE_UNKNOWN, "Admin API not available, health could not be determined"
+    except M2EEAdminTimeout as e:
+        return STATE_WARNING, "Admin API timeout, health could not be determined"
 
 
 def check_critical_logs(client):
     try:
-        errors = client.get_critical_log_messages()
+        errors = client.get_critical_log_messages(timeout=5)
         if len(errors) != 0:
             return STATE_CRITICAL, "%d critical error(s) were logged" % len(errors), errors
         return STATE_OK, "No critical log messages", None
     except M2EEAdminException as e:
         return STATE_CRITICAL, "Checking critical log messages failed unexpectedly: %s" % e, None
-    except M2EEAdminNotAvailable as e:
+    except (M2EEAdminNotAvailable, M2EEAdminHTTPException) as e:
         return STATE_UNKNOWN, \
             "Admin API not available, critical log messages could not be checked", None
+    except M2EEAdminTimeout as e:
+        return STATE_WARNING, "Admin API timeout, critical log messages could not be checked", None
 
 
 def check_license(client):
     try:
-        feedback = client.get_license_information()
+        feedback = client.get_license_information(timeout=5)
         if 'license' not in feedback:
             return STATE_OK, "No license activated"
         expiry = feedback['license'].get('ExpirationDate', None)
@@ -174,5 +178,7 @@ def check_license(client):
             return STATE_UNKNOWN, "No license info available"
         else:
             return STATE_CRITICAL, "Checking license expiration failed unexpectedly: %s" % e
-    except M2EEAdminNotAvailable as e:
+    except (M2EEAdminNotAvailable, M2EEAdminHTTPException) as e:
         return STATE_UNKNOWN, "Admin API not available, license expiration could not be checked"
+    except M2EEAdminTimeout as e:
+        return STATE_WARNING, "Admin API timeout, license expiration could not be checked"

@@ -5,7 +5,7 @@ from m2ee.exceptions import M2EEException
 def __to_mx_version__(version):
     if isinstance(version, MXVersion):
         return version
-    if isinstance(version, (int, long, float)):
+    if isinstance(version, (int, float)):
         version = str(version)
     return MXVersion(version)
 
@@ -13,7 +13,7 @@ def __to_mx_version__(version):
 class MXVersion:
 
     def __init__(self, version):
-        if isinstance(version, (int, long, float, MXVersion)):
+        if isinstance(version, (int, float, MXVersion)):
             version = str(version)
         parsed = re.match(
             "(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:\.(\d+))?(?:-(.*))?",
@@ -31,8 +31,8 @@ class MXVersion:
         self.addendum = groups[-1]
 
     def _numbers(self):
-        v = [self.major, self.minor, self.patch, self.hotfix]
-        return filter(lambda x: x is not None, v)
+        return [x for x in [self.major, self.minor, self.patch, self.hotfix]
+                if x is not None]
 
     def __str__(self):
         version = ".".join(map(str, self._numbers()))
@@ -40,8 +40,11 @@ class MXVersion:
             version = "%s-%s" % (version, self.addendum)
         return version
 
+    def __repr__(self):
+        return "%s('%s')" % (self.__class__.__name__, str(self))
+
     def __contains__(self, other):
-        if isinstance(other, basestring):
+        if not isinstance(other, MXVersion):
             other = MXVersion(other)
         s = self._numbers()
         o = other._numbers()
