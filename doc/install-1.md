@@ -100,12 +100,6 @@ If you want to use this location as a little additional yum repository, you can 
 
 This package has dependencies on a few small python libraries, of which part of them (yaml and httplib2) aren't available in the base distribution of RedHat / Centos. You can get them from EPEL.
 
-## System-wide configuration of m2ee-tools
-
-The m2ee-tools package provides a template configuration file for system-wide configuration, installed in the examples directory in the package documentation under /usr/share/doc. This file is called `system-wide-m2ee.yaml` and can be placed at `/etc/m2ee/m2ee.yaml`.
-
-Instead of using this system-wide configuration file, you can specify these options in the application-specific configuration as well, which will override or replace the system-wide configuration.
-
 - - -
 
 [Next: Preparing an application deployment location](install-2.md)

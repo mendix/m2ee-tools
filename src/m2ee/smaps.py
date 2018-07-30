@@ -1,8 +1,5 @@
 #
-# Copyright (c) 2009-2017, Mendix bv
-# All Rights Reserved.
-#
-# http://www.mendix.com/
+# Copyright (C) 2009 Mendix. All rights reserved.
 #
 
 from __future__ import print_function
@@ -77,7 +74,8 @@ def get_smaps_rss_by_category(pid):
 
 def _load_proc_smaps_lines(pid):
     try:
-        return open('/proc/%s/smaps' % pid).read().splitlines()
+        with open('/proc/%s/smaps' % pid) as f:
+            return f.read().splitlines()
     except EnvironmentError:
         return None
 

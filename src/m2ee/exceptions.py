@@ -1,6 +1,5 @@
-# Copyright (c) 2009-2017, Mendix bv
-# All Rights Reserved.
-# http://www.mendix.com/
+#
+# Copyright (C) 2009 Mendix. All rights reserved.
 #
 
 
@@ -27,14 +26,17 @@ class M2EEException(Exception):
 
     ERR_DOWNLOAD_FAILED = 20
 
-    def __init__(self, message, cause=None, errno=1):
+    def __init__(self, message, cause=None, errno=1, output=None):
         self.message = message
         self.cause = cause
         self.errno = errno
+        self.output = output
 
     def __str__(self):
         strlist = [self.message]
         if self.cause is not None:
             strlist.append("caused by: %s" % self.cause)
         strlist.append("errno: %s" % hex(self.errno))
+        if self.output:
+            strlist.append("subprocess output available")
         return ', '.join(strlist)

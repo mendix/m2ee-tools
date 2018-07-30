@@ -10,7 +10,7 @@ In the home directory of our example user myapp we create the .m2ee settings dir
 
     myapp@example.mendix.net:~ 1-$ mkdir .m2ee
 
-The m2ee-tools package provides a template configuration file, installed in the examples directory in the package documentation under `/usr/share/doc`. You can copy this template configuration file, `user-specific-m2ee.yaml`, to `~/.m2ee/m2ee.yaml`.
+The m2ee-tools package provides a template configuration file, installed in the examples directory in the package documentation under `/usr/share/doc`. You can copy this template configuration file, `m2ee.yaml`, to `~/.m2ee/m2ee.yaml`.
 
 Take a look at the example `m2ee.yaml` file. This example configuration file consists of several sections with configurable settings. In this howto, we're focusing on the basic settings to get a simple application running.
 
