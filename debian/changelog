@@ -1,3 +1,9 @@
+m2ee-tools (7.2~rc1-1) unstable; urgency=medium
+
+  * New release v7.2-rc1, see CHANGES and NEWS for changes
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Mon, 30 Jul 2018 21:26:08 +0200
+
 m2ee-tools (7.1-1) unstable; urgency=medium
 
   * New release v7.1, see CHANGES and NEWS for changes
