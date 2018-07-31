@@ -1,7 +1,5 @@
 #
-# Copyright (c) 2009-2017, Mendix bv
-# All Rights Reserved.
-# http://www.mendix.com/
+# Copyright (C) 2009 Mendix. All rights reserved.
 #
 
 import logging
@@ -10,8 +8,9 @@ import os
 import signal
 import time
 import errno
+import fcntl
+import sys
 from time import sleep
-from client import M2EEAdminException
 from m2ee.exceptions import M2EEException
 
 logger = logging.getLogger(__name__)
@@ -30,14 +29,13 @@ class M2EERunner:
     def _read_pidfile(self):
         pidfile = self._config.get_pidfile()
         try:
-            pf = file(pidfile, 'r')
-            self._pid = int(pf.read().strip())
-            pf.close()
-        except IOError, e:
+            with open(pidfile, 'r') as f:
+                self._pid = int(f.read().strip())
+        except IOError as e:
             if e.errno != errno.ENOENT:
                 logger.warn("Cannot read pidfile: %s" % e)
             self._pid = None
-        except ValueError, e:
+        except ValueError as e:
             logger.warn("Cannot read pidfile: %s" % e)
             self._pid = None
 
@@ -45,8 +43,9 @@ class M2EERunner:
         if self._pid:
             pidfile = self._config.get_pidfile()
             try:
-                file(pidfile, 'w+').write("%s\n" % self._pid)
-            except IOError, e:
+                with open(pidfile, 'w+') as f:
+                    f.write("%s\n" % self._pid)
+            except IOError as e:
                 logger.error("Cannot write pidfile: %s" % e)
 
     def cleanup_pid(self):
@@ -120,25 +119,47 @@ class M2EERunner:
             return
 
         if detach:
+            pipe_r, pipe_w = os.pipe()
             try:
                 logger.trace("[%s] Forking now..." % os.getpid())
                 pid = os.fork()
-                if pid > 0:
-                    self._pid = None
-                    logger.trace("[%s] Waiting for intermediate process to exit..." % os.getpid())
-                    # prevent zombie process
-                    (pid, result) = os.waitpid(pid, 0)
-                    exitcode = result >> 8
-                    self._handle_jvm_start_result(exitcode)
-                    return
-            except OSError, e:
+            except OSError as e:
                 raise M2EEException("Forking subprocess failed: %d (%s)\n" % (e.errno, e.strerror))
+            if pid > 0:
+                self._pid = None
+                os.close(pipe_w)
+                fcntl.fcntl(pipe_r, fcntl.F_SETFL,
+                            fcntl.fcntl(pipe_r, fcntl.F_GETFL) | os.O_NONBLOCK)
+                logger.trace("[%s] Waiting for intermediate process to exit..." % os.getpid())
+                interactive = sys.stderr.isatty()
+                pipe_fragments = []
+                child, result = 0, 0
+                while child == 0:
+                    sleep(step)
+                    child, result = os.waitpid(pid, os.WNOHANG)
+                    if child != 0:
+                        os.close(pipe_r)
+                    while True:
+                        try:
+                            pipe_fragment = os.read(pipe_r, 1024)
+                            if interactive:
+                                os.write(2, pipe_fragment)
+                            pipe_fragments.append(pipe_fragment)
+                        except OSError:
+                            break
+                pipe_bytes = b''.join(pipe_fragments)
+                output = pipe_bytes.decode('utf-8')
+                exitcode = result >> 8
+                self._handle_jvm_start_result(exitcode, output)
+                return
             logger.trace("[%s] Now in intermediate forked process..." % os.getpid())
+            os.close(pipe_r)
             # decouple from parent environment
             os.chdir("/")
             os.setsid()
-            os.umask(0022)
-            exitcode = self._start_jvm(detach, timeout, step)
+            os.umask(0o0022)
+            exitcode = self._start_jvm(detach, timeout, step, pipe_w)
+            os.close(pipe_w)
             logger.trace("[%s] Exiting intermediate process with exit code %s" %
                          (os.getpid(), exitcode))
             os._exit(exitcode)
@@ -146,7 +167,7 @@ class M2EERunner:
             exitcode = self._start_jvm(detach, timeout, step)
             self._handle_jvm_start_result(exitcode)
 
-    def _handle_jvm_start_result(self, exitcode):
+    def _handle_jvm_start_result(self, exitcode, output=None):
         if exitcode == 0:
             logger.debug("The JVM process has been started.")
         elif exitcode == 2:
@@ -163,34 +184,48 @@ class M2EERunner:
             raise M2EEException("Starting the JVM process (fork/exec) did not succeed.",
                                 errno=M2EEException.ERR_JVM_FORKEXEC)
         elif exitcode == 4:
+            if self.check_pid():
+                stopped = self.terminate(5)
+            if not stopped and self.check_pid():
+                logger.error("Unable to terminate JVM process...")
+                stopped = self.kill(5)
+            if not stopped:
+                logger.error("Unable to kill JVM process!")
             raise M2EEException("Starting the JVM process takes too long.",
-                                errno=M2EEException.ERR_JVM_TIMEOUT)
+                                errno=M2EEException.ERR_JVM_TIMEOUT,
+                                output=output)
         elif exitcode == 0x20:
             raise M2EEException("JVM process disappeared with a clean exit code.",
-                                errno=M2EEException.ERR_APPCONTAINER_EXIT_ZERO)
+                                errno=M2EEException.ERR_APPCONTAINER_EXIT_ZERO,
+                                output=output)
         elif exitcode == 0x21:
             raise M2EEException("JVM process terminated without reason.",
-                                errno=M2EEException.ERR_APPCONTAINER_UNKNOWN_ERROR)
+                                errno=M2EEException.ERR_APPCONTAINER_UNKNOWN_ERROR,
+                                output=output)
         elif exitcode == 0x22:
             raise M2EEException("JVM process terminated: could not bind admin port.",
-                                errno=M2EEException.ERR_APPCONTAINER_ADMIN_PORT_IN_USE)
+                                errno=M2EEException.ERR_APPCONTAINER_ADMIN_PORT_IN_USE,
+                                output=output)
         elif exitcode == 0x23:
             raise M2EEException("JVM process terminated: could not bind runtime port.",
-                                errno=M2EEException.ERR_APPCONTAINER_RUNTIME_PORT_IN_USE)
+                                errno=M2EEException.ERR_APPCONTAINER_RUNTIME_PORT_IN_USE,
+                                output=output)
         elif exitcode == 0x24:
             raise M2EEException("JVM process terminated: incompatible JVM version.",
-                                errno=M2EEException.ERR_APPCONTAINER_INVALID_JDK_VERSION)
+                                errno=M2EEException.ERR_APPCONTAINER_INVALID_JDK_VERSION,
+                                output=output)
         else:
             raise M2EEException("Starting the JVM process failed, reason unknown (%s)." %
-                                exitcode, errno=M2EEException.ERR_JVM_UNKNOWN)
+                                exitcode, errno=M2EEException.ERR_JVM_UNKNOWN,
+                                output=output)
         return
 
-    def _start_jvm(self, detach, timeout, step):
+    def _start_jvm(self, detach, timeout, step, pipe_w=None):
         env = self._config.get_java_env()
         cmd = self._config.get_java_cmd()
 
         logger.trace("Environment to be used when starting the JVM: %s" %
-                     ' '.join(["%s='%s'" % (k, v) for k, v in env.iteritems()]))
+                     ' '.join(["%s='%s'" % (k, v) for k, v in env.items()]))
         logger.trace("Command line to be used when starting the JVM: %s" % ' '.join(cmd))
         logger.trace("[%s] Starting the JVM..." % os.getpid())
         try:
@@ -198,9 +233,12 @@ class M2EERunner:
                 cmd,
                 close_fds=True,
                 stdin=subprocess.PIPE,
+                stdout=pipe_w,
+                stderr=pipe_w,
                 cwd='/',
                 env=env,
             )
+            proc.stdin.close()
         except Exception as e:
             if isinstance(e, OSError) and e.errno == errno.ENOENT:
                 return 2
@@ -224,21 +262,12 @@ class M2EERunner:
             if self.check_pid(proc.pid) and self._client.ping():
                 break
             t += step
+        if not detach:
+            self._attached_proc = proc
         if t >= timeout:
             logger.debug("Timeout: Java subprocess takes too long to start.")
             return 4
-        if detach:
-            self.close_jvm_stdio()
-        if not detach:
-            self._attached_proc = proc
         return 0
-
-    def close_jvm_stdio(self):
-        logger.trace("Calling CloseStdIO...")
-        try:
-            self._client.close_stdio()
-        except M2EEAdminException as e:
-            logger.error("Failed to close stdio, ignoring: %s" % e)
 
     def _wait_pid(self, timeout=None, step=0.25):
         logger.trace("Waiting for process to disappear: timeout=%s" % timeout)

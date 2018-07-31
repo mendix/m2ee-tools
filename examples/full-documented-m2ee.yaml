@@ -48,8 +48,7 @@
 # The configuration in /etc/ can be used to set server-wide configuration
 # options without having to specify them again for each user. (if you run
 # multiple applications on a single operating system installation, which is
-# perfectly possible). Examples are the file system location where you put
-# Mendix Runtime distributions (the unpacked mendix-x.y.z.tar.gz files)
+# perfectly possible).
 #
 # In configuration options explained below, the uncommented shown values are in
 # most cases not default values, but just an example value. When an option has
@@ -58,19 +57,22 @@
 
 mxnode:
  # mxjar_repo can be a single location, or a list of locations which need to be
- # searched for installed Mendix Runtime versions
+ # searched for installed Mendix Runtime versions.
+ #
+ # It is highly recommended to not set this option, but let it default to the
+ # 'runtimes' directory under the app_base location, as specified in the m2ee
+ # section below, so the user can use the download_runtime command to install
+ # mendix runtime versions.
+ #
  mxjar_repo: /usr/local/share/mendix/
  # or, when specifying multiple locations:
  #mxjar_repo: ["/opt/mendix/runtime/", "/usr/local/share/mendix/"]
  #
- # When starting an application that has been created using version 4.2.2 of
+ # When starting an application that has been created using version 7.7.1 of
  # the Mendix Business Modeler, the following location would be checked for
- # existence: /usr/local/share/mendix/4.2.2/ when the first configuration
+ # existence: /usr/local/share/mendix/7.7.1/ when the first configuration
  # example above is used.
  #
- # If the mxjar_repo contains a path that is writable by the user itself, it can be
- # used together with the download_runtime functionality to download runtimes on
- # demand.
  # If a 'runtimes' directory exists under the app_base location, as specified
  # in the m2ee section below, it will be inserted at the front of the
  # mxjar_repo automatically, to facilitate runtime downloads on demand.
@@ -286,14 +288,6 @@ m2ee:
  # defaults to data/model-upload under app_base path
  model_upload_path: '/path/to/project/data/model-upload'
 
- # Configuration file for Apache Felix / OSGi (Mendix >= 5 only)
- #
- # The configuration file will be generated when application configuration is
- # being loaded.
- #
- # defaults to the file felixconfig.properties in model under app_base path
- felix_config_file: '/path/to/project/model/felixconfig.properties'
-
  # When using the log command in the m2ee shell, m2ee-tools will execute a tail
  # -F on the log file of your Mendix Runtime. Unfortunately, it does not
  # automagically know where this file is located. You might be logging via
@@ -417,6 +411,21 @@ logging:
    port: 514
    facility: LOCAL6
    prefix: example
+   # In the Mendix Runtime, log nodes are created on the fly when a log message
+   # is published to them and they don't exist yet.  However, since we cannot
+   # interactively change the log level for a node that does not exist yet,
+   # loglevel configuration in here allows to force create and set a loglevel
+   # for nodes even before any logging in the Mendix Runtime happens, to enable
+   # debugging right from the start. This also allows debugging of the early
+   # startup code of the Mendix Runtime.
+   #
+   # This functionality is available in Mendix >= 6
+   #
+   # Note that setting a log level on a single logsubscriber will also
+   # configure it on other log subscribers using their autosubscribe setting!
+   loglevel:
+    Core: DEBUG
+    Connector: WARNING
  -
    # Example of File Subscriber configuration. This log subscriber will output
    # all log messages directly to a text file.
@@ -669,50 +678,35 @@ mxruntime:
  # stored in the database of your Mendix application, instead of only in the
  # volatile application memory.
  #
- # Only login sessions will be stored in the database. The object cache
- # (choosing edit in the client... editing... save...) and intermediate state of
- # running microflows are not persistanly committed to the database, as doing so
- # would instantly open the gates of performance hell.
+ # Only login sessions will be stored in the database. Intermediate state of
+ # running microflows and objects that are being edited in the web client, but
+ # not yet committed, are not saved in the database.
  #
- # Enabling persistent sessions is not desirable in any use case. It might be
- # fun that users are not logged out if you do a quick restart of the
- # application, but all unsaved edit forms will generate errors or corrupt data
- # when you do so.
+ # -- For Mendix versions before 7 --
  #
- # After all, it may only be desirable in a testing environment where integrity
- # of data is not a big issue, when application restarts are done frequently and
- # logging in again is more inconvenient than working through some red error
- # popups. My advice... never enable persistent sessions.
+ # It is not desirable in any use case to enable persistent sessions in Mendix
+ # versions earlier than 7. It might be convenient that users do not seem to be
+ # logged out if you do a quick restart of the application, but all unsaved
+ # edit forms will generate errors or corrupt data.
  #
- # Do not enable persistent sessions together with disabling keepalive, because
- # this will cause an extra database update to happen on the session store for
- # every request the browser client issues (and that's a lot of times).
+ # Moreover, never disable the EnableKeepAlive setting together with enabling
+ # PersistentSessions, because this will cause an extra database update to
+ # happen on the user object for every request the browser client issues, which
+ # has serious impact on the performance of the application.
+ #
+ # default: False  # for Mendix < 7
  PersistentSessions: False
-
- # DTAPMode is an old setting that specifies in which DTAP (Development, Test,
- # Acceptance, Production) step the application is running. The Mendix Runtime
- # will behave differently when using Development/Test setting than in
- # Acceptance/Production. In D/T, more 'development'-like extra magic
- # functionality like automatically creating/updating an administrative account
- # or trying to create a database when it does not exist is enabled.
  #
- # Nowadays this DTAP stages are replaced by the 'Configurations' tab page in
- # Project Settings in the Modeler, which allows to create any number of sets of
- # configuration settings to be used. (e.g. run on built-in database for
- # development, switch to test-database of the project team etc...) The Modeler
- # always starts using the Development mode.
+ # -- For Mendix 7 --
  #
- # NEVER EVER use Development or Test on a production server.
+ # In Mendix 7, optimizations were made to reduce the performance impact of
+ # enabling PersistentSessions and disabling the EnableKeepAlive option.
  #
- # Also, NEVER EVER run the Modeler on a production database using e.g. an ssh
- # tunnel to the database. Because the Modeler is always using development mode,
- # it will instantaneously reset the password of the 'admin user' which is
- # defined in the modeler to its development default (which likely means there
- # will be a user MxAdmin with password set to '1' and/or create this account
- # when it does not exist, which you DO NOT WANT TO HAPPEN.
+ # When using multiple runtime instances for a single environment, this option
+ # needs to be enabled.
  #
- # default: P(roduction)
- #DTAPMode: P
+ # default: True  # Mendix 7
+ PersistentSessions: True
 
 # By specifying file names in the include section, additional configuration
 # will be read from those files, and will be deep-merged into the already read

@@ -22,10 +22,10 @@ def monkeypatch_logging():
 if not hasattr(logging, 'trace'):
     monkeypatch_logging()
 
-from core import M2EE  # noqa
-import pgutil  # noqa
-import nagios  # noqa
-import munin  # noqa
-import version  # noqa
+from m2ee.core import M2EE  # noqa
+import m2ee.pgutil  # noqa
+import m2ee.nagios  # noqa
+import m2ee.munin  # noqa
+import m2ee.version  # noqa
 
-__version__ = '7.1'
+__version__ = '7.2-rc1'

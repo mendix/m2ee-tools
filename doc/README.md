@@ -6,8 +6,6 @@ The following operating systems are currently fully supported:
 
  * Debian GNU/Linux 9 (Stretch)
  * Debian GNU/Linux 8 (Jessie)
- * Debian GNU/Linux 7 (Wheezy)
- * RHEL 6, Centos 6
  * RHEL 7, Centos 7
 
 Installation on other unix-like operating systems is possible, but is not fully tested and supported by Mendix.

@@ -1,8 +1,8 @@
-m2ee-tools (7.1-1~mx7u1) wheezy; urgency=medium
+m2ee-tools (7.2~rc1-1) unstable; urgency=medium
 
-  * Rebuild for wheezy
+  * New release v7.2-rc1, see CHANGES and NEWS for changes
 
- -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Thu, 02 Nov 2017 18:59:56 +0100
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Mon, 30 Jul 2018 21:26:08 +0200
 
 m2ee-tools (7.1-1) unstable; urgency=medium
 
