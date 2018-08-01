@@ -613,7 +613,7 @@ def print_pg_stat_activity_config(name):
     print("idle.draw STACK")
     print("idle.info Amount of idle (unused) but open connections")
     print("total.label total")
-    print("total.draw LINE0")
+    print("total.draw LINE1")
     print("total.colour 000000")
     print("total.info Total amount of open connections as seen by PostgreSQL "
           "(e.g. also including this monitoring query and things like backup dump operations)")
