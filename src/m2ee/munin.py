@@ -433,7 +433,7 @@ def print_jvm_threads_config(name, stats):
         return
     print("multigraph mxruntime_threads_%s" % name)
     print("graph_args --base 1000 -l 0")
-    print("graph_vlabel objects")
+    print("graph_vlabel threads")
     print("graph_title %s - JVM Threads" % name)
     print("graph_category Mendix")
     print("graph_info This graph shows the total amount of threads in the JVM process")
