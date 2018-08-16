@@ -433,7 +433,7 @@ def print_jvm_threads_config(name, stats):
         return
     print("multigraph mxruntime_threads_%s" % name)
     print("graph_args --base 1000 -l 0")
-    print("graph_vlabel objects")
+    print("graph_vlabel threads")
     print("graph_title %s - JVM Threads" % name)
     print("graph_category Mendix")
     print("graph_info This graph shows the total amount of threads in the JVM process")
@@ -536,23 +536,6 @@ def print_jvm_process_memory_values(name, stats, pid, java_version):
 
 
 def print_pg_stat_database_config(name):
-    print("multigraph mxruntime_pg_stat_xact_%s" % name)
-    print("graph_args -l 0")
-    print("graph_vlabel transactions per second")
-    print("graph_title %s - PostgreSQL transactions" % name)
-    print("graph_category Mendix")
-    print("graph_info This graph shows amount of transaction commits and rollbacks")
-    print("xact_commit.label xact commit")
-    print("xact_commit.draw LINE1")
-    print("xact_commit.min 0")
-    print("xact_commit.type DERIVE")
-    print("xact_commit.info Number of commits")
-    print("xact_rollback.label xact rollback")
-    print("xact_rollback.draw LINE1")
-    print("xact_rollback.min 0")
-    print("xact_rollback.type DERIVE")
-    print("xact_rollback.info Number of rollbacks")
-    print("")
     print("multigraph mxruntime_pg_stat_tuples_%s" % name)
     print("graph_args -l 0")
     print("graph_vlabel tuple mutations per second")
@@ -578,12 +561,7 @@ def print_pg_stat_database_config(name):
 
 
 def print_pg_stat_database_values(name, m2):
-    xact_commit, xact_rollback, tup_inserted, tup_updated, tup_deleted = \
-        m2ee.pgutil.pg_stat_database(m2.config)
-    print("multigraph mxruntime_pg_stat_xact_%s" % name)
-    print("xact_commit.value %s" % xact_commit)
-    print("xact_rollback.value %s" % xact_rollback)
-    print("")
+    _, _, tup_inserted, tup_updated, tup_deleted = m2ee.pgutil.pg_stat_database(m2.config)
     print("multigraph mxruntime_pg_stat_tuples_%s" % name)
     print("tup_inserted.value %s" % tup_inserted)
     print("tup_updated.value %s" % tup_updated)
@@ -613,7 +591,7 @@ def print_pg_stat_activity_config(name):
     print("idle.draw STACK")
     print("idle.info Amount of idle (unused) but open connections")
     print("total.label total")
-    print("total.draw LINE0")
+    print("total.draw LINE1")
     print("total.colour 000000")
     print("total.info Total amount of open connections as seen by PostgreSQL "
           "(e.g. also including this monitoring query and things like backup dump operations)")

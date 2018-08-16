@@ -1,4 +1,4 @@
-m2ee-tools 7.2-rc1, 30 Jul 2018
+m2ee-tools 7.2, 16 Aug 2018
   * Drop support for RHEL 6 / Centos 6
   * Drop support for Debian Wheezy
   * Don't warn about missing constants any more, but use default values from
@@ -14,7 +14,8 @@ m2ee-tools 7.2-rc1, 30 Jul 2018
     output of the JVM process and put it in the 'output' field of the exception
     object that is raised.
   * Add munin plugins with database statistics (open connections, database
-    size, transaction commits, tuple mutations) when PostgreSQL is used.
+    size, tuple mutations) when PostgreSQL is used.
+  * Refresh munin documentation with new example graphs and explanations.
   * Remove system-wide-m2ee example from the documentation, it's not useful any
     more.
   * Ignore deprecated DTAPMode setting. Only try creating database in yolo mode
@@ -24,6 +25,8 @@ m2ee-tools 7.2-rc1, 30 Jul 2018
     the default location.
   * Python 3 compatibility. This is only tested with Debian Stretch. Any older
     Debian Release will not be supported with Python 3.
+  * Document the Mendix 7 changed default for PersistentSessions in
+    full-documented-m2ee.yaml
   * Small typo fixes, cleanups and improvements.
 
 m2ee-tools 7.1, 2 Nov 2017
