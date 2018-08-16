@@ -1,4 +1,4 @@
-m2ee-tools 7.2-rc1, 30 Jul 2018
+m2ee-tools 7.2, 16 Aug 2018
 ==========================
 
 This release drops support for RHEL / Centos 6 and Debian Wheezy.
@@ -7,6 +7,12 @@ When constants are not defined, their default from the application model will
 be used, instead of failing to start the application. A new interactive command
 is added, check_constants, which reports which constant definitions are missing
 or unneeded.
+
+In the logging configuration, it's now possible to preset loglevels before
+starting the application. This allows debugging problems during the start of an
+application, without having to set the entire logging system to a debug level.
+See the logging section in the full-documented-m2ee.yaml configuration example
+for more information.
 
 When using m2ee-tools in "one-off" mode, the exit code of the process will now
 be 1 instead of 0 if an exception occured.
