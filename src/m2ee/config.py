@@ -607,7 +607,9 @@ class M2EEConfig:
         model_constants = {}
         for metadata_constant in self._model_metadata['Constants']:
             model_constants[metadata_constant['Name']] = metadata_constant['DefaultValue']
-        yaml_constants = self._conf['mxruntime']['MicroflowConstants']
+        yaml_constants = self._conf['mxruntime'].get('MicroflowConstants', None)
+        if yaml_constants is None:
+            yaml_constants = {}
         constants_to_use = {}
         default_constants = {}
         for name, value in model_constants.items():
