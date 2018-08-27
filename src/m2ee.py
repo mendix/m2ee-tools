@@ -957,7 +957,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-c",
-        nargs=1,
         action="append",
         dest="yaml_files"
     )
