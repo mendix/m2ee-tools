@@ -1,3 +1,9 @@
+m2ee-tools 7.2.1, 27 Aug 2018
+  * Fix regression in -c command line option handling. Using the option would
+    crash the program.
+  * Improve usability of MicroflowConstants configuration handling. Omitting
+    the option or listing it without any value would crash the program.
+
 m2ee-tools 7.2, 16 Aug 2018
   * Drop support for RHEL 6 / Centos 6
   * Drop support for Debian Wheezy

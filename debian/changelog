@@ -1,9 +1,8 @@
-m2ee-tools (7.2-1~mx7u1) wheezy; urgency=medium
+m2ee-tools (7.2.1-1) unstable; urgency=medium
 
-  * debian/control: only python 2.7 kthxbye
-  * Rebuild for Wheezy
+  * New release v7.2.1, see CHANGES for changes
 
- -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Thu, 16 Aug 2018 18:01:42 +0200
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Mon, 27 Aug 2018 16:21:53 +0200
 
 m2ee-tools (7.2-1) unstable; urgency=medium
 
