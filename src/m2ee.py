@@ -1005,13 +1005,8 @@ def main():
         verbosity = 5
     start_console_logging(verbosity)
 
-    if args.yaml_files is None:
-        yaml_files = None
-    else:
-        yaml_files = [sublist[0] for sublist in args.yaml_files]
-
     cli = CLI(
-        yaml_files=yaml_files,
+        yaml_files=args.yaml_files,
         yolo_mode=args.yolo_mode,
     )
     atexit.register(cli._cleanup_logging)
