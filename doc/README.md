@@ -2,13 +2,13 @@
 
 This documentation describes the installation and configuration of the Mendix software on a system running GNU/Linux. This howto assumes the reader has decent skills concerning administering GNU/Linux server environments.
 
-The following operating systems are currently fully supported:
+The following operating systems are currently supported:
 
  * Debian GNU/Linux 9 (Stretch)
  * Debian GNU/Linux 8 (Jessie)
  * RHEL 7, Centos 7
 
-Installation on other unix-like operating systems is possible, but is not fully tested and supported by Mendix.
+Installation on other unix-like operating systems is possible, but is not tested and supported by Mendix.
 
 In order to set up an environment to run Mendix applications, you will need to install the Mendix software, together with some dependencies, provided by your operating system. For each Mendix application that will be run, a separate user account and project folder on the filesystem is required.
 
