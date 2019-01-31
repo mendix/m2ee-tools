@@ -15,7 +15,7 @@ This page describes installation instructions for Debian and RHEL/Centos in case
 
 The deployment tools, written in python are available in a public apt repository. When using Debian Jessie this repository can be added to your apt sources as follows:
 
-    deb http://packages.mendix.com/platform/debian/ jessie main contrib non-free
+    deb http://packages.mendix.com/platform/debian/ stretch main contrib non-free
 
 ### GPG keyring
 
@@ -30,10 +30,7 @@ Step 2: Fetch the package lists. This should succeed without any GPG verificatio
 
     # apt-get update
     [...]
-    Get:1 http://packages.mendix.com jessie InRelease [10.9 kB]
-    Get:2 http://packages.mendix.com jessie/main amd64 Packages [1,556 B]
-    Get:3 http://packages.mendix.com jessie/contrib amd64 Packages [20 B]
-    Get:4 http://packages.mendix.com jessie/non-free amd64 Packages [20 B]
+    Get:5 http://packages.mendix.com/platform/debian stretch InRelease [10.9 kB]
     [...]
 
 Step 3: Install the `debian-mendix-archive-keyring` package from the Mendix repository. Installing this package makes sure that you will automatically receive new public keys when Mendix does a key-rollover to a new key.
@@ -57,16 +54,16 @@ Now you can install m2ee-tools:
     Reading package lists... Done
     Building dependency tree
     Reading state information... Done
-    The following extra packages will be installed:
-      python-httplib2 python-m2ee unzip
+    The following additional packages will be installed:
+      python-httplib2 python-m2ee python-yaml unzip
     Suggested packages:
-      postgresql-client zip
+      zip
     The following NEW packages will be installed:
-      m2ee-tools python-httplib2 python-m2ee unzip
-    0 upgraded, 4 newly installed, 0 to remove and 0 not upgraded.
-    Need to get 336 kB of archives.
-    After this operation, 826 kB of additional disk space will be used.
-    Do you want to continue [Y/n]?
+      m2ee-tools python-httplib2 python-m2ee python-yaml unzip
+    0 upgraded, 5 newly installed, 0 to remove and 0 not upgraded.
+    Need to get 691 kB of archives.
+    After this operation, 1,743 kB of additional disk space will be used.
+    Do you want to continue? [Y/n]
     [...]
 
 ## Oracle Java JRE or OpenJDK JRE on Debian
