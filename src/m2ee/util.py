@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 from m2ee.exceptions import M2EEException
 from m2ee.version import MXVersion
 
@@ -29,30 +30,6 @@ def unpack(config, mda_name):
     if not os.path.isfile(mda_file_name):
         raise M2EEException("File %s does not exist." % mda_file_name)
 
-    logger.debug("Testing archive...")
-    cmd = ("unzip", "-tqq", mda_file_name)
-    logger.trace("Executing %s" % str(cmd))
-    try:
-        proc = subprocess.Popen(cmd,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-        (stdout, stderr) = proc.communicate()
-
-        logger.trace("stdout: %s" % stdout)
-        logger.trace("stderr: %s" % stderr)
-        if proc.returncode != 0:
-            raise M2EEException("\n".join([
-                "An error occured while testing archive consistency:",
-                "stdout: %s" % stdout,
-                "stderr: %s" % stderr,
-            ]))
-    except OSError as ose:
-        import errno
-        if ose.errno == errno.ENOENT:
-            raise M2EEException("The unzip program could not be found", ose)
-        else:
-            raise M2EEException("An error occured while executing unzip: %s " % ose, ose)
-
     logger.debug("Removing everything in model/ and web/ locations...")
     # TODO: error handling. removing model/ and web/ itself should not be
     # possible (parent dir is root owned), all errors ignored for now
@@ -60,22 +37,16 @@ def unpack(config, mda_name):
     shutil.rmtree(os.path.join(app_base, 'model'), ignore_errors=True)
     shutil.rmtree(os.path.join(app_base, 'web'), ignore_errors=True)
 
-    logger.debug("Extracting archive...")
-    cmd = ("unzip", "-oq", mda_file_name, "web/*", "model/*", "-d", app_base)
-    logger.trace("Executing %s" % str(cmd))
-    proc = subprocess.Popen(cmd,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-    (stdout, stderr) = proc.communicate()
-
-    logger.trace("stdout: %s" % stdout)
-    logger.trace("stderr: %s" % stderr)
-    if proc.returncode != 0:
-        raise M2EEException("\n".join([
-            "An error occured while extracting archive:",
-            "stdout: %s" % stdout,
-            "stderr: %s" % stderr,
-        ]))
+    logger.info("Extracting archive '%s'..." % mda_name)
+    try:
+        z = zipfile.ZipFile(mda_file_name, 'r')
+        z.extractall(
+            path=app_base,
+            members=[info for info in z.infolist()
+                     if info.filename.startswith(('model/', 'web/'))]
+        )
+    except Exception as e:
+        raise M2EEException("Error extracting archive '%s'" % mda_name, e)
 
     # XXX: reset permissions on web/ model/ to be sure after executing this
     # function

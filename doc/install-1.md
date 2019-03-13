@@ -55,11 +55,9 @@ Now you can install m2ee-tools:
     Building dependency tree
     Reading state information... Done
     The following additional packages will be installed:
-      python-httplib2 python-m2ee python-yaml unzip
-    Suggested packages:
-      zip
+      python-httplib2 python-m2ee python-yaml
     The following NEW packages will be installed:
-      m2ee-tools python-httplib2 python-m2ee python-yaml unzip
+      m2ee-tools python-httplib2 python-m2ee python-yaml
     0 upgraded, 5 newly installed, 0 to remove and 0 not upgraded.
     Need to get 691 kB of archives.
     After this operation, 1,743 kB of additional disk space will be used.
