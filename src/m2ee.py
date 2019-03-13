@@ -817,7 +817,11 @@ class CLI(cmd.Cmd, object):
         return feedback['count']
 
     def precmd(self, line):
-        self.m2ee.reload_config_if_changed()
+        try:
+            self.m2ee.reload_config_if_changed()
+        except m2ee.exceptions.M2EEException as e:
+            logger.critical(e)
+            return line
         if line:
             logger.trace("Executing command: %s" % line)
         return line
@@ -1010,10 +1014,15 @@ def main():
         verbosity = 5
     start_console_logging(verbosity)
 
-    cli = CLI(
-        yaml_files=args.yaml_files,
-        yolo_mode=args.yolo_mode,
-    )
+    try:
+        cli = CLI(
+            yaml_files=args.yaml_files,
+            yolo_mode=args.yolo_mode,
+        )
+    except m2ee.exceptions.M2EEException as e:
+        logger.critical(e)
+        sys.exit(1)
+
     atexit.register(cli._cleanup_logging)
     if args.onecmd:
         try:

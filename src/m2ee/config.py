@@ -116,18 +116,18 @@ class M2EEConfig:
     def _check_appcontainer_config(self):
         # did we load any configuration at all?
         if not self._conf:
-            logger.critical("No configuration present. Please put a m2ee.yaml "
-                            "configuration file at the default location "
-                            "~/.m2ee/m2ee.yaml or specify an alternate "
-                            "configuration file using the -c option.")
-            sys.exit(1)
+            raise M2EEException(
+                "No configuration present. Please put a m2ee.yaml "
+                "configuration file at the default location "
+                "~/.m2ee/m2ee.yaml or specify an alternate "
+                "configuration file using the -c option.")
 
         # m2ee
         for option in ['app_base', 'admin_port', 'admin_pass']:
             if not self._conf['m2ee'].get(option, None):
-                logger.critical("Option %s in configuration section m2ee is "
-                                "not defined!" % option)
-                sys.exit(1)
+                raise M2EEException(
+                    "Option %s in configuration section m2ee is "
+                    "not defined!" % option)
 
         # force admin_pass to a string, prevent TypeError when base64-ing it
         # before sending to m2ee api
@@ -145,11 +145,11 @@ class M2EEConfig:
         # change default passwords
         if (self._conf['m2ee']['admin_pass'] == '1' or
                 self._conf['m2ee']['admin_pass'] == 'password'):
-            logger.critical("Using admin_pass '1' or 'password' is not "
-                            "allowed. Please put a long, random password into "
-                            "the admin_pass configuration option. At least "
-                            "change the default!")
-            sys.exit(1)
+            raise M2EEException(
+                "Using admin_pass '1' or 'password' is not "
+                "allowed. Please put a long, random password into "
+                "the admin_pass configuration option. At least "
+                "change the default!")
 
         # database_dump_path
         if 'database_dump_path' not in self._conf['m2ee']:
@@ -174,9 +174,7 @@ class M2EEConfig:
         # check some locations for existance and permissions
         basepath = self._conf['m2ee']['app_base']
         if not os.path.exists(basepath):
-            logger.critical("Application base directory %s does not exist!" %
-                            basepath)
-            sys.exit(1)
+            raise M2EEException("Application base directory %s does not exist!" % basepath)
 
         # model_upload_path
         if 'model_upload_path' not in self._conf['m2ee']:
@@ -277,17 +275,12 @@ class M2EEConfig:
             try:
                 os.mkdir(dotm2ee)
             except OSError as e:
-                logger.debug("Got %s: %s" % (type(e), e))
-                import traceback
-                logger.debug(traceback.format_exc())
-                logger.critical("Directory %s does not exist, and cannot be "
-                                "created!")
-                logger.critical("If you do not want to use .m2ee in your home "
-                                "directory, you have to specify pidfile, "
-                                "munin -> config_cache in your configuration "
-                                "file")
-                sys.exit(1)
-
+                raise M2EEException(
+                    "Directory %s does not exist, and cannot be created: %s. "
+                    "If you do not want to use .m2ee in your home "
+                    "directory, you have to specify pidfile and "
+                    "munin config_cache in your configuration file explicitly."
+                    % (dotm2ee, e))
         return dotm2ee
 
     def get_symlink_mxclientsystem(self):
