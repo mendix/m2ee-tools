@@ -105,6 +105,12 @@ class CLI(cmd.Cmd, object):
         way. See the client_errno for possible error codes.
         """
 
+        if not self.m2ee.config.all_systems_are_go():
+            raise m2ee.exceptions.M2EEException(
+                "The application cannot be started because no application "
+                "model is present, or because of other previous errors."
+            )
+
         if not self.m2ee.config.get_runtime_path():
             raise m2ee.exceptions.M2EEException(
                 "It appears that the Mendix Runtime version which has to be "

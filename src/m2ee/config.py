@@ -45,21 +45,22 @@ class M2EEConfig:
             ))
 
         self.runtime_version = self._lookup_runtime_version()
-
-        self._runtime_path = None
         if self.runtime_version is None:
             logger.info("Unable to look up mendix runtime files "
-                        "because product version is yet unknown.")
+                        "because product version is yet unknown. "
+                        "Try unpacking a deployment archive first.")
             self._all_systems_are_go = False
-        else:
-            self._runtime_path = self.lookup_in_mxjar_repo(
-                str(self.runtime_version))
-            if self._runtime_path is None:
-                logger.warn("Mendix Runtime not found for version %s. "
-                            "You can try downloading it using the "
-                            "download_runtime command." %
-                            str(self.runtime_version))
-                self._all_systems_are_go = False
+            return
+
+        self._runtime_path = self.lookup_in_mxjar_repo(str(self.runtime_version))
+        if self._runtime_path is None:
+            logger.warn("Mendix Runtime not found for version %s. "
+                        "You can try downloading it using the "
+                        "download_runtime command." %
+                        str(self.runtime_version))
+            self._all_systems_are_go = False
+            return
+
         if self.runtime_version < 7:
             self._setup_classpath()
 
