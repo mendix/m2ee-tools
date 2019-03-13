@@ -35,8 +35,6 @@ class M2EEConfig:
 
         self._conf['mxruntime']['DTAPMode'] = 'P'
 
-        self.fix_permissions()
-
         self._model_metadata = self._try_load_json(
             os.path.join(
                 self._conf['m2ee']['app_base'],
@@ -51,6 +49,8 @@ class M2EEConfig:
                         "Try unpacking a deployment archive first.")
             self._all_systems_are_go = False
             return
+
+        self.fix_permissions()
 
         self._runtime_path = self.lookup_in_mxjar_repo(str(self.runtime_version))
         if self._runtime_path is None:
@@ -208,11 +208,18 @@ class M2EEConfig:
                 "web": 0o0755,
                 "data": 0o0700}.items():
             fullpath = os.path.join(basepath, directory)
-            if not os.path.exists(fullpath):
-                logger.critical("Directory %s does not exist!" % fullpath)
-                sys.exit(1)
-            # TODO: detect permissions and tell user if changing is needed
-            os.chmod(fullpath, mode)
+            if not os.path.isdir(fullpath):
+                logger.warn("Directory '%s' does not exist, unable to fixup permissions!" %
+                            fullpath)
+                continue
+            try:
+                if os.stat(fullpath).st_mode & 0xFFF != mode:
+                    os.chmod(fullpath, mode)
+                    logging.info("Fixing up permissions of directory '%s' "
+                                 "with mode %s" % (directory, oct(mode)[-3:]))
+            except Exception as e:
+                logger.error("Unable to fixup permissions of directory '%s' "
+                             "with mode %s: %s, Ignoring." % (directory, oct(mode)[-3:], e))
 
     def get_felix_config_file(self):
         return os.path.join(self._conf['m2ee']['app_base'], 'model', 'felixconfig.properties')

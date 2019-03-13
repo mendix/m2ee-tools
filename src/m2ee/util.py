@@ -48,9 +48,6 @@ def unpack(config, mda_name):
     except Exception as e:
         raise M2EEException("Error extracting archive '%s'" % mda_name, e)
 
-    # XXX: reset permissions on web/ model/ to be sure after executing this
-    # function
-
 
 def fix_mxclientsystem_symlink(config):
     logger.debug("Running fix_mxclientsystem_symlink...")
