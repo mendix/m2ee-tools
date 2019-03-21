@@ -78,18 +78,16 @@ default_stats = {
 
 def print_config(m2, name):
     stats, java_version = get_stats('config', m2)
-    if stats is None:
-        return
-    options = m2.config.get_munin_options()
-
-    print_requests_config(name, stats)
-    print_connectionbus_config(name, m2, stats)
-    print_sessions_config(name, stats, options.get('graph_total_named_users', True))
-    print_jvmheap_config(name, stats)
-    print_threadpool_config(name, stats)
-    print_cache_config(name, stats)
-    print_jvm_threads_config(name, stats)
-    print_jvm_process_memory_config(name)
+    if stats is not None:
+        options = m2.config.get_munin_options()
+        print_requests_config(name, stats)
+        print_connectionbus_config(name, m2, stats)
+        print_sessions_config(name, stats, options.get('graph_total_named_users', True))
+        print_jvmheap_config(name, stats)
+        print_threadpool_config(name, stats)
+        print_cache_config(name, stats)
+        print_jvm_threads_config(name, stats)
+        print_jvm_process_memory_config(name)
     if m2.config.is_using_postgresql():
         print_pg_stat_database_config(name)
         print_pg_stat_activity_config(name)
@@ -98,18 +96,16 @@ def print_config(m2, name):
 
 def print_values(m2, name):
     stats, java_version = get_stats('values', m2)
-    if stats is None:
-        return
-    options = m2.config.get_munin_options()
-
-    print_requests_values(name, stats)
-    print_connectionbus_values(name, stats)
-    print_sessions_values(name, stats, options.get('graph_total_named_users', True))
-    print_jvmheap_values(name, stats)
-    print_threadpool_values(name, stats)
-    print_cache_values(name, stats)
-    print_jvm_threads_values(name, stats)
-    print_jvm_process_memory_values(name, stats, m2.runner.get_pid(), java_version)
+    if stats is not None:
+        options = m2.config.get_munin_options()
+        print_requests_values(name, stats)
+        print_connectionbus_values(name, stats)
+        print_sessions_values(name, stats, options.get('graph_total_named_users', True))
+        print_jvmheap_values(name, stats)
+        print_threadpool_values(name, stats)
+        print_cache_values(name, stats)
+        print_jvm_threads_values(name, stats)
+        print_jvm_process_memory_values(name, stats, m2.runner.get_pid(), java_version)
     if m2.config.is_using_postgresql():
         print_pg_stat_database_values(name, m2)
         print_pg_stat_activity_values(name, m2)
