@@ -1,3 +1,11 @@
+m2ee-tools (7.2.2-1) unstable; urgency=medium
+
+  * New release v7.2.2, see CHANGES for changes
+  * debian/control: require at least python 2.7
+  * debian/control: drop unzip dependency
+
+ -- Hans van Kranenburg <hans.van.kranenburg@mendix.com>  Fri, 12 Apr 2019 14:26:27 +0200
+
 m2ee-tools (7.2.1-1) unstable; urgency=medium
 
   * New release v7.2.1, see CHANGES for changes
