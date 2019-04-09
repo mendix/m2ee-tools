@@ -20,7 +20,7 @@ Description: Mendix Runtime deployment tools
 
 Package: python-m2ee
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, unzip, python-yaml, python-httplib2, curl
+Depends: ${misc:Depends}, ${python:Depends}, python-yaml, python-httplib2, curl
 Section: python
 Breaks: munin-plugins-mendix (<< 9-3)
 Suggests: m2ee-tools, postgresql-client
