@@ -35,8 +35,6 @@ class M2EEConfig:
 
         self._conf['mxruntime']['DTAPMode'] = 'P'
 
-        self.fix_permissions()
-
         self._model_metadata = self._try_load_json(
             os.path.join(
                 self._conf['m2ee']['app_base'],
@@ -45,21 +43,24 @@ class M2EEConfig:
             ))
 
         self.runtime_version = self._lookup_runtime_version()
-
-        self._runtime_path = None
         if self.runtime_version is None:
             logger.info("Unable to look up mendix runtime files "
-                        "because product version is yet unknown.")
+                        "because product version is yet unknown. "
+                        "Try unpacking a deployment archive first.")
             self._all_systems_are_go = False
-        else:
-            self._runtime_path = self.lookup_in_mxjar_repo(
-                str(self.runtime_version))
-            if self._runtime_path is None:
-                logger.warn("Mendix Runtime not found for version %s. "
-                            "You can try downloading it using the "
-                            "download_runtime command." %
-                            str(self.runtime_version))
-                self._all_systems_are_go = False
+            return
+
+        self.fix_permissions()
+
+        self._runtime_path = self.lookup_in_mxjar_repo(str(self.runtime_version))
+        if self._runtime_path is None:
+            logger.warn("Mendix Runtime not found for version %s. "
+                        "You can try downloading it using the "
+                        "download_runtime command." %
+                        str(self.runtime_version))
+            self._all_systems_are_go = False
+            return
+
         if self.runtime_version < 7:
             self._setup_classpath()
 
@@ -115,18 +116,18 @@ class M2EEConfig:
     def _check_appcontainer_config(self):
         # did we load any configuration at all?
         if not self._conf:
-            logger.critical("No configuration present. Please put a m2ee.yaml "
-                            "configuration file at the default location "
-                            "~/.m2ee/m2ee.yaml or specify an alternate "
-                            "configuration file using the -c option.")
-            sys.exit(1)
+            raise M2EEException(
+                "No configuration present. Please put a m2ee.yaml "
+                "configuration file at the default location "
+                "~/.m2ee/m2ee.yaml or specify an alternate "
+                "configuration file using the -c option.")
 
         # m2ee
         for option in ['app_base', 'admin_port', 'admin_pass']:
             if not self._conf['m2ee'].get(option, None):
-                logger.critical("Option %s in configuration section m2ee is "
-                                "not defined!" % option)
-                sys.exit(1)
+                raise M2EEException(
+                    "Option %s in configuration section m2ee is "
+                    "not defined!" % option)
 
         # force admin_pass to a string, prevent TypeError when base64-ing it
         # before sending to m2ee api
@@ -144,11 +145,11 @@ class M2EEConfig:
         # change default passwords
         if (self._conf['m2ee']['admin_pass'] == '1' or
                 self._conf['m2ee']['admin_pass'] == 'password'):
-            logger.critical("Using admin_pass '1' or 'password' is not "
-                            "allowed. Please put a long, random password into "
-                            "the admin_pass configuration option. At least "
-                            "change the default!")
-            sys.exit(1)
+            raise M2EEException(
+                "Using admin_pass '1' or 'password' is not "
+                "allowed. Please put a long, random password into "
+                "the admin_pass configuration option. At least "
+                "change the default!")
 
         # database_dump_path
         if 'database_dump_path' not in self._conf['m2ee']:
@@ -173,9 +174,7 @@ class M2EEConfig:
         # check some locations for existance and permissions
         basepath = self._conf['m2ee']['app_base']
         if not os.path.exists(basepath):
-            logger.critical("Application base directory %s does not exist!" %
-                            basepath)
-            sys.exit(1)
+            raise M2EEException("Application base directory %s does not exist!" % basepath)
 
         # model_upload_path
         if 'model_upload_path' not in self._conf['m2ee']:
@@ -207,11 +206,18 @@ class M2EEConfig:
                 "web": 0o0755,
                 "data": 0o0700}.items():
             fullpath = os.path.join(basepath, directory)
-            if not os.path.exists(fullpath):
-                logger.critical("Directory %s does not exist!" % fullpath)
-                sys.exit(1)
-            # TODO: detect permissions and tell user if changing is needed
-            os.chmod(fullpath, mode)
+            if not os.path.isdir(fullpath):
+                logger.warn("Directory '%s' does not exist, unable to fixup permissions!" %
+                            fullpath)
+                continue
+            try:
+                if os.stat(fullpath).st_mode & 0xFFF != mode:
+                    os.chmod(fullpath, mode)
+                    logging.info("Fixing up permissions of directory '%s' "
+                                 "with mode %s" % (directory, oct(mode)[-3:]))
+            except Exception as e:
+                logger.error("Unable to fixup permissions of directory '%s' "
+                             "with mode %s: %s, Ignoring." % (directory, oct(mode)[-3:], e))
 
     def get_felix_config_file(self):
         return os.path.join(self._conf['m2ee']['app_base'], 'model', 'felixconfig.properties')
@@ -269,17 +275,12 @@ class M2EEConfig:
             try:
                 os.mkdir(dotm2ee)
             except OSError as e:
-                logger.debug("Got %s: %s" % (type(e), e))
-                import traceback
-                logger.debug(traceback.format_exc())
-                logger.critical("Directory %s does not exist, and cannot be "
-                                "created!")
-                logger.critical("If you do not want to use .m2ee in your home "
-                                "directory, you have to specify pidfile, "
-                                "munin -> config_cache in your configuration "
-                                "file")
-                sys.exit(1)
-
+                raise M2EEException(
+                    "Directory %s does not exist, and cannot be created: %s. "
+                    "If you do not want to use .m2ee in your home "
+                    "directory, you have to specify pidfile and "
+                    "munin config_cache in your configuration file explicitly."
+                    % (dotm2ee, e))
         return dotm2ee
 
     def get_symlink_mxclientsystem(self):

@@ -1,3 +1,19 @@
+m2ee-tools 7.2.2, 21 Mar 2019
+  * Include a proper bugfix for the regression in -c argument handling that was
+    already quickly fixed in v7.2.1.
+  * Replace the usage of the external unzip program while unpacking a
+    deployment archive with the python zipfile library, since that built in
+    library is sufficient for doing the needed work.
+  * Fix a program crash when there's no unpacked application model.
+  * Improve resetting permissions on web/ model/ and data/ in the project
+    directory.
+  * Remove all occurences of sys.exit(1) in library code.
+  * Still provide PostgreSQL related munin graph output when the application is
+    not running.
+  * Improve unclear wording of how Mendix can support users of this software.
+    (We can't "fully" support things a user does on their own computer.)
+  * Update documentation to use Debian Stretch in the examples.
+
 m2ee-tools 7.2.1, 27 Aug 2018
   * Fix regression in -c command line option handling. Using the option would
     crash the program.

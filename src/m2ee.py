@@ -105,6 +105,12 @@ class CLI(cmd.Cmd, object):
         way. See the client_errno for possible error codes.
         """
 
+        if not self.m2ee.config.all_systems_are_go():
+            raise m2ee.exceptions.M2EEException(
+                "The application cannot be started because no application "
+                "model is present, or because of other previous errors."
+            )
+
         if not self.m2ee.config.get_runtime_path():
             raise m2ee.exceptions.M2EEException(
                 "It appears that the Mendix Runtime version which has to be "
@@ -811,7 +817,11 @@ class CLI(cmd.Cmd, object):
         return feedback['count']
 
     def precmd(self, line):
-        self.m2ee.reload_config_if_changed()
+        try:
+            self.m2ee.reload_config_if_changed()
+        except m2ee.exceptions.M2EEException as e:
+            logger.critical(e)
+            return line
         if line:
             logger.trace("Executing command: %s" % line)
         return line
@@ -957,7 +967,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-c",
-        nargs=1,
         action="append",
         dest="yaml_files"
     )
@@ -1005,15 +1014,15 @@ def main():
         verbosity = 5
     start_console_logging(verbosity)
 
-    if args.yaml_files is None:
-        yaml_files = None
-    else:
-        yaml_files = [sublist[0] for sublist in args.yaml_files]
+    try:
+        cli = CLI(
+            yaml_files=args.yaml_files,
+            yolo_mode=args.yolo_mode,
+        )
+    except m2ee.exceptions.M2EEException as e:
+        logger.critical(e)
+        sys.exit(1)
 
-    cli = CLI(
-        yaml_files=yaml_files,
-        yolo_mode=args.yolo_mode,
-    )
     atexit.register(cli._cleanup_logging)
     if args.onecmd:
         try:
