@@ -209,7 +209,7 @@ def write_last_known_good_stats_cache(stats, config_cache):
         with open(config_cache, 'w+') as f:
             f.write(json.dumps(stats))
     except Exception as e:
-        logger.error("Error writing munin config cache to %s: %s",
+        logger.error("Error writing munin config cache to %s: %s" %
                      (config_cache, e))
 
 
