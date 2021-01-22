@@ -7,15 +7,13 @@ To be able to run Mendix applications, the following pieces of software need to 
  * Mendix Deployment tools (m2ee-tools), a helper script to manage deployments and application processes.
  * The Java Runtime Environment.
 
-This page describes installation instructions for Debian and RHEL/Centos in case a system wide installation is done using provided software packages. If you want to do a custom installation on another operating system or an installation without the need to use the administrator (root) account, additionally have a look at the documentation to do a [local m2ee-tools and mendix runtime installation](non-root-install.md).
+This page describes installation instructions for Debian in case a system wide installation is done using provided software packages. If you want to do a custom installation on another operating system or an installation without the need to use the administrator (root) account, additionally have a look at the documentation to do a [local m2ee-tools and mendix runtime installation](non-root-install.md).
 
 ## Deployment Tools for Debian
 
-(scroll down for RHEL / Centos based instructions)
+The deployment tools, written in python are available in a public apt repository. When e.g. using Debian Buster this repository can be added to your apt sources as follows:
 
-The deployment tools, written in python are available in a public apt repository. When using Debian Jessie this repository can be added to your apt sources as follows:
-
-    deb http://packages.mendix.com/platform/debian/ stretch main contrib non-free
+    deb http://packages.mendix.com/platform/debian/ buster main contrib non-free
 
 ### GPG keyring
 
@@ -30,7 +28,7 @@ Step 2: Fetch the package lists. This should succeed without any GPG verificatio
 
     # apt-get update
     [...]
-    Get:5 http://packages.mendix.com/platform/debian stretch InRelease [10.9 kB]
+    Get:5 http://packages.mendix.com/platform/debian buster InRelease [10.9 kB]
     [...]
 
 Step 3: Install the `debian-mendix-archive-keyring` package from the Mendix repository. Installing this package makes sure that you will automatically receive new public keys when Mendix does a key-rollover to a new key.
