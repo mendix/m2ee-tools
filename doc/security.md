@@ -2,9 +2,9 @@
 
 ### Use a Mendix version containing the latest security patches.
 
- * Use either Mendix version 3.3.3 or 4.3.0 or any newer 3.x or 4.x release. These releases contain important security fixes. If you're running on older versions before 3.3.3, 4.3.0 or even on 2.5.x, upgrade as soon as possible.
+ * Always use a recent, supported Mendix version that contains all available security fixes.
 
-*Please Note: If your app runs in the Mendix Cloud and uses Mendix version 3.3.3, 4.3.0 or newer it will automatically comply with this checklist once it is deployed.*
+*Please Note: If your app runs in the Mendix Cloud it will automatically comply with the remaining part of this checklist once it is deployed.*
 
 ### Use an unprivileged dedicated user account for every application.
 
@@ -21,7 +21,7 @@
 
 ### Configure your firewall
 
- * Make sure that, e.g. using firewall rules, it is impossible to directly connect to the application process (e.g. on port 8000) except for the reverse proxy. End users or an attacker should not be able to circumvent using https by directly connecting to the application port. New: Since Mendix 4.3.0, you are required to explicitly configure the application to be able to connect from the network instead of only at the local server.
+ * Make sure that, e.g. using firewall rules, it is impossible to directly connect to the application process (e.g. on port 8000) except for the reverse proxy. End users or an attacker should not be able to circumvent using https by directly connecting to the application port. You are required to explicitly configure the application to be able to connect from the network instead of only at the local server.
 
 ### Let the HTTP reverse proxy serve static content
 
@@ -29,7 +29,7 @@
 
 ### Secure access to the admin port (for m2ee-tools and Windows Service Console access)
 
- * Make sure that, e.g. using firewall rules, it's not possible to connect to the 'Adminport' of the Mendix application process from any other location than where administrative tools like m2ee-tools or the Windows Service Console are used. In most situations this will mean the port can only be reachable on the local host and all external access is denied. If allowing access from the network, keep in mind communication is not secured using SSL, so it cannot be used on networks that cannot be fully trusted. New: Since Mendix 4.3.0, the admin port will by default only allow connections from the local host. In case you want to connect from the network, this has to be explicitely configured.
+ * Make sure that, e.g. using firewall rules, it's not possible to connect to the 'Adminport' of the Mendix application process from any other location than where administrative tools like m2ee-tools or the Windows Service Console are used. In most situations this will mean the port can only be reachable on the local host and all external access is denied. If allowing access from the network, keep in mind communication is not secured using SSL, so it cannot be used on networks that cannot be fully trusted. The admin port will by default only allow connections from the local host. In case you want to connect from the network, this has to be explicitely configured.
  * Choose a strong password to protect the administrative interface, running on the admin TCP port. Set this password to e.g. a long random string. (When using the Windows Service Console, this is automatically done.) It's not used manually anywhere. It's only used in the background by administrative tools like m2ee-tools and the Windows Service Console to be able to connect back to the Mendix application after it has been started for administrative tasks.
 
 ### Do not connect to a production database using the Modeler

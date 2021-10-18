@@ -123,7 +123,7 @@ Some basic pieces of nginx configuration to serve up a mendix application could 
 
 ## Set the X-Forwarded-Scheme header!
 
-Pay close attention to the `proxy_set_header` line that adds `X-Forwarded-Scheme`. If you omit this header (with value 'https') when using https between the end users browser and nginx, the mendix runtime will not know about the use of https and will not set the secure flag on cookies, which means the web browser of the end user will also send cookies when the end user tries to connect to the application over plain http. Because it's common practice to provide a redirect to https on the default http port as convenience method for users typing the application url without explicit https, this means cookies are sent unencrypted when the user does so. Be sure to use at least Mendix version 3.3.3 or 4.2.2, because earlier versions did not correctly set the secure cookie flag.
+Pay close attention to the `proxy_set_header` line that adds `X-Forwarded-Scheme`. If you omit this header (with value 'https') when using https between the end users browser and nginx, the mendix runtime will not know about the use of https and will not set the secure flag on cookies, which means the web browser of the end user will also send cookies when the end user tries to connect to the application over plain http. Because it's common practice to provide a redirect to https on the default http port as convenience method for users typing the application url without explicit https, this means cookies are sent unencrypted when the user does so.
 
 ## Using gzip compression
 
