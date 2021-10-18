@@ -668,7 +668,7 @@ def load_yaml_file(yaml_file, config, yaml_mtimes):
     logger.debug("Loading configuration from %s" % yaml_file)
     try:
         with open(yaml_file) as f:
-            additional_config = yaml.load(f)
+            additional_config = yaml.safe_load(f)
         config = merge_config(config, additional_config)
         yaml_mtimes[yaml_file] = os.stat(yaml_file)[8]
     except Exception as e:
