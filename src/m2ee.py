@@ -474,7 +474,7 @@ class CLI(cmd.Cmd, object):
                 "a password: ")
             if not debugger_password:
                 debugger_password = ''.join(
-                    random.choice(string.letters + string.digits)
+                    random.choice(string.ascii_letters + string.digits)
                     for x in range(random.randint(20, 30)))
         else:
             debugger_password = args
