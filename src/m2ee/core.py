@@ -211,6 +211,9 @@ class M2EE():
     def get_log_levels(self, timeout=None):
         return self.client.get_log_settings({"sort": "subscriber"}, timeout=timeout)
 
+    def has_license(self):
+        return 'license' in self.client.get_license_information()
+
     def save_ddl_commands(self, ddl_commands):
         query_file_name = os.path.join(self.config.get_database_dump_path(),
                                        "%s_database_commands.sql" %
