@@ -30,7 +30,7 @@ def dumpdb(config, name=None):
                                 stderr=subprocess.PIPE)
         (_, stderr) = proc.communicate()
 
-        if stderr != '':
+        if len(stderr) != 0:
             raise M2EEException("An error occured while creating database dump: %s" %
                                 stderr.strip())
     except OSError as e:
@@ -53,7 +53,7 @@ def restoredb(config, dump_name):
                                 stderr=subprocess.PIPE)
         (stdout, stderr) = proc.communicate()
 
-        if stderr != '':
+        if len(stderr) != 0:
             raise M2EEException("An error occured while doing database restore: %s " %
                                 stderr.strip())
     except OSError as e:
@@ -79,7 +79,7 @@ def emptydb(config):
                                  stderr=subprocess.PIPE)
         (stdout1, stderr1) = proc1.communicate()
 
-        if stderr1 != '':
+        if len(stderr1) != 0:
             raise M2EEException("Emptying database (step 1) failed: %s" % stderr1.strip())
     except OSError as e:
         raise M2EEException("Emptying database (step 1) failed, cmd: %s" % cmd1, e)
@@ -92,7 +92,7 @@ def emptydb(config):
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout2, stderr2) = proc2.communicate(stdin2)
 
-        if stderr2 != '':
+        if len(stderr2) != 0:
             raise M2EEException("Emptying database (step 2) failed: %s" % stderr2.strip())
     except OSError as e:
         raise M2EEException("Emptying database (step 2) failed, cmd: %s" % cmd2, e)
@@ -113,7 +113,7 @@ def emptydb(config):
                                  stderr=subprocess.PIPE)
         (stdout3, stderr3) = proc3.communicate()
 
-        if stderr3 != '':
+        if len(stderr3) != 0:
             raise M2EEException("Emptying database (step 3) failed: %s" % stderr3.strip())
     except OSError as e:
         raise M2EEException("Emptying database (step 3) failed, cmd: %s" % cmd3, e)
@@ -126,7 +126,7 @@ def emptydb(config):
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout4, stderr4) = proc4.communicate(stdin4)
 
-        if stderr4 != '':
+        if len(stderr4) != 0:
             raise M2EEException("Emptying database (step 4) failed: %s" % stderr4.strip())
     except OSError as e:
         raise M2EEException("Emptying database (step 4) failed, cmd: %s" % cmd4, e)
@@ -157,7 +157,7 @@ def pg_stat_database(config):
         proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
         (stdout, stderr) = proc.communicate()
-        if stderr != '':
+        if len(stderr) != 0:
             raise M2EEException("Retrieving pg_stat_database info failed: %s" % stderr.strip())
     except OSError as e:
         raise M2EEException("Retrieving pg_stat_database info failed, cmd: %s" % cmd, e)
@@ -180,7 +180,7 @@ def pg_stat_activity(config):
         proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
         (stdout, stderr) = proc.communicate()
-        if stderr != '':
+        if len(stderr) != 0:
             raise M2EEException("Retrieving pg_stat_activity info failed: %s" % stderr.strip())
     except OSError as e:
         raise M2EEException("Retrieving pg_stat_activity info failed, cmd: %s" % cmd, e)
