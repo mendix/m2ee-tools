@@ -1002,12 +1002,7 @@ def main():
 
     # how verbose should we be? see
     # http://docs.python.org/release/2.7/library/logging.html#logging-levels
-    verbosity = args.quiet - args.verbose
-    if args.quiet:
-        verbosity = verbosity + args.quiet
-    if args.verbose:
-        verbosity = verbosity - args.verbose
-    verbosity = verbosity * 10 + 20
+    verbosity = (args.quiet - args.verbose) * 10 + 20
     if verbosity > 50:
         verbosity = 100
     if verbosity < 5:
