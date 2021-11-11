@@ -956,6 +956,9 @@ def start_console_logging(level):
     logger.addHandler(stdoutlog)
     logger.addHandler(stderrlog)
 
+    logging.getLogger('requests').setLevel(logging.WARNING)
+    logging.getLogger('urllib3').setLevel(logging.WARNING)
+
 
 def main():
     parser = argparse.ArgumentParser()
