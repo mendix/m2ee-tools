@@ -3,7 +3,6 @@
 # Copyright (C) 2009 Mendix. All rights reserved.
 #
 
-from __future__ import print_function
 import argparse
 import atexit
 import cmd
