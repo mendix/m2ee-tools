@@ -10,6 +10,18 @@ from m2ee.exceptions import M2EEException
 
 logger = logging.getLogger(__name__)
 
+try:
+    import psycopg2
+except ImportError:
+    psycopg2 = None
+
+
+def _check_psycopg2():
+    if psycopg2 is None:
+        raise M2EEException("Failed to import psycopg2. This module is needed by m2ee for "
+                            "PostgreSQL related functionality. "
+                            "Please provide it on the python library path.")
+
 
 def dumpdb(config, name=None):
     env = os.environ.copy()
