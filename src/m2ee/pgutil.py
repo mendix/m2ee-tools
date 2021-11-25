@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 try:
     import psycopg2
+    import psycopg2.sql
 except ImportError:
     psycopg2 = None
 
@@ -91,75 +92,49 @@ def restoredb(config, dump_name):
 
 
 def emptydb(config):
-    env = os.environ.copy()
-    env.update(config.get_pg_environment())
-
-    logger.info("Removing all tables...")
-    # get list of drop table commands
-    cmd1 = (
-        config.get_psql_binary(), "-t", "-c",
-        "SELECT 'DROP TABLE ' || n.nspname || '.\"' || c.relname || '\" CASCADE;' "
-        "FROM pg_catalog.pg_class AS c LEFT JOIN pg_catalog.pg_namespace AS n "
-        "ON n.oid = c.relnamespace WHERE relkind = 'r' AND n.nspname NOT IN "
-        "('pg_catalog', 'pg_toast') AND pg_catalog.pg_table_is_visible(c.oid)"
-    )
-    logger.trace("Executing %s, creating pipe for stdout,stderr" % str(cmd1))
+    conn = open_pg_connection(config)
     try:
-        proc1 = subprocess.Popen(cmd1, env=env, stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-        (stdout1, stderr1) = proc1.communicate()
+        with conn.cursor() as cur:
+            logger.info("Removing all tables...")
+            cur.execute("""
+                SELECT n.nspname, c.relname
+                FROM pg_catalog.pg_class AS c
+                LEFT JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace
+                WHERE relkind = 'r'
+                    AND n.nspname NOT IN ('pg_catalog', 'pg_toast')
+                    AND pg_catalog.pg_table_is_visible(c.oid);
+            """)
+            nsp_rel_tuples = cur.fetchall()
+            logger.debug("Dropping {} tables.".format(len(nsp_rel_tuples)))
+            for nsp_rel_tuple in nsp_rel_tuples:
+                cur.execute(
+                    psycopg2.sql.SQL("""DROP TABLE {} CASCADE;""").format(
+                        psycopg2.sql.Identifier(*nsp_rel_tuple),
+                    )
+                )
 
-        if len(stderr1) != 0:
-            raise M2EEException("Emptying database (step 1) failed: %s" % stderr1.strip())
-    except OSError as e:
-        raise M2EEException("Emptying database (step 1) failed, cmd: %s" % cmd1, e)
-
-    stdin2 = stdout1
-    cmd2 = (config.get_psql_binary(),)
-    logger.trace("Piping stdout,stderr to %s" % str(cmd2))
-    try:
-        proc2 = subprocess.Popen(cmd2, env=env, stdin=subprocess.PIPE,
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        (stdout2, stderr2) = proc2.communicate(stdin2)
-
-        if len(stderr2) != 0:
-            raise M2EEException("Emptying database (step 2) failed: %s" % stderr2.strip())
-    except OSError as e:
-        raise M2EEException("Emptying database (step 2) failed, cmd: %s" % cmd2, e)
-
-    logger.info("Removing all sequences...")
-    # get list of drop sequence commands
-    cmd3 = (
-        config.get_psql_binary(), "-t", "-c",
-        "SELECT 'DROP SEQUENCE ' || n.nspname || '.\"' || c.relname || '\" "
-        "CASCADE;' FROM pg_catalog.pg_class AS c LEFT JOIN "
-        "pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace WHERE "
-        "relkind = 'S' AND n.nspname NOT IN ('pg_catalog', 'pg_toast') AND "
-        "pg_catalog.pg_table_is_visible(c.oid)"
-    )
-    logger.trace("Executing %s, creating pipe for stdout,stderr" % str(cmd3))
-    try:
-        proc3 = subprocess.Popen(cmd3, env=env, stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-        (stdout3, stderr3) = proc3.communicate()
-
-        if len(stderr3) != 0:
-            raise M2EEException("Emptying database (step 3) failed: %s" % stderr3.strip())
-    except OSError as e:
-        raise M2EEException("Emptying database (step 3) failed, cmd: %s" % cmd3, e)
-
-    stdin4 = stdout3
-    cmd4 = (config.get_psql_binary(),)
-    logger.trace("Piping stdout,stderr to %s" % str(cmd4))
-    try:
-        proc4 = subprocess.Popen(cmd4, env=env, stdin=subprocess.PIPE,
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        (stdout4, stderr4) = proc4.communicate(stdin4)
-
-        if len(stderr4) != 0:
-            raise M2EEException("Emptying database (step 4) failed: %s" % stderr4.strip())
-    except OSError as e:
-        raise M2EEException("Emptying database (step 4) failed, cmd: %s" % cmd4, e)
+            logger.info("Removing all sequences...")
+            cur.execute("""
+                SELECT n.nspname, c.relname
+                FROM pg_catalog.pg_class AS c
+                LEFT JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace
+                WHERE relkind = 'S'
+                    AND n.nspname NOT IN ('pg_catalog', 'pg_toast')
+                    AND pg_catalog.pg_table_is_visible(c.oid);
+            """)
+            nsp_rel_tuples = cur.fetchall()
+            logger.debug("Dropping {} sequences.".format(len(nsp_rel_tuples)))
+            for nsp_rel_tuple in nsp_rel_tuples:
+                cur.execute(
+                    psycopg2.sql.SQL("""DROP SEQUENCE {} CASCADE;""").format(
+                        psycopg2.sql.Identifier(*nsp_rel_tuple),
+                    )
+                )
+        conn.commit()
+    except psycopg2.Error as pe:
+        raise M2EEException("Emptying database failed: {}".format(pe)) from pe
+    finally:
+        conn.close()
 
 
 def psql(config):
