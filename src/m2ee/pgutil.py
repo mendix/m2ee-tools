@@ -23,6 +23,24 @@ def _check_psycopg2():
                             "Please provide it on the python library path.")
 
 
+def open_pg_connection(config):
+    """
+    Returns a new open database connection as psycopg2.connection object. It's
+    callers responsibility to call the close() function on it when done.
+    """
+    _check_psycopg2()
+    pg_env = config.get_pg_environment()
+    try:
+        conn = psycopg2.connect(
+            database=pg_env['PGDATABASE'],
+            user=pg_env['PGUSER'],
+            password=pg_env['PGPASSWORD'],
+        )
+    except psycopg2.Error as pe:
+        raise M2EEException("Opening database connection failed: {}".format(pe)) from pe
+    return conn
+
+
 def dumpdb(config, name=None):
     env = os.environ.copy()
     env.update(config.get_pg_environment())
