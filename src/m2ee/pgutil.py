@@ -24,6 +24,10 @@ def _check_psycopg2():
                             "Please provide it on the python library path.")
 
 
+# Mendix *always* uses the default namespace, and default schema 'public'.
+default_schema = 'public'
+
+
 def open_pg_connection(config):
     """
     Returns a new open database connection as psycopg2.connection object. It's
@@ -77,7 +81,7 @@ def restoredb(config, dump_name):
     )
     logger.debug("Restoring %s" % db_dump_file_name)
     cmd = (config.get_pg_restore_binary(), "-d", env['PGDATABASE'],
-           "-O", "-n", "public", "-x", db_dump_file_name)
+           "-O", "-n", default_schema, "-x", db_dump_file_name)
     logger.trace("Executing %s" % str(cmd))
     try:
         proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
@@ -96,14 +100,12 @@ def emptydb(config):
     try:
         with conn.cursor() as cur:
             logger.info("Removing all tables...")
-            cur.execute("""
+            cur.execute(psycopg2.sql.SQL("""
                 SELECT n.nspname, c.relname
                 FROM pg_catalog.pg_class AS c
                 LEFT JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace
-                WHERE relkind = 'r'
-                    AND n.nspname NOT IN ('pg_catalog', 'pg_toast')
-                    AND pg_catalog.pg_table_is_visible(c.oid);
-            """)
+                WHERE relkind = 'r' AND n.nspname = {};
+            """).format(psycopg2.sql.Literal(default_schema)))
             nsp_rel_tuples = cur.fetchall()
             logger.debug("Dropping {} tables.".format(len(nsp_rel_tuples)))
             for nsp_rel_tuple in nsp_rel_tuples:
@@ -114,14 +116,12 @@ def emptydb(config):
                 )
 
             logger.info("Removing all sequences...")
-            cur.execute("""
+            cur.execute(psycopg2.sql.SQL("""
                 SELECT n.nspname, c.relname
                 FROM pg_catalog.pg_class AS c
                 LEFT JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace
-                WHERE relkind = 'S'
-                    AND n.nspname NOT IN ('pg_catalog', 'pg_toast')
-                    AND pg_catalog.pg_table_is_visible(c.oid);
-            """)
+                WHERE relkind = 'S' AND n.nspname = {};
+            """).format(psycopg2.sql.Literal(default_schema)))
             nsp_rel_tuples = cur.fetchall()
             logger.debug("Dropping {} sequences.".format(len(nsp_rel_tuples)))
             for nsp_rel_tuple in nsp_rel_tuples:
