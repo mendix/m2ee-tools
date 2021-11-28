@@ -7,8 +7,18 @@ import logging
 import os
 from m2ee.client import M2EEAdminException, M2EEAdminNotAvailable, \
     M2EEAdminHTTPException, M2EEAdminTimeout
+from m2ee.exceptions import M2EEException
 import m2ee.smaps as smaps
 import m2ee.pgutil
+
+try:
+    import psycopg2.sql
+except ImportError:
+    # We need psycopg2.sql to build queries for database statistics. However,
+    # if psycopg2 is not available, we can ignore it here, since the function
+    # to open a connection in the pgutil module will already bail out before
+    # actually reaching the code that uses this import.
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -106,9 +116,11 @@ def print_values(m2, name):
         print_jvm_threads_values(name, stats)
         print_jvm_process_memory_values(name, stats, m2.runner.get_pid(), java_version)
     if m2.config.is_using_postgresql():
-        print_pg_stat_database_values(name, m2)
-        print_pg_stat_activity_values(name, m2)
-        print_pg_table_index_size_values(name, m2)
+        db_stats = get_db_stats(m2)
+        print_pg_stat_database_values(name, db_stats['pg_stat_database'])
+        print_pg_stat_activity_values(name, db_stats['pg_stat_activity'],
+                                      m2.config.get_max_active_db_connections())
+        print_pg_table_index_size_values(name, *db_stats['pg_table_index_size'])
 
 
 def guess_java_version(m2, runtime_version, stats):
@@ -530,6 +542,55 @@ def print_jvm_process_memory_values(name, stats, pid, java_version):
     print("")
 
 
+def get_db_stats(m2):
+    logger.debug("Retrieving database statistics.")
+    stats = {}
+    conn = m2ee.pgutil.open_pg_connection(m2.config)
+    user = conn.get_dsn_parameters()['user']
+    dbname = conn.get_dsn_parameters()['dbname']
+    try:
+        with conn.cursor() as cur:
+            # pg_stat_database
+            cur.execute(psycopg2.sql.SQL("""
+                SELECT tup_inserted, tup_updated, tup_deleted
+                FROM pg_stat_database where datname = {};
+            """).format(psycopg2.sql.Literal(dbname)))
+            tup_inserted, tup_updated, tup_deleted = cur.fetchone()
+            stats['pg_stat_database'] = {
+                'tup_inserted': tup_inserted,
+                'tup_updated': tup_updated,
+                'tup_deleted': tup_deleted,
+            }
+
+            # pg_stat_activity
+            cur.execute(psycopg2.sql.SQL("""
+                SELECT count(*), state FROM pg_stat_activity
+                WHERE datname = {} AND usename = {} GROUP BY 2
+            """).format(psycopg2.sql.Literal(dbname),
+                        psycopg2.sql.Literal(user)))
+            stats['pg_stat_activity'] = {}
+            for count, state in cur.fetchall():
+                stats['pg_stat_activity'][state] = count
+
+            # pg_table_index_size
+            cur.execute(psycopg2.sql.SQL("""
+                SELECT
+                    sum(pg_table_size(table_name::regclass)),
+                    sum(pg_indexes_size(table_name::regclass))
+                FROM (
+                    SELECT ('"' || table_schema || '"."' || table_name || '"')
+                    AS table_name
+                    FROM information_schema.tables
+                ) AS foo;
+            """))
+            stats['pg_table_index_size'] = cur.fetchone()
+    except psycopg2.Error as pe:
+        raise M2EEException("Retrieving database statistics failed: {}".format(pe)) from pe
+    finally:
+        conn.close()
+    return stats
+
+
 def print_pg_stat_database_config(name):
     print("multigraph mxruntime_pg_stat_tuples_%s" % name)
     print("graph_args -l 0")
@@ -555,12 +616,11 @@ def print_pg_stat_database_config(name):
     print("")
 
 
-def print_pg_stat_database_values(name, m2):
-    _, _, tup_inserted, tup_updated, tup_deleted = m2ee.pgutil.pg_stat_database(m2.config)
+def print_pg_stat_database_values(name, stats):
     print("multigraph mxruntime_pg_stat_tuples_%s" % name)
-    print("tup_inserted.value %s" % tup_inserted)
-    print("tup_updated.value %s" % tup_updated)
-    print("tup_deleted.value %s" % tup_deleted)
+    print("tup_inserted.value {}".format(stats['tup_inserted']))
+    print("tup_updated.value {}".format(stats['tup_updated']))
+    print("tup_deleted.value {}".format(stats['tup_deleted']))
     print("")
 
 
@@ -597,10 +657,8 @@ def print_pg_stat_activity_config(name):
     print("")
 
 
-def print_pg_stat_activity_values(name, m2):
-    activity = m2ee.pgutil.pg_stat_activity(m2.config)
+def print_pg_stat_activity_values(name, activity, limit):
     total = sum(activity.values())
-    limit = m2.config.get_max_active_db_connections()
     print("multigraph mxruntime_pg_stat_activity_%s" % name)
     print("active.value %s" % activity.get('active', 0))
     print("idle.value %s" % activity.get('idle', 0))
@@ -632,8 +690,7 @@ def print_pg_table_index_size_config(name):
     print("")
 
 
-def print_pg_table_index_size_values(name, m2):
-    tables, indexes = m2ee.pgutil.pg_table_index_size(m2.config)
+def print_pg_table_index_size_values(name, tables, indexes):
     print("multigraph mxruntime_pg_table_index_size_%s" % name)
     print("tables.value %s" % tables)
     print("indexes.value %s" % indexes)
