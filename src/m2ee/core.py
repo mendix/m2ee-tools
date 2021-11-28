@@ -113,11 +113,11 @@ class M2EE():
                 logger.info("The application has been stopped successfully.")
                 return True
             else:
-                logger.warn("The application did not shutdown by itself...")
+                logger.warning("The application did not shutdown by itself...")
                 return False
         else:
             if self.runner.check_pid():
-                logger.warn("Admin API not available, so not able to use shutdown action.")
+                logger.warning("Admin API not available, so not able to use shutdown action.")
                 return False
             else:
                 logger.info("Nothing to stop, the application process is not running.")
@@ -131,8 +131,8 @@ class M2EE():
             if stopped:
                 logger.info("The JVM process has been stopped.")
                 return True
-            logger.warn("The application process seems not to respond to any "
-                        "command or signal.")
+            logger.warning("The application process seems not to respond to any "
+                           "command or signal.")
             return False
         else:
             self.runner.cleanup_pid()

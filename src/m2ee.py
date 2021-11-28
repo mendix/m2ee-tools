@@ -235,8 +235,8 @@ class CLI(cmd.Cmd, object):
 
     def do_create_admin_user(self, args=None):
         if not self.m2ee.client.ping():
-            logger.warn("The application process needs to be running to "
-                        "create a user object in the application.")
+            logger.warning("The application process needs to be running to "
+                           "create a user object in the application.")
             return
         print("This option will create an administrative user account, using "
               "the preset username and user role settings.")
@@ -249,8 +249,8 @@ class CLI(cmd.Cmd, object):
 
     def do_update_admin_user(self, args=None):
         if not self.m2ee.client.ping():
-            logger.warn("The application process needs to be running to "
-                        "change user objects in the application.")
+            logger.warning("The application process needs to be running to "
+                           "change user objects in the application.")
             return
         print("Using this function you can reset the password of an "
               "administrative user account.")
@@ -509,9 +509,9 @@ class CLI(cmd.Cmd, object):
                 limitint = int(args)
                 self._who(limitint)
             except ValueError:
-                logger.warn("Could not parse argument to an integer. Use a "
-                            "number as argument to limit the amount of logged "
-                            "in users shown.")
+                logger.warning("Could not parse argument to an integer. Use a "
+                               "number as argument to limit the amount of logged "
+                               "in users shown.")
         else:
             self._who()
 
@@ -559,8 +559,8 @@ class CLI(cmd.Cmd, object):
             return
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if pid_alive or m2ee_alive:
-            logger.warn("The application is still running, refusing to "
-                        "restore the database right now.")
+            logger.warning("The application is still running, refusing to "
+                           "restore the database right now.")
             return
         database_name = self.m2ee.config.get_pg_environment()['PGDATABASE']
         answer = ('y' if self.yolo_mode
@@ -591,8 +591,8 @@ class CLI(cmd.Cmd, object):
             return
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if pid_alive or m2ee_alive:
-            logger.warn("The application process is still running, refusing "
-                        "to empty the database right now.")
+            logger.warning("The application process is still running, refusing "
+                           "to empty the database right now.")
             return
         logger.info("This command will drop all tables and sequences in "
                     "database %s." %
@@ -655,7 +655,7 @@ class CLI(cmd.Cmd, object):
             return
         logfile = self.m2ee.config.get_logfile()
         if not logfile:
-            logger.warn("logfile location is not specified")
+            logger.warning("logfile location is not specified")
             return
         print("This command will start printing log information from the "
               "application right in the middle of all of the other output on "

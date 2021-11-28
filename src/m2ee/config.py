@@ -53,10 +53,10 @@ class M2EEConfig:
 
         self._runtime_path = self.lookup_in_mxjar_repo(str(self.runtime_version))
         if self._runtime_path is None:
-            logger.warn("Mendix Runtime not found for version %s. "
-                        "You can try downloading it using the "
-                        "download_runtime command." %
-                        str(self.runtime_version))
+            logger.warning("Mendix Runtime not found for version %s. "
+                           "You can try downloading it using the "
+                           "download_runtime command." %
+                           str(self.runtime_version))
             self._all_systems_are_go = False
             return
 
@@ -78,8 +78,8 @@ class M2EEConfig:
             if isinstance(self._conf['m2ee']['extend_classpath'], list):
                 classpath.extend(self._conf['m2ee']['extend_classpath'])
             else:
-                logger.warn("extend_classpath option in m2ee section in "
-                            "configuration is not a list")
+                logger.warning("extend_classpath option in m2ee section in "
+                               "configuration is not a list")
 
         self._classpath = ":".join(classpath)
         if self._classpath:
@@ -155,8 +155,8 @@ class M2EEConfig:
             self._conf['m2ee']['database_dump_path'] = os.path.join(
                 self._conf['m2ee']['app_base'], 'data', 'database')
         if not os.path.isdir(self._conf['m2ee']['database_dump_path']):
-            logger.warn("Database dump path %s is not a directory" %
-                        self._conf['m2ee']['database_dump_path'])
+            logger.warning("Database dump path %s is not a directory" %
+                           self._conf['m2ee']['database_dump_path'])
 
     def _check_runtime_config(self):
         # ensure mxjar_repo is a list, multiple locations are allowed for searching
@@ -168,8 +168,8 @@ class M2EEConfig:
         # m2ee
         for option in ['app_name', 'app_base', 'runtime_port']:
             if not self._conf['m2ee'].get(option, None):
-                logger.warn("Option %s in configuration section m2ee is not "
-                            "defined!" % option)
+                logger.warning("Option %s in configuration section m2ee is not "
+                               "defined!" % option)
         # check some locations for existance and permissions
         basepath = self._conf['m2ee']['app_base']
         if not os.path.exists(basepath):
@@ -180,8 +180,8 @@ class M2EEConfig:
             self._conf['m2ee']['model_upload_path'] = os.path.join(
                 self._conf['m2ee']['app_base'], 'data', 'model-upload')
         if not os.path.isdir(self._conf['m2ee']['model_upload_path']):
-            logger.warn("Model upload path %s is not a directory" %
-                        self._conf['m2ee']['model_upload_path'])
+            logger.warning("Model upload path %s is not a directory" %
+                           self._conf['m2ee']['model_upload_path'])
 
         # magically add app_base/runtimes to mxjar_repo when it's present
         magic_runtimes = os.path.join(self._conf['m2ee']['app_base'],
@@ -191,12 +191,12 @@ class M2EEConfig:
             self._conf['mxnode']['mxjar_repo'].insert(0, magic_runtimes)
 
         if 'DatabasePassword' not in self._conf['mxruntime']:
-            logger.warn("There is no database password present in the configuration. Either add "
-                        "it to the configuration, or use the set_database_password command to "
-                        "set it before trying to start the application!")
+            logger.warning("There is no database password present in the configuration. Either "
+                           "add it to the configuration, or use the set_database_password "
+                           "command to set it before trying to start the application!")
 
         if len(self._conf['logging']) == 0:
-            logger.warn("No logging settings found, this is probably not what you want.")
+            logger.warning("No logging settings found, this is probably not what you want.")
 
     def fix_permissions(self):
         basepath = self._conf['m2ee']['app_base']
@@ -206,8 +206,8 @@ class M2EEConfig:
                 "data": 0o0700}.items():
             fullpath = os.path.join(basepath, directory)
             if not os.path.isdir(fullpath):
-                logger.warn("Directory '%s' does not exist, unable to fixup permissions!" %
-                            fullpath)
+                logger.warning("Directory '%s' does not exist, unable to fixup permissions!" %
+                               fullpath)
                 continue
             try:
                 if os.stat(fullpath).st_mode & 0xFFF != mode:
@@ -323,18 +323,18 @@ class M2EEConfig:
                 if varname in os.environ:
                     env[varname] = os.environ[varname]
                 else:
-                    logger.warn("preserve_environment variable %s is not "
-                                "present in os.environ" % varname)
+                    logger.warning("preserve_environment variable %s is not "
+                                   "present in os.environ" % varname)
         else:
-            logger.warn("preserve_environment is not a boolean or list")
+            logger.warning("preserve_environment is not a boolean or list")
 
         custom_environment = self._conf['m2ee'].get('custom_environment', {})
         if custom_environment is not None:
             if type(custom_environment) == dict:
                 env.update(custom_environment)
             else:
-                logger.warn("custom_environment option in m2ee section in "
-                            "configuration is not a dictionary")
+                logger.warning("custom_environment option in m2ee section in "
+                               "configuration is not a dictionary")
 
         env.update({
             'M2EE_ADMIN_PORT': str(self._conf['m2ee']['admin_port']),
@@ -367,8 +367,8 @@ class M2EEConfig:
             if isinstance(self._conf['m2ee']['javaopts'], list):
                 cmd.extend(self._conf['m2ee']['javaopts'])
             else:
-                logger.warn("javaopts option in m2ee section in configuration "
-                            "is not a list")
+                logger.warning("javaopts option in m2ee section in configuration "
+                               "is not a list")
         if self.runtime_version >= 7:
             cmd.extend([
                 '-jar',
@@ -433,7 +433,7 @@ class M2EEConfig:
 
     def get_pg_environment(self):
         if not self.is_using_postgresql():
-            logger.warn("Only PostgreSQL databases are supported right now.")
+            logger.warning("Only PostgreSQL databases are supported right now.")
         # rip additional :port from hostName, but allow occurrence of plain
         # ipv6 address between []-brackets (simply assume [ipv6::] when ']' is
         # found in string (also see JDBCDataStoreConfiguration in MxRuntime)
@@ -671,7 +671,7 @@ def load_yaml_file(yaml_file, config, yaml_mtimes):
         config = merge_config(config, additional_config)
         yaml_mtimes[yaml_file] = os.stat(yaml_file)[8]
     except Exception as e:
-        logger.warn("Error reading configuration file %s: %s, ignoring..." % (yaml_file, e))
+        logger.warning("Error reading configuration file %s: %s, ignoring..." % (yaml_file, e))
     return (config, yaml_mtimes)
 
 
