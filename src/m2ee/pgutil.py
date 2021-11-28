@@ -162,7 +162,7 @@ def pg_stat_database(config):
     except OSError as e:
         raise M2EEException("Retrieving pg_stat_database info failed, cmd: %s" % cmd, e)
 
-    return [int(x) for x in stdout.split('|')]
+    return [int(x) for x in stdout.split(b'|')]
 
 
 def pg_stat_activity(config):
@@ -187,9 +187,9 @@ def pg_stat_activity(config):
 
     # e.g. {'idle': 19, 'active': 2, 'idle in transaction': 1}
     return {
-        state: int(count)
+        state.decode(): int(count)
         for line in stdout.splitlines()
-        for count, state in [line.split('|')]
+        for count, state in [line.split(b'|')]
     }
 
 
@@ -205,4 +205,4 @@ def pg_table_index_size(config):
         "        AS table_name FROM information_schema.tables) AS foo"
     )
     output = subprocess.check_output(cmd, env=env)
-    return [int(x) for x in output.split('|')]
+    return [int(x) for x in output.split(b'|')]
