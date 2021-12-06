@@ -708,6 +708,47 @@ mxruntime:
  # default: True  # Mendix 7
  PersistentSessions: True
 
+ # These parameters are used for app's usage metrics export.
+ # If app has connection to the Internet then usage metrics will be exported to the
+ # Subscription Service, otherwise usage metrics will be exported to the local file 
+metering:
+ # db_query_batch_size specifies how many usage records should be processed
+ # in a batch during the export_usage_metrics command. If not set then all query data
+ # would be loaded at one take during export_usage_metrics which would increase the memory 
+ # consumption. On the other hand, if a very small batch size is set it would increase the 
+ # time taken to complete export_usage_metrics
+ db_query_batch_size: 50000
+ # subscription_service_api_batch_size specifies how many usage records should be processed
+ # in one request during the submitting it to the Subscription Service API. If not set then default
+ # 50000 would be sent at one take which could increase the memory consumption. On the other hand, 
+ # if a very small batch size is set it would increase the time taken to complete the export
+ subscription_service_api_batch_size: 50000
+ # usage metrics will be exported to this file appended with the time as milliseconds since epoch
+ output_file_name: "mendix_usage_metrics"
+ # usage metrics file will be created in this path if it's specified or in the
+ # m2ee-tools root directory otherwise
+ output_file_path: /path/to/your/output/directory
+ # usage metrics will be exported to the Subscription Service via this endpoint (instead of export to 
+ # local file) in case of your app is connected to the Internet
+ subscription_service_url: https://subscription-service-api-endpoint/activate #FIXME: replace with correct url when we have one
+ # timeout for Subscription Service in seconds (default is 30 sec)
+ subscription_service_timeout: 30
+ # If your app uses specializations of the 'System.User' entity to store users, use this variable 
+ # to point to the them. This enables us to identify internal and external users of your app and 
+ # add them to the usage report during the export_usage_metrics command execution. 
+ # The value of this variable is in the format 'Module.Entity.Attribute', where 'Module' is the 
+ # module of your app which contains the 'Entity' that is a specialization of 'System.User' and 
+ # 'Attribute' is the attribute that contains the email address of the user. If you have multiple 
+ # specializations of 'System.User', you can specify the values in comma-separated format. 
+ # That is 'Module1.Entity1.Attribute1,Module2.Entity2.Attribute2,…,ModuleN.EntityN.AttributeN'. 
+ # In the following example there are two specializations identified: 
+ # "Administration.Account.Email,MendixSSO.MendixSSOUser.EmailAddress"
+ # Define your own specializations of the 'System.User' entity to store users if needed, uncomment 
+ # next line and set this variable to specializations that you defined to use this functionality:
+ email_fields:
+ - Module1.Entity1.Attribute1
+ - Module2.Entity2.Attribute2
+
 # By specifying file names in the include section, additional configuration
 # will be read from those files, and will be deep-merged into the already read
 # configuration.

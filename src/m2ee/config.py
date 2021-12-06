@@ -268,6 +268,9 @@ class M2EEConfig:
     def get_app_base(self):
         return self._conf['m2ee']['app_base']
 
+    def get_app_data_tmp_path(self):
+        return os.path.join(self._conf['m2ee']['app_base'], 'data', 'tmp')
+
     def get_default_dotm2ee_directory(self):
         dotm2ee = os.path.join(pwd.getpwuid(os.getuid())[5], ".m2ee")
         if not os.path.isdir(dotm2ee):
@@ -632,6 +635,30 @@ class M2EEConfig:
 
     def get_max_active_db_connections(self):
         return self._conf['mxruntime'].get('ConnectionPoolingMaxActive', 50)
+
+    def get_metering_db_query_batch_size(self):
+        return self._conf['metering'].get('db_query_batch_size', 0)
+
+    def get_metering_output_file_name(self):
+        return self._conf['metering'].get('output_file_name', 'mendix_usage_metrics')
+
+    def get_metering_output_file_path(self):
+        return self._conf['metering'].get('output_file_path', self.get_app_data_tmp_path())
+
+    def get_metering_subscription_service_url(self):
+        return self._conf['metering'].get('subscription_service_url', '') #FIXME: replace default correct url when we have one
+
+    def get_metering_subscription_service_timeout(self):
+        return self._conf['metering'].get('subscription_service_timeout', 30)
+
+    def get_metering_subscription_service_api_batch_size(self):
+        return self._conf['metering'].get('subscription_service_api_batch_size', 50000)
+
+    def get_metering_email_fields(self):
+        return self._conf['metering'].get('email_fields', [])
+
+    def get_project_id(self):
+        return self._model_metadata['ProjectID']
 
 
 def find_yaml_files():

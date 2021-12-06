@@ -27,5 +27,6 @@ import m2ee.pgutil  # noqa
 import m2ee.nagios  # noqa
 import m2ee.munin  # noqa
 import m2ee.version  # noqa
+import m2ee.metering  # noqa
 
 __version__ = '7.2.3'
