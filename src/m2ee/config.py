@@ -646,7 +646,7 @@ class M2EEConfig:
         return self._conf['metering'].get('output_file_path', self.get_app_data_tmp_path())
 
     def get_metering_subscription_service_url(self):
-        return self._conf['metering'].get('subscription_service_url', '') #FIXME: replace default correct url when we have one
+        return self._conf['metering'].get('subscription_service_url', 'https://subscription-da-api-prod-2-eu-central-1.mendix.com/v3/activate')
 
     def get_metering_subscription_service_timeout(self):
         return self._conf['metering'].get('subscription_service_timeout', 30)

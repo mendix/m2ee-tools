@@ -16,6 +16,7 @@ from time import mktime
 from time import time
 from zipfile import ZipFile
 from zipfile import ZIP_DEFLATED
+from os.path import basename
 
 try:
     import psycopg2.sql
@@ -136,6 +137,10 @@ def prepare_db_cursor_for_usage_query(config, db_conn):
 def check_subscription_service_availability(config):
     url = config.get_metering_subscription_service_url()
 
+    if not url:
+        # no URL specified at all
+        return False
+
     try:
         response = requests.post(url)
         if response.status_code == requests.codes.ok:
@@ -227,12 +232,21 @@ def send_to_subscription_service(config, server_id, usage_metrics, created_at):
 def export_to_file(config, db_cursor, server_id):
     # create file
     file_suffix = str(int(time()))
-    output_file = path.join(config.get_metering_output_file_name() + "_" + file_suffix + ".json")
+    output_file = path.join(
+        config.get_metering_output_file_path(), 
+        config.get_metering_output_file_name() + "_" + file_suffix + ".json"
+    )
 
     with open(output_file, "w") as out_file:
         # dump usage metering data to file
         i = 1
-        out_file.write("[\n")
+        out_file.write("{\n")
+        out_file.write('"subscriptionSecret": "{}",\n'.format(server_id))
+        out_file.write('"environmentName": "",\n')
+        out_file.write('"projectID": "{}",\n'.format(config.get_project_id()))
+        # for incremental uploads and to prevent the same usage metrics processed more than once
+        out_file.write('"timestamp": "{}",\n'.format(str(datetime.datetime.now())))
+        out_file.write('"users": [\n')
         for usage_metric in db_cursor:
             export_data = convert_data_for_export(usage_metric, server_id, True)
             # no comma before the first element in JSON array
@@ -245,11 +259,12 @@ def export_to_file(config, db_cursor, server_id):
             # takes ~3Gb for 1 million users)
             json.dump(export_data, out_file, indent=4, sort_keys=True)
         out_file.write("\n]")
+        out_file.write("\n}")
 
         logger.info("Usage metrics exported at {} to {}".format(
             datetime.datetime.now(), output_file))
 
-    zip_file(output_file, file_suffix)
+    zip_file(output_file, file_suffix, config)
 
 
 def convert_data_for_export(usage_metric, server_id, to_file=False):
@@ -515,7 +530,11 @@ def hash_data(name):
     return h.hexdigest()
 
 
-def zip_file(file_path, file_suffix):
-    archive_name = 'mendix_usage_metrics_' + file_suffix + '.zip'
+def zip_file(file_path, file_suffix, config):
+    archive_name = path.join(
+        config.get_metering_output_file_path(), 
+        'mendix_usage_metrics_' + file_suffix + '.zip'
+    )
+
     with ZipFile(archive_name, 'w', ZIP_DEFLATED) as zip_archive:
-        zip_archive.write(file_path)
+        zip_archive.write(file_path, basename(file_path))
