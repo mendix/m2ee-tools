@@ -16,6 +16,7 @@ from time import mktime
 from time import time
 from zipfile import ZipFile
 from zipfile import ZIP_DEFLATED
+from os.path import basename
 
 try:
     import psycopg2.sql
@@ -231,7 +232,10 @@ def send_to_subscription_service(config, server_id, usage_metrics, created_at):
 def export_to_file(config, db_cursor, server_id):
     # create file
     file_suffix = str(int(time()))
-    output_file = path.join(config.get_metering_output_file_name() + "_" + file_suffix + ".json")
+    output_file = path.join(
+        config.get_metering_output_file_path(), 
+        config.get_metering_output_file_name() + "_" + file_suffix + ".json"
+    )
 
     with open(output_file, "w") as out_file:
         # dump usage metering data to file
@@ -260,7 +264,7 @@ def export_to_file(config, db_cursor, server_id):
         logger.info("Usage metrics exported at {} to {}".format(
             datetime.datetime.now(), output_file))
 
-    zip_file(output_file, file_suffix)
+    zip_file(output_file, file_suffix, config)
 
 
 def convert_data_for_export(usage_metric, server_id, to_file=False):
@@ -526,7 +530,11 @@ def hash_data(name):
     return h.hexdigest()
 
 
-def zip_file(file_path, file_suffix):
-    archive_name = 'mendix_usage_metrics_' + file_suffix + '.zip'
+def zip_file(file_path, file_suffix, config):
+    archive_name = path.join(
+        config.get_metering_output_file_path(), 
+        'mendix_usage_metrics_' + file_suffix + '.zip'
+    )
+
     with ZipFile(archive_name, 'w', ZIP_DEFLATED) as zip_archive:
-        zip_archive.write(file_path)
+        zip_archive.write(file_path, basename(file_path))
