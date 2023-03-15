@@ -2,13 +2,14 @@ Source: m2ee-tools
 Section: misc
 Priority: optional
 Maintainer: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Build-Depends: debhelper (>= 9), dh-python, python-all (>= 2.7~), python-setuptools
-Standards-Version: 4.1.1
+Build-Depends: debhelper-compat (= 12), dh-python, python3-all, python3-setuptools
+Standards-Version: 4.3.0
 Homepage: https://github.com/mendix/m2ee-tools/
+X-Python3-Version: >= 3.7
 
 Package: m2ee-tools
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python-m2ee (= ${source:Version})
+Depends: ${misc:Depends}, ${python:Depends}, python3-m2ee (= ${source:Version})
 Description: Mendix Runtime deployment tools
  The m2ee tools provide an interactive way to manage a Mendix Runtime
  process. Using the scripts, a Mendix application can be started, stopped
@@ -18,9 +19,9 @@ Description: Mendix Runtime deployment tools
  also provides functionality to dump and restore databases, if the
  postgresql-client package is installed.
 
-Package: python-m2ee
+Package: python3-m2ee
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python-yaml, python-httplib2, curl
+Depends: ${misc:Depends}, ${python:Depends}, python3-yaml, python3-httplib2, curl
 Section: python
 Breaks: munin-plugins-mendix (<< 9-3)
 Suggests: m2ee-tools, postgresql-client
@@ -30,7 +31,7 @@ Description: Python modules for administrative interaction with the Mendix Runti
 
 Package: munin-plugins-m2ee
 Architecture: all
-Depends: ${misc:Depends}, python, python-m2ee (>= 7~)
+Depends: ${misc:Depends}, ${python:Depends}, python3-m2ee (>= 8~)
 Section: net
 Recommends: munin-node
 Description: m2ee plugin for Munin
