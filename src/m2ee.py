@@ -1,9 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 #
 # Copyright (C) 2009 Mendix. All rights reserved.
 #
 
-from __future__ import print_function
 import argparse
 import atexit
 import cmd
@@ -29,11 +28,6 @@ if not sys.stdout.isatty():
     import codecs
     import locale
     sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
-
-try:
-    raw_input
-except NameError:
-    raw_input = input
 
 
 class CLI(cmd.Cmd, object):
@@ -67,8 +61,8 @@ class CLI(cmd.Cmd, object):
         answer = None
         while answer not in ('y', 'n'):
             answer = ('y' if self.yolo_mode
-                      else raw_input("Do you want to try to signal the JVM "
-                                     "process to stop immediately? (y)es, (n)o? "))
+                      else input("Do you want to try to signal the JVM "
+                                 "process to stop immediately? (y)es, (n)o? "))
             if answer == 'y':
                 stopped = self.m2ee.terminate()
                 if stopped:
@@ -83,8 +77,8 @@ class CLI(cmd.Cmd, object):
         answer = None
         while answer not in ('y', 'n'):
             answer = ('y' if self.yolo_mode
-                      else raw_input("Do you want to kill the JVM process? "
-                                     "(y)es, (n)o? "))
+                      else input("Do you want to kill the JVM process? "
+                                 "(y)es, (n)o? "))
             if answer == 'y':
                 stopped = self.m2ee.kill()
                 if stopped:
@@ -172,8 +166,8 @@ class CLI(cmd.Cmd, object):
         answer = None
         while answer not in ('v', 's', 'e', 'a'):
             answer = ('e' if self.yolo_mode
-                      else raw_input("Do you want to (v)iew queries, (s)ave them to "
-                                     "a file, (e)xecute and save them, or (a)bort: "))
+                      else input("Do you want to (v)iew queries, (s)ave them to "
+                                 "a file, (e)xecute and save them, or (a)bort: "))
             if answer == 'a':
                 pass
             elif answer == 'v':
@@ -191,8 +185,8 @@ class CLI(cmd.Cmd, object):
     def _handle_admin_1(self, users):
         answer = None
         while answer not in ('c', 'a'):
-            answer = raw_input("Do you want to (c)hange passwords or "
-                               "(a)bort: ")
+            answer = input("Do you want to (c)hange passwords or "
+                           "(a)bort: ")
             if answer == 'a':
                 pass
             elif answer == 'c':
@@ -241,8 +235,8 @@ class CLI(cmd.Cmd, object):
 
     def do_create_admin_user(self, args=None):
         if not self.m2ee.client.ping():
-            logger.warn("The application process needs to be running to "
-                        "create a user object in the application.")
+            logger.warning("The application process needs to be running to "
+                           "create a user object in the application.")
             return
         print("This option will create an administrative user account, using "
               "the preset username and user role settings.")
@@ -255,12 +249,12 @@ class CLI(cmd.Cmd, object):
 
     def do_update_admin_user(self, args=None):
         if not self.m2ee.client.ping():
-            logger.warn("The application process needs to be running to "
-                        "change user objects in the application.")
+            logger.warning("The application process needs to be running to "
+                           "change user objects in the application.")
             return
         print("Using this function you can reset the password of an "
               "administrative user account.")
-        username = raw_input("User name: ")
+        username = input("User name: ")
         newpw1 = getpass.getpass("Type new password for user %s: " % username)
         newpw2 = getpass.getpass("Type new password for user %s again: " %
                                  username)
@@ -270,9 +264,9 @@ class CLI(cmd.Cmd, object):
             self.m2ee.client.update_admin_user({"username": username, "password": newpw1})
 
     def do_debug(self, args):
-        answer = raw_input("This command will throw you into a local python "
-                           "debug session inside the M2EE object! Continue "
-                           "(y/N)?")
+        answer = input("This command will throw you into a local python "
+                       "debug session inside the M2EE object! Continue "
+                       "(y/N)?")
         if answer == 'y':
             import code
             code.interact(local=locals())
@@ -449,15 +443,15 @@ class CLI(cmd.Cmd, object):
                   "license in versions before Mendix 4.1 you will need to "
                   "restart the application again to be sure it is fully "
                   "activated.")
-            answer = raw_input("Do you want to continue anyway? (type YES if "
-                               "you want to): ")
+            answer = input("Do you want to continue anyway? (type YES if "
+                           "you want to): ")
             if answer != 'YES':
                 print("Aborting.")
                 return
         if not args:
-            license_key = raw_input("Paste your license key (a long text "
-                                    "string without newlines) or empty input "
-                                    "to abort: ")
+            license_key = input("Paste your license key (a long text "
+                                "string without newlines) or empty input "
+                                "to abort: ")
         else:
             license_key = args
         if not license_key:
@@ -468,13 +462,13 @@ class CLI(cmd.Cmd, object):
     def do_enable_debugger(self, args):
         self.m2ee.client.require_action("enable_debugger")
         if not args:
-            debugger_password = raw_input(
+            debugger_password = input(
                 "Please enter the password to be used for remote debugger "
                 "access from the modeler, or leave blank to auto-generate "
                 "a password: ")
             if not debugger_password:
                 debugger_password = ''.join(
-                    random.choice(string.letters + string.digits)
+                    random.choice(string.ascii_letters + string.digits)
                     for x in range(random.randint(20, 30)))
         else:
             debugger_password = args
@@ -515,9 +509,9 @@ class CLI(cmd.Cmd, object):
                 limitint = int(args)
                 self._who(limitint)
             except ValueError:
-                logger.warn("Could not parse argument to an integer. Use a "
-                            "number as argument to limit the amount of logged "
-                            "in users shown.")
+                logger.warning("Could not parse argument to an integer. Use a "
+                               "number as argument to limit the amount of logged "
+                               "in users shown.")
         else:
             self._who()
 
@@ -565,13 +559,13 @@ class CLI(cmd.Cmd, object):
             return
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if pid_alive or m2ee_alive:
-            logger.warn("The application is still running, refusing to "
-                        "restore the database right now.")
+            logger.warning("The application is still running, refusing to "
+                           "restore the database right now.")
             return
         database_name = self.m2ee.config.get_pg_environment()['PGDATABASE']
         answer = ('y' if self.yolo_mode
-                  else raw_input("This command will restore this dump into database "
-                                 "%s. Continue? (y)es, (N)o? " % database_name))
+                  else input("This command will restore this dump into database "
+                             "%s. Continue? (y)es, (N)o? " % database_name))
         if answer != 'y':
             logger.info("Aborting!")
             return
@@ -597,14 +591,14 @@ class CLI(cmd.Cmd, object):
             return
         (pid_alive, m2ee_alive) = self.m2ee.check_alive()
         if pid_alive or m2ee_alive:
-            logger.warn("The application process is still running, refusing "
-                        "to empty the database right now.")
+            logger.warning("The application process is still running, refusing "
+                           "to empty the database right now.")
             return
         logger.info("This command will drop all tables and sequences in "
                     "database %s." %
                     self.m2ee.config.get_pg_environment()['PGDATABASE'])
         answer = ('y' if self.yolo_mode
-                  else raw_input("Continue? (y)es, (N)o? "))
+                  else input("Continue? (y)es, (N)o? "))
         if answer != 'y':
             print("Aborting!")
             return
@@ -625,7 +619,7 @@ class CLI(cmd.Cmd, object):
                     "web/ locations, using the files extracted from the "
                     "archive")
         answer = ('y' if self.yolo_mode
-                  else raw_input("Continue? (y)es, (N)o? "))
+                  else input("Continue? (y)es, (N)o? "))
         if answer != 'y':
             logger.info("Aborting!")
             return
@@ -661,7 +655,7 @@ class CLI(cmd.Cmd, object):
             return
         logfile = self.m2ee.config.get_logfile()
         if not logfile:
-            logger.warn("logfile location is not specified")
+            logger.warning("logfile location is not specified")
             return
         print("This command will start printing log information from the "
               "application right in the middle of all of the other output on "
@@ -669,7 +663,7 @@ class CLI(cmd.Cmd, object):
               "typing something and everything gets messed up by the logging. "
               "Issuing the log command again will turn off logging output.")
         answer = ('y' if self.yolo_mode
-                  else raw_input("Do you want to start log output (y/N): "))
+                  else input("Do you want to start log output (y/N): "))
         if answer == 'y':
             cmd = ("tail", "-F", logfile)
             proc = subprocess.Popen(cmd)
@@ -962,6 +956,9 @@ def start_console_logging(level):
     logger.addHandler(stdoutlog)
     logger.addHandler(stderrlog)
 
+    logging.getLogger('requests').setLevel(logging.WARNING)
+    logging.getLogger('urllib3').setLevel(logging.WARNING)
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -1002,12 +999,7 @@ def main():
 
     # how verbose should we be? see
     # http://docs.python.org/release/2.7/library/logging.html#logging-levels
-    verbosity = args.quiet - args.verbose
-    if args.quiet:
-        verbosity = verbosity + args.quiet
-    if args.verbose:
-        verbosity = verbosity - args.verbose
-    verbosity = verbosity * 10 + 20
+    verbosity = (args.quiet - args.verbose) * 10 + 20
     if verbosity > 50:
         verbosity = 100
     if verbosity < 5:

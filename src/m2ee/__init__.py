@@ -28,4 +28,4 @@ import m2ee.nagios  # noqa
 import m2ee.munin  # noqa
 import m2ee.version  # noqa
 
-__version__ = '7.2.2'
+__version__ = '7.2.3'

@@ -1,3 +1,18 @@
+m2ee-tools 8.0.0, 12 Jun 2023
+  * Python 3 support
+  * Python 2 support dropped
+
+m2ee-tools 7.2.3, 18 Oct 2021
+  * Fix a crash in the munin plugin code when writing out the cache file with
+    last known statistics fails.
+  * Revise various parts of the documentation that only mentioned old operating
+    system versions. Make the text more generic instead.
+  * Remove documentation about the RPM packages, since those are not maintained
+    since m2ee-tools 0.5.4.1 any more.
+  * Fix the config module to use the yaml safe_load function() instead of
+    load() without arguments, since the latter is deprecated and not possible
+    in the most recent pyyaml version.
+
 m2ee-tools 7.2.2, 21 Mar 2019
   * Include a proper bugfix for the regression in -c argument handling that was
     already quickly fixed in v7.2.1.

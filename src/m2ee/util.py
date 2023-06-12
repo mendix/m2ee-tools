@@ -74,8 +74,8 @@ def fix_mxclientsystem_symlink(config):
         except OSError as e:
             logger.error("creating symlink failed: %s" % e)
     else:
-        logger.warn("Not touching mxclientsystem symlink: file exists "
-                    "and is not a symlink")
+        logger.warning("Not touching mxclientsystem symlink: file exists "
+                       "and is not a symlink")
 
 
 def run_post_unpack_hook(post_unpack_hook):
