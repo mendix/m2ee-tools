@@ -1,3 +1,9 @@
+m2ee-tools (8.0.0-2) unstable; urgency=medium
+
+  * debian/control: fix dependencies
+
+ -- Igor Yurchenko <igor.yurchenko@mendix.com>  Wed, 14 Jun 2023 11:09:09 +0200
+
 m2ee-tools (8.0.0-1) unstable; urgency=medium
 
   * New release v8.0.0, see CHANGES and NEWS
