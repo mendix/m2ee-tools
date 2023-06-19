@@ -1,3 +1,6 @@
+m2ee-tools 8.0.1, 19 Jun 2023
+  * Display correct version in outputs
+
 m2ee-tools 8.0.0, 12 Jun 2023
   * Python 3 support
   * Python 2 support dropped
@@ -299,7 +302,7 @@ m2ee-tools 0.3.0, 30 May 2011
   * Update Mendix copyright and license notices, cleanup third-party licenses
   * Implement sending monitoring_pass at startup
   * Cleanup pidfile handling and detection of running / not running
-  * Implement setting output verbosity at startup using -v/-q 
+  * Implement setting output verbosity at startup using -v/-q
   * Use python logging module for logging instead of print statements
   * Refactored startup code
   * Add option to save ddl commands besides view/execute
