@@ -13,7 +13,7 @@ be installed:
 
 The current Python library dependencies are:
  * PyYAML
- * httplib2
+ * requests
 
 This page first of all describes installation instructions for Debian GNU/Linux
 in case a system wide installation is done using provided software packages.
