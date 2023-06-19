@@ -9,7 +9,7 @@ X-Python3-Version: >= 3.7
 
 Package: m2ee-tools
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python3-m2ee (= ${source:Version})
+Depends: ${misc:Depends}, ${python3:Depends}, python3-m2ee (= ${source:Version})
 Description: Mendix Runtime deployment tools
  The m2ee tools provide an interactive way to manage a Mendix Runtime
  process. Using the scripts, a Mendix application can be started, stopped
@@ -21,7 +21,7 @@ Description: Mendix Runtime deployment tools
 
 Package: python3-m2ee
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python3-yaml, python3-requests, curl
+Depends: ${misc:Depends}, ${python3:Depends}, python3-yaml, python3-requests, curl
 Section: python
 Breaks: munin-plugins-mendix (<< 9-3)
 Suggests: m2ee-tools, postgresql-client
@@ -31,7 +31,7 @@ Description: Python modules for administrative interaction with the Mendix Runti
 
 Package: munin-plugins-m2ee
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python3-m2ee (>= 8~)
+Depends: ${misc:Depends}, ${python3:Depends}, python3-m2ee (>= 8~)
 Section: net
 Recommends: munin-node
 Description: m2ee plugin for Munin
