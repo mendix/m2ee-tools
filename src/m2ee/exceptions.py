@@ -28,7 +28,10 @@ class M2EEException(Exception):
 
     def __init__(self, message, cause=None, errno=1, output=None):
         self.message = message
-        self.cause = cause
+        if cause is None and self.__cause__ is not None:
+            self.cause = self.__cause__
+        else:
+            self.cause = cause
         self.errno = errno
         self.output = output
 

@@ -33,10 +33,10 @@ class M2EERunner:
                 self._pid = int(f.read().strip())
         except IOError as e:
             if e.errno != errno.ENOENT:
-                logger.warn("Cannot read pidfile: %s" % e)
+                logger.warning("Cannot read pidfile: %s" % e)
             self._pid = None
         except ValueError as e:
-            logger.warn("Cannot read pidfile: %s" % e)
+            logger.warning("Cannot read pidfile: %s" % e)
             self._pid = None
 
     def _write_pidfile(self):

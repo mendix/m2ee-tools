@@ -3,69 +3,76 @@
 #
 
 from base64 import b64encode
-import json
 import logging
-import socket
 
 logger = logging.getLogger(__name__)
 
 try:
-    import httplib2
+    import requests
 except ImportError:
-    logger.critical("Failed to import httplib2. This module is needed by "
-                    "m2ee. Please povide it on the python library path")
+    logger.critical("Failed to import requests. This module is needed by "
+                    "m2ee. Please provide it on the python library path.")
     raise
 
 
 class M2EEClient:
 
     def __init__(self, url, password):
-        self._url = url
-        self._headers = {
-            'Content-Type': 'application/json',
+        self.url = url
+        self.headers = {
             'X-M2EE-Authentication': b64encode(bytearray(password, 'utf-8')),
-            'Connection': 'close',
+        }
+        # If there's proxy settings configured in the environment, we want to
+        # make sure we ignore those for this localhost connection.
+        self.proxies = {
+            'http': None,
         }
 
     def request(self, action, params=None, timeout=None):
-        body = {"action": action}
-        if params:
-            body["params"] = params
-        body = json.dumps(body)
+        body = {
+            'action': action,
+            'params': params if params is not None else {}
+        }
+        logger.trace("M2EE request body: {}".format(body))
         try:
-            h = httplib2.Http(timeout=timeout, proxy_info=None)  # httplib does not like os.fork
-            logger.trace("M2EE request body: %s" % body)
-            response_headers, response_bytes = h.request(self._url, "POST", body,
-                                                         headers=self._headers)
-            response_body = response_bytes.decode('utf-8')
-            logger.trace("M2EE response: %s" % response_body)
-            if (response_headers['status'] != "200"):
-                raise M2EEAdminHTTPException("Non OK http status code: %s %s" %
-                                             (response_headers, response_body))
-            response = json.loads(response_body)
-            result = response['result']
-            if result == M2EEAdminException.ERR_ACTION_NOT_FOUND and action != "runtime_status":
-                status = self.runtime_status()['status']
-                if status != 'running':
-                    raise M2EERuntimeNotFullyRunning(status, action)
-            if result != 0:
-                raise M2EEAdminException(action, response)
-            return response.get('feedback', {})
-        except AttributeError as e:
-            # httplib 0.6 throws this in case of a connection refused :-|
-            if str(e) == "'NoneType' object has no attribute 'makefile'":
-                message = "Admin API not available for requests."
-                logger.trace("%s (%s: %s)" % (message, type(e), e))
-                raise M2EEAdminNotAvailable(message)
-            raise e
-        except socket.timeout as e:
-            message = "Admin API does not respond. Timeout reached after %s seconds." % timeout
+            # We use a new connection for every request. We're in charge of
+            # starting and stopping and dealing with broken situations of the
+            # target of our calls, so let's reduce the amount of state that's
+            # dragged around.  Also, the runner code uses os.fork, and then
+            # accesses the Admin API using echo requests.
+            with requests.Session() as session:
+                response = session.post(
+                    self.url,
+                    headers=self.headers,
+                    json=body,
+                    timeout=timeout,
+                    proxies=self.proxies,
+                )
+        except requests.exceptions.Timeout:
+            message = "Admin API does not respond. " \
+                "Timeout reached after {} seconds.".format(timeout)
             logger.trace(message)
             raise M2EEAdminTimeout(message)
-        except socket.error as e:
-            message = "Admin API not available for requests: (%s: %s)" % (type(e), e)
+        except requests.exceptions.ConnectionError as ce:
+            message = "Admin API connection failed: {}".format(ce)
             logger.trace(message)
             raise M2EEAdminNotAvailable(message)
+
+        if response.status_code != 200:
+            raise M2EEAdminHTTPException(
+                "Non OK http status code {}. Headers: {} Body: {}".format(
+                    response.status_code, response.headers, response.text))
+
+        response_json = response.json()
+        logger.trace("M2EE response: {}".format(response_json))
+        result = response_json['result']
+        if result == M2EEAdminException.ERR_ACTION_NOT_FOUND and action != 'runtime_status':
+            status = self.runtime_status()['status']
+            if status != 'running':
+                raise M2EERuntimeNotFullyRunning(status, action)
+        if result != 0:
+            raise M2EEAdminException(action, response_json)
+        return response_json.get('feedback', {})
 
     def ping(self, timeout=5):
         try:

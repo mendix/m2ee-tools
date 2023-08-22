@@ -1,3 +1,13 @@
+m2ee-tools 8.0, 12 Jun 2023
+===========================
+
+This release switches from Python 2 to Python 3.
+
+Support for Debian 8 Jessie and Debian 9 Stretch is dropped.
+
+Supported Mendix runtime versions are 7 to 9 (just like officially supported
+runtime versions).
+
 m2ee-tools 7.2, 16 Aug 2018
 ==========================
 
