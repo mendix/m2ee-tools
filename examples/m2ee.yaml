@@ -33,7 +33,7 @@ logging:
    autosubscribe: INFO
    filename: /path/to/your/favorite/logfile
    max_size: 10485760 # bytes(!!)
-   max_rotation: 7
+   max_rotate: 7
 mxruntime:
  # Database login credentials
  DatabaseType: PostgreSQL
