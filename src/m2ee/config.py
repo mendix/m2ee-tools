@@ -32,7 +32,7 @@ class M2EEConfig:
         self._conf['mxruntime'].setdefault(
             'BasePath', self._conf['m2ee']['app_base'])
 
-        self._conf['mxruntime']['DTAPMode'] = 'P'
+        self._conf['mxruntime'].setdefault('DTAPMode', 'P')
 
         self._model_metadata = self._try_load_json(
             os.path.join(
