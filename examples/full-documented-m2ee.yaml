@@ -445,15 +445,15 @@ logging:
    # stops writing a log file when the size of the file reaches max_size bytes.
    # Sadly, there's no m2ee api call to make the Mendix Runtime re-open its
    # logfile (yet), so directly using logrotate on these files (together with
-   # setting max_rotation 0 is not possible. When requiring more advanced log
+   # setting max_rotate 0) is not possible. When requiring more advanced log
    # rotate and compression functionality, it is recommended to use logging via
    # unix syslog.  default: 2097152 bytes (2MB)
    max_size: 10485760 # specify this value in bytes
-   # After opening a new log file, max_rotation amount of files will be kept,
+   # After opening a new log file, max_rotate amount of files will be kept,
    # and will be renamed with a dot-number suffix like file.1, file.2, file.3
-   # etc. Set max_rotation to 0 to never rotate
+   # etc. Set max_rotate to 0 to never rotate
    # default: 10
-   max_rotation: 10
+   max_rotate: 10
 
 # The last section of this file contains the 'mxruntime' section, which contains
 # configuration which will be sent to the Mendix Runtime when it's started.
