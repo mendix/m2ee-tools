@@ -18,13 +18,14 @@ import string
 import subprocess
 import sys
 import yaml
+import os.path
 
 from m2ee import pgutil, M2EE, client_errno
 import m2ee
 
 logger = logging
 
-if not sys.stdout.isatty():
+if not sys.stdout.isatty() and not os.path.basename(__file__) == "m2ee-pipe":
     import codecs
     import locale
     sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
