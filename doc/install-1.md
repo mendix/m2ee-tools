@@ -2,6 +2,8 @@
 
 # Installing the Mendix software
 
+## ** M2EE-tools only support Debian 10 (buster) and Mendix Runtime versions 7-9. Further version support will not be added anymore. **
+
 To be able to run Mendix applications, the following pieces of software need to
 be installed:
 
