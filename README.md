@@ -1,7 +1,7 @@
 m2ee-tools
 ==========
 
-##** M2EE-tools only support Debian 10 (buster) and Mendix Runtime versions 7-9. Further version support will not be added anymore. **
+## ** M2EE-tools only support Debian 10 (buster) and Mendix Runtime versions 7-9. Further version support will not be added anymore. **
 
 m2ee, the Mendix runtime helper tools for GNU/Linux
 
