@@ -1,4 +1,4 @@
-## ** M2EE-tools only support Debian 10 (buster) and Mendix Runtime versions 7-9. Further version support will not be added anymore. **
+## ** Linux deployment is only supported on Debian 10 (buster) for the Mendix Runtime version 9, 10, and 11. We will not add support for any other versions of the Mendix Runtime. **
 
 # Installing a Mendix server based on GNU/Linux
 
