@@ -81,7 +81,7 @@ def restoredb(config, dump_name):
     )
     logger.debug("Restoring %s" % db_dump_file_name)
     cmd = (config.get_pg_restore_binary(), "-d", env['PGDATABASE'],
-           "-O", "-n", default_schema, "-x", db_dump_file_name)
+           "--clean", "--if-exists", "-O", "-n", default_schema, "-x", db_dump_file_name)
     logger.trace("Executing %s" % str(cmd))
     try:
         proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
